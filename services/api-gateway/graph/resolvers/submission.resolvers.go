@@ -1,0 +1,178 @@
+package resolvers
+
+import (
+	"fmt"
+
+	"github.com/graphql-go/graphql"
+	"go.uber.org/zap"
+
+	"github.com/skillofide/api-gateway/middleware"
+	submissionv1 "github.com/skillofide/proto/submission/v1"
+	executionv1 "github.com/skillofide/proto/execution/v1"
+)
+
+// SubmissionClients holds all gRPC clients needed for submission resolvers.
+type SubmissionClients struct {
+	SubmissionSvc submissionv1.SubmissionServiceClient
+	ExecutionSvc  executionv1.ExecutionServiceClient
+	Log           *zap.Logger
+}
+
+// GetSubmissionResolver handles the getSubmission GraphQL query.
+func (c *SubmissionClients) GetSubmission(p graphql.ResolveParams) (interface{}, error) {
+	id, ok := p.Args["id"].(string)
+	if !ok || id == "" {
+		return nil, fmt.Errorf("id is required")
+	}
+
+	s, err := c.SubmissionSvc.GetSubmission(p.Context, &submissionv1.GetSubmissionRequest{Id: id})
+	if err != nil {
+		return nil, fmt.Errorf("submission not found: %s", id)
+	}
+
+	return submissionToMap(s), nil
+}
+
+// ListSubmissionsResolver handles the listSubmissions GraphQL query.
+func (c *SubmissionClients) ListSubmissions(p graphql.ResolveParams) (interface{}, error) {
+	userID := middleware.UserIDFromContext(p.Context)
+	if userID == "" {
+		return nil, fmt.Errorf("authentication required")
+	}
+
+	req := &submissionv1.ListSubmissionsRequest{
+		UserId:    userID,
+		ProblemId: stringArg(p, "problemId"),
+		Page:      int32Arg(p, "page", 1),
+		PageSize:  int32Arg(p, "pageSize", 20),
+	}
+
+	resp, err := c.SubmissionSvc.ListSubmissions(p.Context, req)
+	if err != nil {
+		return nil, fmt.Errorf("list submissions failed: %v", err)
+	}
+
+	submissions := make([]interface{}, 0, len(resp.Submissions))
+	for _, s := range resp.Submissions {
+		submissions = append(submissions, submissionToMap(s))
+	}
+
+	return map[string]interface{}{
+		"submissions": submissions,
+		"total":       resp.Total,
+		"page":        resp.Page,
+		"pageSize":    resp.PageSize,
+	}, nil
+}
+
+// SubmitCodeResolver handles the submitCode GraphQL mutation.
+func (c *SubmissionClients) SubmitCode(p graphql.ResolveParams) (interface{}, error) {
+	userID := middleware.UserIDFromContext(p.Context)
+	if userID == "" {
+		return nil, fmt.Errorf("authentication required")
+	}
+
+	problemId := stringArg(p, "problemId")
+	language := stringArg(p, "language")
+	code := stringArg(p, "code")
+
+	if problemId == "" || language == "" || code == "" {
+		return nil, fmt.Errorf("problemId, language, and code are required")
+	}
+
+	resp, err := c.SubmissionSvc.Submit(p.Context, &submissionv1.SubmitRequest{
+		UserId:    userID,
+		ProblemId: problemId,
+		Language:  language,
+		Code:      code,
+	})
+	if err != nil {
+		c.Log.Error("submit code failed", zap.Error(err))
+		return nil, fmt.Errorf("submit failed: %v", err)
+	}
+
+	return map[string]interface{}{
+		"submissionId": resp.SubmissionId,
+	}, nil
+}
+
+// RunCodeResolver handles the runCode GraphQL mutation (sync execution against visible test cases).
+func (c *SubmissionClients) RunCode(p graphql.ResolveParams) (interface{}, error) {
+	userID := middleware.UserIDFromContext(p.Context)
+	if userID == "" {
+		return nil, fmt.Errorf("authentication required")
+	}
+
+	problemId := stringArg(p, "problemId")
+	language := stringArg(p, "language")
+	code := stringArg(p, "code")
+
+	if problemId == "" || language == "" || code == "" {
+		return nil, fmt.Errorf("problemId, language, and code are required")
+	}
+
+	resp, err := c.ExecutionSvc.RunCode(p.Context, &executionv1.RunCodeRequest{
+		ProblemId: problemId,
+		Language:  language,
+		Code:      code,
+		UserId:    userID,
+	})
+	if err != nil {
+		c.Log.Error("run code failed", zap.Error(err))
+		return nil, fmt.Errorf("run code failed: %v", err)
+	}
+
+	testResults := make([]interface{}, 0, len(resp.TestResults))
+	for _, tr := range resp.TestResults {
+		testResults = append(testResults, testResultToMap(tr))
+	}
+
+	return map[string]interface{}{
+		"jobId":         resp.JobId,
+		"overallStatus": resp.OverallStatus,
+		"testResults":   testResults,
+		"compileError":  resp.CompileError,
+		"runtimeMs":     resp.Runtime,
+	}, nil
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+func submissionToMap(s *submissionv1.Submission) map[string]interface{} {
+	testResults := make([]interface{}, 0, len(s.TestResults))
+	for _, tr := range s.TestResults {
+		testResults = append(testResults, map[string]interface{}{
+			"testCaseId":     tr.TestCaseId,
+			"input":          tr.Input,
+			"expectedOutput": tr.ExpectedOutput,
+			"actualOutput":   tr.ActualOutput,
+			"status":         tr.Status,
+			"executionMs":    tr.ExecutionMs,
+			"error":          tr.Error,
+		})
+	}
+	return map[string]interface{}{
+		"id":          s.Id,
+		"userId":      s.UserId,
+		"problemId":   s.ProblemId,
+		"language":    s.Language,
+		"status":      s.Status,
+		"runtimeMs":   s.RuntimeMs,
+		"memoryKb":    s.MemoryKb,
+		"testResults": testResults,
+		"submittedAt": s.SubmittedAt,
+		"completedAt": s.CompletedAt,
+	}
+}
+
+func testResultToMap(tr *executionv1.TestResult) map[string]interface{} {
+	return map[string]interface{}{
+		"testCaseId":     tr.TestCaseId,
+		"input":          tr.Input,
+		"expectedOutput": tr.ExpectedOutput,
+		"actualOutput":   tr.ActualOutput,
+		"status":         tr.Status,
+		"executionMs":    tr.ExecutionMs,
+		"error":          tr.Error,
+	}
+}

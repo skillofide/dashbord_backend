@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package problem.v1;
+
+option go_package = "skillofide/proto/problem/v1;problemv1";
+
+// ──────────────────────────────────────────────────────────
+// Service
+// ──────────────────────────────────────────────────────────
+service ProblemService {
+  // List problems — filter by setId, topic, difficulty
+  rpc ListProblems(ListProblemsRequest) returns (ListProblemsResponse);
+
+  // Get single problem (full detail + starter codes)
+  rpc GetProblem(GetProblemRequest) returns (Problem);
+
+  // Get test cases (INTERNAL ONLY — never exposed to frontend)
+  rpc GetTestCases(GetTestCasesRequest) returns (GetTestCasesResponse);
+
+  // List practice sets
+  rpc ListPracticeSets(ListPracticeSetsRequest) returns (ListPracticeSetsResponse);
+
+  // Get problem status (user-specific — requires user_id in metadata)
+  rpc GetProblemUserStatus(GetProblemUserStatusRequest) returns (ProblemUserStatus);
+}
+
+// ──────────────────────────────────────────────────────────
+// Messages — Problems
+// ──────────────────────────────────────────────────────────
+message ListProblemsRequest {
+  string set_id    = 1;
+  string topic     = 2;
+  string difficulty = 3;
+  int32  page      = 4; // pagination — page number (1-based)
+  int32  page_size = 5; // default 50
+}
+
+message ListProblemsResponse {
+  repeated Problem problems = 1;
+  int32 total               = 2;
+  int32 page                = 3;
+  int32 page_size           = 4;
+}
+
+message GetProblemRequest {
+  string id = 1; // UUID or slug
+}
+
+message Problem {
+  string id          = 1;
+  string slug        = 2;
+  string title       = 3;
+  string difficulty  = 4;
+  string topic       = 5;
+  int32  xp          = 6;
+  string statement   = 7;
+  repeated string constraints = 8;
+  repeated string tags        = 9;
+  repeated Example examples   = 10;
+  repeated Hint    hints      = 11;
+  StarterCodes starter_codes  = 12;
+  string set_id               = 13;
+  string user_status          = 14; // Solved | InProgress | Unsolved
+}
+
+message Example {
+  string input       = 1;
+  string output      = 2;
+  string explanation = 3;
+}
+
+message Hint {
+  int32  order = 1;
+  string title = 2;
+  string body  = 3;
+}
+
+message StarterCodes {
+  string javascript = 1;
+  string python     = 2;
+  string java       = 3;
+  string cpp        = 4;
+  string go         = 5;
+}
+
+// ──────────────────────────────────────────────────────────
+// Messages — Test Cases (internal)
+// ──────────────────────────────────────────────────────────
+message GetTestCasesRequest {
+  string problem_id = 1;
+  bool   include_hidden = 2; // true for Submit, false for Run
+}
+
+message TestCase {
+  string id              = 1;
+  string input           = 2;
+  string expected_output = 3;
+  bool   is_hidden       = 4;
+  int32  time_limit_ms   = 5;
+  int32  memory_limit_mb = 6;
+  int32  order_index     = 7;
+}
+
+message GetTestCasesResponse {
+  repeated TestCase test_cases = 1;
+}
+
+// ──────────────────────────────────────────────────────────
+// Messages — Practice Sets
+// ──────────────────────────────────────────────────────────
+message ListPracticeSetsRequest {
+  string user_id = 1; // optional — for progress %
+}
+
+message PracticeSet {
+  string id             = 1;
+  string title          = 2;
+  string level          = 3;
+  string level_color    = 4;
+  string bg_color       = 5;
+  int32  total_problems = 6;
+  float  progress       = 7; // 0–100, user-specific
+}
+
+message ListPracticeSetsResponse {
+  repeated PracticeSet practice_sets = 1;
+}
+
+// ──────────────────────────────────────────────────────────
+// Messages — User Status
+// ──────────────────────────────────────────────────────────
+message GetProblemUserStatusRequest {
+  string user_id    = 1;
+  string problem_id = 2;
+}
+
+message ProblemUserStatus {
+  string user_id    = 1;
+  string problem_id = 2;
+  string status     = 3; // Solved | InProgress | Unsolved
+  string solved_at  = 4;
+  int32  attempts   = 5;
+}

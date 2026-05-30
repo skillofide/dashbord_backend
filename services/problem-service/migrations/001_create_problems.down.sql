@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS problem_user_status;
+DROP TABLE IF EXISTS test_cases;
+DROP TABLE IF EXISTS starter_codes;
+DROP TABLE IF EXISTS hints;
+DROP TABLE IF EXISTS examples;
+DROP TABLE IF EXISTS problem_tags;
+DROP TABLE IF EXISTS problem_constraints;
+DROP TABLE IF EXISTS problems;
+DROP TABLE IF EXISTS practice_sets;

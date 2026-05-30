@@ -1,0 +1,6 @@
+[16268] 29 May 18:53:42.907 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+[16268] 29 May 18:53:42.907 # Redis version=5.0.14.1, bits=64, commit=ec77f72d, modified=0, pid=16268, just started
+[16268] 29 May 18:53:42.907 # Warning: no config file specified, using the default config. In order to specify a config file use c:\users\prabh\downloads\dashbord_backend\third-party\redis\redis-server.exe /path/to/redis.conf
+[16268] 29 May 18:53:42.907 * Running mode=standalone, port=6379.
+[16268] 29 May 18:53:42.924 # Server initialized
+[16268] 29 May 18:53:42.924 * Ready to accept connections

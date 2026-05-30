@@ -1,0 +1,12 @@
+go 1.22
+
+use (
+	./proto
+	./pkg
+	./services/api-gateway
+	./services/problem-service
+	./services/execution-service
+	./services/progress-service
+	./services/submission-service
+	./services/notification-service
+)

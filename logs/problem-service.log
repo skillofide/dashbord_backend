@@ -1,0 +1,2 @@
+{"level":"INFO","ts":"2026-05-29T18:53:57.484+0530","caller":"cmd/main.go:39","msg":"postgres connected"}
+{"level":"INFO","ts":"2026-05-29T18:53:57.493+0530","caller":"cmd/main.go:62","msg":"problem-service starting","port":"50051"}

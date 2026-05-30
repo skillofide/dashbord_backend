@@ -1,0 +1,2 @@
+{"level":"INFO","ts":"2026-05-29T18:53:56.007+0530","caller":"subscriber/nats.go:46","msg":"NATS subscriber started"}
+{"level":"INFO","ts":"2026-05-29T18:53:56.012+0530","caller":"cmd/main.go:52","msg":"notification-service starting","port":"8081"}

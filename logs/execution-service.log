@@ -1,0 +1,10 @@
+{"level":"WARN","ts":"2026-05-29T18:54:03.972+0530","caller":"sandbox/docker.go:69","msg":"failed to ping Docker daemon, using local execution fallback","error":"error during connect: in the default daemon configuration on Windows, the docker client must be run with elevated privileges to connect: Head \"http://%2F%2F.%2Fpipe%2Fdocker_engine/_ping\": open //./pipe/docker_engine: The system cannot find the file specified."}
+{"level":"INFO","ts":"2026-05-29T18:54:04.006+0530","caller":"cmd/main.go:56","msg":"nats connected","url":"nats://localhost:4222"}
+{"level":"INFO","ts":"2026-05-29T18:54:04.010+0530","caller":"cmd/main.go:77","msg":"execution-service starting","port":"50052"}
+{"level":"INFO","ts":"2026-05-29T18:54:04.013+0530","caller":"worker/worker.go:76","msg":"execution worker started","subject":"execution.run"}
+{"level":"INFO","ts":"2026-05-29T18:55:58.889+0530","caller":"handler/grpc.go:90","msg":"run code completed","job_id":"24d9db23-063a-4959-8679-f8afaac04cec","language":"java","status":"RuntimeError","cases":3}
+{"level":"INFO","ts":"2026-05-29T18:55:59.228+0530","caller":"handler/grpc.go:90","msg":"run code completed","job_id":"8deac7ce-a1b2-4c05-ad69-b1460284761d","language":"java","status":"RuntimeError","cases":3}
+{"level":"INFO","ts":"2026-05-29T18:56:23.824+0530","caller":"handler/grpc.go:90","msg":"run code completed","job_id":"cabc8959-e0c4-43b5-b9f6-a786e088ea51","language":"java","status":"RuntimeError","cases":3}
+{"level":"INFO","ts":"2026-05-29T19:01:09.258+0530","caller":"handler/grpc.go:90","msg":"run code completed","job_id":"f52d6b11-64a3-4976-a7f0-56a34cf178a5","language":"java","status":"RuntimeError","cases":3}
+{"level":"INFO","ts":"2026-05-29T19:02:47.263+0530","caller":"handler/grpc.go:90","msg":"run code completed","job_id":"a01594c7-bca3-4d76-895f-3d7aeeb68c64","language":"java","status":"RuntimeError","cases":3}
+{"level":"INFO","ts":"2026-05-29T19:03:11.245+0530","caller":"handler/grpc.go:90","msg":"run code completed","job_id":"c7080713-7fe7-49e7-84f1-fc6a2797cacb","language":"java","status":"RuntimeError","cases":3}

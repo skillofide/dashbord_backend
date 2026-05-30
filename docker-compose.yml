@@ -1,0 +1,189 @@
+services:
+  # ─── Infrastructure ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: skillofide
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: skillofide
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillofide"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --save ""
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  nats:
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    command: "--jetstream --http_port 8222 --store_dir /data"
+    ports:
+      - "4222:4222"   # client port
+      - "8222:8222"   # monitoring
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  db-migrate:
+    image: migrate/migrate:v4.17.1
+    volumes:
+      - ./services/problem-service/migrations:/migrations/problem-service:ro
+      - ./services/submission-service/migrations:/migrations/submission-service:ro
+      - ./services/progress-service/migrations:/migrations/progress-service:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        /migrate -path=/migrations/problem-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable' up && \
+        /migrate -path=/migrations/submission-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable' up && \
+        /migrate -path=/migrations/progress-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable' up
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─── Microservices ────────────────────────────────────────────────────────────
+  problem-service:
+    build:
+      context: .
+      dockerfile: services/problem-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_DSN: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
+      REDIS_ADDR: redis:6379
+      GRPC_PORT: "50051"
+      LOG_LEVEL: info
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+
+  execution-service:
+    build:
+      context: .
+      dockerfile: services/execution-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      PROBLEM_SERVICE_ADDR: problem-service:50051
+      NATS_URL: nats://nats:4222
+      GRPC_PORT: "50052"
+      LOG_LEVEL: info
+    ports:
+      - "50052:50052"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Docker-in-Docker for sandbox
+    depends_on:
+      nats:
+        condition: service_healthy
+      problem-service:
+        condition: service_started
+
+  submission-service:
+    build:
+      context: .
+      dockerfile: services/submission-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_DSN: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
+      NATS_URL: nats://nats:4222
+      PROGRESS_SERVICE_ADDR: progress-service:50054
+      GRPC_PORT: "50053"
+      LOG_LEVEL: info
+    ports:
+      - "50053:50053"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+
+  progress-service:
+    build:
+      context: .
+      dockerfile: services/progress-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_DSN: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
+      REDIS_ADDR: redis:6379
+      GRPC_PORT: "50054"
+      LOG_LEVEL: info
+    ports:
+      - "50054:50054"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      NATS_URL: nats://nats:4222
+      HTTP_PORT: "8081"
+      LOG_LEVEL: info
+    ports:
+      - "8081:8081"
+    depends_on:
+      nats:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      HTTP_PORT: "8080"
+      PROBLEM_SERVICE_ADDR: problem-service:50051
+      SUBMISSION_SERVICE_ADDR: submission-service:50053
+      EXECUTION_SERVICE_ADDR: execution-service:50052
+      PROGRESS_SERVICE_ADDR: progress-service:50054
+      NOTIFICATION_SERVICE_URL: http://notification-service:8081
+      JWT_SECRET: dev-secret-change-in-production
+      POSTGRES_DSN: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
+      ALLOWED_ORIGINS: "*"
+      DEV_MODE: "true"
+      LOG_LEVEL: info
+    ports:
+      - "8080:8080"
+    depends_on:
+      - problem-service
+      - submission-service
+      - execution-service
+      - progress-service
+      - notification-service
+
+volumes:
+  postgres_data:
+  nats_data:

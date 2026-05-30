@@ -1,0 +1,142 @@
+"""
+GraphQL schema for the SkillofIDE API Gateway.
+This file is informational — the schema is defined programmatically in graph/generated/generated.go
+using the graphql-go library (no code generation required).
+"""
+
+# ─── Types ────────────────────────────────────────────────────────────────────
+
+type Problem {
+  id: ID!
+  slug: String!
+  title: String!
+  difficulty: String!
+  topic: String!
+  xp: Int!
+  statement: String!
+  constraints: [String!]!
+  tags: [String!]!
+  examples: [Example!]!
+  hints: [Hint!]!
+  starterCodes: StarterCodes
+  setId: String!
+  userStatus: String!
+}
+
+type Example {
+  input: String!
+  output: String!
+  explanation: String!
+}
+
+type Hint {
+  order: Int!
+  title: String!
+  body: String!
+}
+
+type StarterCodes {
+  javascript: String!
+  python: String!
+  java: String!
+  cpp: String!
+  go: String!
+}
+
+type PracticeSet {
+  id: ID!
+  title: String!
+  level: String!
+  levelColor: String!
+  bgColor: String!
+  totalProblems: Int!
+  progress: Float!
+}
+
+type ListProblemsResult {
+  problems: [Problem!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+}
+
+type Submission {
+  id: ID!
+  userId: String!
+  problemId: String!
+  language: String!
+  status: String!
+  runtimeMs: Int!
+  memoryKb: Int!
+  testResults: [TestResult!]!
+  submittedAt: String!
+  completedAt: String
+}
+
+type TestResult {
+  testCaseId: String!
+  input: String!
+  expectedOutput: String!
+  actualOutput: String!
+  status: String!
+  executionMs: Int!
+  error: String
+}
+
+type ListSubmissionsResult {
+  submissions: [Submission!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+}
+
+type UserProgress {
+  userId: String!
+  totalSolved: Int!
+  totalAttempted: Int!
+  easySolved: Int!
+  mediumSolved: Int!
+  hardSolved: Int!
+  currentStreak: Int!
+  longestStreak: Int!
+  totalXp: Int!
+  setProgress: [SetProgress!]!
+}
+
+type SetProgress {
+  setId: String!
+  title: String!
+  progress: Float!
+  solved: Int!
+  total: Int!
+}
+
+type SubmitResult {
+  submissionId: String!
+}
+
+type RunCodeResult {
+  jobId: String!
+  overallStatus: String!
+  testResults: [TestResult!]!
+  compileError: String
+  runtimeMs: Int!
+}
+
+# ─── Queries ──────────────────────────────────────────────────────────────────
+
+type Query {
+  listProblems(setId: String, topic: String, difficulty: String, page: Int, pageSize: Int): ListProblemsResult!
+  getProblem(id: String!): Problem
+  listPracticeSets: [PracticeSet!]!
+  getSubmission(id: String!): Submission
+  listSubmissions(problemId: String, page: Int, pageSize: Int): ListSubmissionsResult!
+  getUserProgress: UserProgress!
+}
+
+# ─── Mutations ────────────────────────────────────────────────────────────────
+
+type Mutation {
+  submitCode(problemId: String!, language: String!, code: String!): SubmitResult!
+  runCode(problemId: String!, language: String!, code: String!): RunCodeResult!
+}

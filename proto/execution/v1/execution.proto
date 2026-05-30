@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package execution.v1;
+
+option go_package = "skillofide/proto/execution/v1;executionv1";
+
+// ──────────────────────────────────────────────────────────
+// Service
+// ──────────────────────────────────────────────────────────
+service ExecutionService {
+  // Execute code (async — returns job_id immediately)
+  rpc ExecuteCode(ExecuteRequest) returns (ExecuteResponse);
+
+  // Poll job status
+  rpc GetJobStatus(JobStatusRequest) returns (JobStatusResponse);
+}
+
+// ──────────────────────────────────────────────────────────
+// Messages
+// ──────────────────────────────────────────────────────────
+message ExecuteRequest {
+  string problem_id    = 1;
+  string language      = 2; // javascript | python | java | cpp | go
+  string code          = 3;
+  bool   run_hidden    = 4; // false = Run mode (visible only), true = Submit mode (all)
+  string user_id       = 5;
+  string custom_input  = 6; // optional — overrides test cases for custom run
+  string job_id        = 7; // optional — client-provided idempotency key
+}
+
+message ExecuteResponse {
+  string job_id          = 1;
+  ExecutionStatus status = 2;
+  repeated CaseResult results = 3;
+  string runtime_ms      = 4;
+  string memory_mb       = 5;
+  string error           = 6;
+  int32  passed_cases    = 7;
+  int32  total_cases     = 8;
+}
+
+message CaseResult {
+  string input    = 1;
+  string expected = 2;
+  string actual   = 3;
+  bool   passed   = 4;
+  string stdout   = 5;
+  string stderr   = 6;
+  string runtime_ms = 7;
+}
+
+enum ExecutionStatus {
+  PENDING   = 0;
+  RUNNING   = 1;
+  COMPLETED = 2;
+  FAILED    = 3;
+  TLE       = 4; // Time Limit Exceeded
+  MLE       = 5; // Memory Limit Exceeded
+  CE        = 6; // Compile Error
+  RE        = 7; // Runtime Error
+}
+
+message JobStatusRequest {
+  string job_id = 1;
+}
+
+message JobStatusResponse {
+  string job_id          = 1;
+  ExecutionStatus status = 2;
+  ExecuteResponse result = 3; // populated when COMPLETED
+}

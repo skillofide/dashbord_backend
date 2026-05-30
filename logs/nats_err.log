@@ -1,0 +1,27 @@
+[14908] 2026/05/29 18:53:42.739243 [INF] Starting nats-server
+[14908] 2026/05/29 18:53:42.740359 [INF]   Version:  2.10.16
+[14908] 2026/05/29 18:53:42.740726 [INF]   Git:      [80e29794]
+[14908] 2026/05/29 18:53:42.741507 [INF]   Name:     NBSGTUYNCXUQUBTGUHSDB4VDKNFW473AIYK7YVABAVNOPP7MJX6WT7QK
+[14908] 2026/05/29 18:53:42.742127 [INF]   Node:     Qoj8h5q9
+[14908] 2026/05/29 18:53:42.742710 [INF]   ID:       NBSGTUYNCXUQUBTGUHSDB4VDKNFW473AIYK7YVABAVNOPP7MJX6WT7QK
+[14908] 2026/05/29 18:53:42.745068 [INF] Starting JetStream
+[14908] 2026/05/29 18:53:42.747516 [INF]     _ ___ _____ ___ _____ ___ ___   _   __  __
+[14908] 2026/05/29 18:53:42.748085 [INF]  _ | | __|_   _/ __|_   _| _ \ __| /_\ |  \/  |
+[14908] 2026/05/29 18:53:42.748683 [INF] | || | _|  | | \__ \ | | |   / _| / _ \| |\/| |
+[14908] 2026/05/29 18:53:42.749796 [INF]  \__/|___| |_| |___/ |_| |_|_\___/_/ \_\_|  |_|
+[14908] 2026/05/29 18:53:42.749796 [INF] 
+[14908] 2026/05/29 18:53:42.750994 [INF]          https://docs.nats.io/jetstream
+[14908] 2026/05/29 18:53:42.750994 [INF] 
+[14908] 2026/05/29 18:53:42.751574 [INF] ---------------- JETSTREAM ----------------
+[14908] 2026/05/29 18:53:42.752167 [INF]   Max Memory:      5.92 GB
+[14908] 2026/05/29 18:53:42.752739 [INF]   Max Storage:     1.00 TB
+[14908] 2026/05/29 18:53:42.753318 [INF]   Store Directory: "C:\Users\PRABH\AppData\Local\Temp\nats\jetstream"
+[14908] 2026/05/29 18:53:42.753888 [INF] -------------------------------------------
+[14908] 2026/05/29 18:53:42.757648 [INF]   Starting restore for stream '$G > EXECUTION'
+[14908] 2026/05/29 18:53:42.762946 [INF]   Restored 0 messages for stream '$G > EXECUTION' in 5ms
+[14908] 2026/05/29 18:53:42.764780 [INF]   Starting restore for stream '$G > SUBMISSION'
+[14908] 2026/05/29 18:53:42.769506 [INF]   Restored 0 messages for stream '$G > SUBMISSION' in 4ms
+[14908] 2026/05/29 18:53:42.773278 [INF]   Recovering 2 consumers for stream - '$G > EXECUTION'
+[14908] 2026/05/29 18:53:42.778039 [INF]   Recovering 1 consumers for stream - '$G > SUBMISSION'
+[14908] 2026/05/29 18:53:42.784764 [INF] Listening for client connections on 0.0.0.0:4222
+[14908] 2026/05/29 18:53:42.870129 [INF] Server is ready
