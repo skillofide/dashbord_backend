@@ -3,11 +3,12 @@ WORKDIR /workspace
 
 # Copy workspace files
 COPY go.work go.work
+COPY go.work.sum go.work.sum
 COPY proto/ proto/
 COPY pkg/ pkg/
-COPY services/problem-service/ services/problem-service/
-
-RUN cd services/problem-service && go build -ldflags="-s -w" -o /problem-service ./cmd/...
+COPY services/ services/
+COPY vendor/ vendor/
+RUN go build -mod=vendor -ldflags="-s -w" -o /problem-service ./services/problem-service/cmd/...
 
 # ── Runtime image ─────────────────────────────────────────────────────────────
 FROM alpine:3.19

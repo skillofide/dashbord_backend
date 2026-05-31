@@ -1,10 +1,12 @@
 FROM golang:1.22-alpine AS builder
 WORKDIR /workspace
 COPY go.work go.work
+COPY go.work.sum go.work.sum
 COPY proto/ proto/
 COPY pkg/ pkg/
-COPY services/notification-service/ services/notification-service/
-RUN cd services/notification-service && go build -ldflags="-s -w" -o /notification-service ./cmd/...
+COPY services/ services/
+COPY vendor/ vendor/
+RUN go build -mod=vendor -ldflags="-s -w" -o /notification-service ./services/notification-service/cmd/...
 
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates tzdata

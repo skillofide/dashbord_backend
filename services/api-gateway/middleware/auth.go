@@ -19,7 +19,8 @@ const (
 )
 
 // Auth returns an HTTP middleware that validates JWTs and injects user claims into the request context.
-// Requests to public paths (listed in publicPaths) bypass authentication.
+// Requests to public paths (listed in publicPaths) bypass authentication entirely.
+// Requests to optional paths get JWT parsed if present, but are not blocked if token is missing.
 func Auth(validator *pkgauth.Validator, log *zap.Logger, publicPaths ...string) func(http.Handler) http.Handler {
 	publicSet := make(map[string]bool, len(publicPaths))
 	for _, p := range publicPaths {
@@ -28,7 +29,7 @@ func Auth(validator *pkgauth.Validator, log *zap.Logger, publicPaths ...string) 
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Allow public paths
+			// Allow public paths with no token required
 			if publicSet[r.URL.Path] {
 				next.ServeHTTP(w, r)
 				return
@@ -39,6 +40,24 @@ func Auth(validator *pkgauth.Validator, log *zap.Logger, publicPaths ...string) 
 			if token == "" {
 				token = r.URL.Query().Get("token") // fallback for WebSocket
 			}
+
+			// For /graphql: parse token if present but don't block if missing
+			// (individual resolvers enforce auth per-field)
+			if r.URL.Path == "/graphql" {
+				if token != "" {
+					claims, err := validator.Validate(strings.TrimPrefix(token, "Bearer "))
+					if err == nil {
+						ctx := context.WithValue(r.Context(), CtxUserID, claims.UserID)
+						ctx = context.WithValue(ctx, CtxRole, claims.Role)
+						r.Header.Set("X-User-ID", claims.UserID)
+						r.Header.Set("X-User-Role", claims.Role)
+						r = r.WithContext(ctx)
+					}
+				}
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			if token == "" {
 				http.Error(w, `{"error":"missing authorization token"}`, http.StatusUnauthorized)
 				return

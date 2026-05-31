@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	_ "github.com/skillofide/proto/codec" // register JSON codec
+	"github.com/skillofide/proto/codec" // register JSON codec
 	problemv1 "github.com/skillofide/proto/problem/v1"
 	pkgdb "github.com/skillofide/pkg/database"
 	pkglog "github.com/skillofide/pkg/logger"
@@ -23,6 +23,7 @@ import (
 )
 
 func main() {
+	codec.Register()
 	cfg := loadConfig()
 	log := pkglog.New(cfg.logLevel)
 	defer log.Sync() //nolint:errcheck

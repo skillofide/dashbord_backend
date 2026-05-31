@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	pkglog "github.com/skillofide/pkg/logger"
-	_ "github.com/skillofide/proto/codec"
+	"github.com/skillofide/proto/codec"
 	executionv1 "github.com/skillofide/proto/execution/v1"
 	problemv1 "github.com/skillofide/proto/problem/v1"
 
@@ -26,6 +26,7 @@ import (
 )
 
 func main() {
+	codec.Register()
 	cfg := loadConfig()
 	log := pkglog.New(cfg.logLevel)
 	defer log.Sync() //nolint:errcheck

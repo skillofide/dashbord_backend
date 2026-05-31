@@ -10,6 +10,11 @@ import (
 )
 
 func init() {
+	Register()
+}
+
+// Register registers the JSONCodec, overriding the default gRPC proto codec.
+func Register() {
 	encoding.RegisterCodec(JSONCodec{})
 }
 

@@ -22,7 +22,7 @@ import (
 	pkgauth "github.com/skillofide/pkg/auth"
 	pkgdb "github.com/skillofide/pkg/database"
 	pkglog "github.com/skillofide/pkg/logger"
-	_ "github.com/skillofide/proto/codec"
+	"github.com/skillofide/proto/codec"
 	executionv1 "github.com/skillofide/proto/execution/v1"
 	problemv1 "github.com/skillofide/proto/problem/v1"
 	progressv1 "github.com/skillofide/proto/progress/v1"
@@ -34,6 +34,7 @@ import (
 )
 
 func main() {
+	codec.Register()
 	cfg := loadConfig()
 	log := pkglog.New(cfg.logLevel)
 	defer log.Sync() //nolint:errcheck
@@ -139,7 +140,7 @@ func main() {
 	})
 
 	// ── Apply middleware chain ────────────────────────────────────────────────
-	authMW := middleware.Auth(jwtValidator, log, "/health", "/graphql", "/login") // GraphQL itself handles auth per-resolver
+	authMW := middleware.Auth(jwtValidator, log, "/health", "/login") // JWT is parsed for /graphql; resolvers decide per-field auth
 	corsMW := middleware.CORS(cfg.allowedOrigins)
 
 	handler := corsMW(authMW(mux))
