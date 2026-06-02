@@ -145,6 +145,7 @@ func (w *Worker) execute(ctx context.Context, req *executionv1.SubmitCodeRequest
 
 	for _, tc := range tcResp.TestCases {
 		sbResult, err := w.sb.Run(ctx, &sandbox.RunRequest{
+			ProblemId:     req.ProblemId,
 			Language:      req.Language,
 			Code:          req.Code,
 			Input:         tc.Input,

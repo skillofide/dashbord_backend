@@ -22,7 +22,7 @@ type ProblemClients struct {
 // ListProblemsResolver handles the listProblems GraphQL query.
 func (c *ProblemClients) ListProblems(p graphql.ResolveParams) (interface{}, error) {
 	req := &problemv1.ListProblemsRequest{
-		SetId:      stringArg(p, "setId"),
+		SetId:      mapSimpleIDToUUID(stringArg(p, "setId")),
 		Topic:      stringArg(p, "topic"),
 		Difficulty: stringArg(p, "difficulty"),
 		Page:       int32Arg(p, "page", 1),
@@ -31,7 +31,7 @@ func (c *ProblemClients) ListProblems(p graphql.ResolveParams) (interface{}, err
 
 	// Inject user ID for user-specific status
 	if uid := middleware.UserIDFromContext(p.Context); uid != "" {
-		req.SetId = req.SetId // user_id not in list req, but used in status overlay
+		req.UserId = uid
 	}
 
 	resp, err := c.ProblemSvc.ListProblems(p.Context, req)
@@ -88,7 +88,7 @@ func (c *ProblemClients) ListPracticeSets(p graphql.ResolveParams) (interface{},
 	result := make([]interface{}, 0, len(resp.PracticeSets))
 	for _, s := range resp.PracticeSets {
 		result = append(result, map[string]interface{}{
-			"id":            s.Id,
+			"id":            mapUUIDToSimpleID(s.Id),
 			"title":         s.Title,
 			"level":         s.Level,
 			"levelColor":    s.LevelColor,
@@ -101,6 +101,32 @@ func (c *ProblemClients) ListPracticeSets(p graphql.ResolveParams) (interface{},
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+func mapSimpleIDToUUID(id string) string {
+	switch id {
+	case "1":
+		return "54574a34-9a68-4e65-ab9a-af05db4ca003" // Masters of Algorithms (Advanced)
+	case "2":
+		return "54574a34-9a68-4e65-ab9a-af05db4ca002" // Path to Proficiency (Intermediate)
+	case "3":
+		return "54574a34-9a68-4e65-ab9a-af05db4ca001" // Foundational Basics (Beginner)
+	default:
+		return id
+	}
+}
+
+func mapUUIDToSimpleID(uuid string) string {
+	switch uuid {
+	case "54574a34-9a68-4e65-ab9a-af05db4ca003":
+		return "1"
+	case "54574a34-9a68-4e65-ab9a-af05db4ca002":
+		return "2"
+	case "54574a34-9a68-4e65-ab9a-af05db4ca001":
+		return "3"
+	default:
+		return uuid
+	}
+}
 
 func problemListToMap(resp *problemv1.ListProblemsResponse) map[string]interface{} {
 	problems := make([]interface{}, 0, len(resp.Problems))
@@ -129,7 +155,7 @@ func problemSummaryToMap(p *problemv1.Problem) map[string]interface{} {
 		"examples":     examplesToMap(p.Examples),
 		"hints":        hintsToMap(p.Hints),
 		"starterCodes": starterCodesToMap(p.StarterCodes),
-		"setId":        p.SetId,
+		"setId":        mapUUIDToSimpleID(p.SetId),
 		"userStatus":   p.UserStatus,
 	}
 }

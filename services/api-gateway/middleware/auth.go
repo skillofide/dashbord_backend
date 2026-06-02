@@ -44,6 +44,7 @@ func Auth(validator *pkgauth.Validator, log *zap.Logger, publicPaths ...string) 
 			// For /graphql: parse token if present but don't block if missing
 			// (individual resolvers enforce auth per-field)
 			if r.URL.Path == "/graphql" {
+				var uid string
 				if token != "" {
 					claims, err := validator.Validate(strings.TrimPrefix(token, "Bearer "))
 					if err == nil {
@@ -52,8 +53,14 @@ func Auth(validator *pkgauth.Validator, log *zap.Logger, publicPaths ...string) 
 						r.Header.Set("X-User-ID", claims.UserID)
 						r.Header.Set("X-User-Role", claims.Role)
 						r = r.WithContext(ctx)
+						uid = claims.UserID
+					} else {
+						log.Warn("graphql token validation failed", zap.Error(err))
 					}
+				} else {
+					log.Warn("graphql request with missing authorization token")
 				}
+				log.Info("GraphQL Request", zap.String("user_id", uid))
 				next.ServeHTTP(w, r)
 				return
 			}

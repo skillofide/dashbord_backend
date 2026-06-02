@@ -19,6 +19,7 @@ type ListProblemsRequest struct {
 	Difficulty string `json:"difficulty"`
 	Page       int32  `json:"page"`
 	PageSize   int32  `json:"page_size"`
+	UserId     string `json:"user_id"`
 }
 
 type ListProblemsResponse struct {

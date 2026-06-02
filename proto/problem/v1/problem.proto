@@ -33,6 +33,7 @@ message ListProblemsRequest {
   string difficulty = 3;
   int32  page      = 4; // pagination — page number (1-based)
   int32  page_size = 5; // default 50
+  string user_id   = 6;
 }
 
 message ListProblemsResponse {

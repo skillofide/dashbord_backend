@@ -61,6 +61,7 @@ func (h *ExecutionHandler) RunCode(ctx context.Context, req *executionv1.RunCode
 
 	for _, tc := range tcResp.TestCases {
 		sbResult, err := h.sb.Run(runCtx, &sandbox.RunRequest{
+			ProblemId:     req.ProblemId,
 			Language:      req.Language,
 			Code:          req.Code,
 			Input:         tc.Input,
@@ -69,7 +70,13 @@ func (h *ExecutionHandler) RunCode(ctx context.Context, req *executionv1.RunCode
 		})
 		if err != nil {
 			h.log.Error("sandbox run error", zap.Error(err))
-			return nil, status.Errorf(codes.Internal, "sandbox error: %v", err)
+			tr := &executionv1.TestResult{
+				TestCaseId: tc.Id,
+				Status:     judge.StatusRuntimeError,
+				Error:      err.Error(),
+			}
+			testResults = append(testResults, tr)
+			continue
 		}
 
 		tr := h.judge.EvaluateTestCase(tc, sbResult)
@@ -84,7 +91,6 @@ func (h *ExecutionHandler) RunCode(ctx context.Context, req *executionv1.RunCode
 			compileError = tr.Error
 		}
 	}
-
 	overallStatus := judge.OverallStatus(testResults)
 
 	h.log.Info("run code completed",

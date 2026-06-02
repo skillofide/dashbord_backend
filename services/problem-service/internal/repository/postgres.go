@@ -40,7 +40,7 @@ func (r *ProblemRepository) ListProblems(ctx context.Context, req *problemv1.Lis
 
 	if req.SetId != "" {
 		filterArgs = append(filterArgs, req.SetId)
-		filterClauses = append(filterClauses, fmt.Sprintf("p.set_id = $%d", len(filterArgs)))
+		filterClauses = append(filterClauses, fmt.Sprintf("p.set_id::text = $%d", len(filterArgs)))
 	}
 	if req.Topic != "" {
 		filterArgs = append(filterArgs, req.Topic)
@@ -56,18 +56,42 @@ func (r *ProblemRepository) ListProblems(ctx context.Context, req *problemv1.Lis
 		whereSQL = "WHERE " + strings.Join(filterClauses, " AND ")
 	}
 
-	// Pagination args appended after filter args
-	paginationArgs := append(filterArgs, pageSize, offset)
-	limitOffset := fmt.Sprintf("LIMIT $%d OFFSET $%d", len(filterArgs)+1, len(filterArgs)+2)
+	// Build pagination args
+	mainArgs := make([]interface{}, len(filterArgs))
+	copy(mainArgs, filterArgs)
 
-	query := fmt.Sprintf(`
-		SELECT p.id, p.slug, p.title, p.difficulty, p.topic, p.xp,
-		       COALESCE(p.set_id::text, '') AS set_id
-		FROM   problems p
-		%s
-		ORDER  BY p.created_at DESC
-		%s
-	`, whereSQL, limitOffset)
+	var userIdParamIndex int
+	if req.UserId != "" {
+		mainArgs = append(mainArgs, req.UserId)
+		userIdParamIndex = len(mainArgs)
+	}
+
+	limitOffset := fmt.Sprintf("LIMIT $%d OFFSET $%d", len(mainArgs)+1, len(mainArgs)+2)
+	paginationArgs := append(mainArgs, pageSize, offset)
+
+	var query string
+	if req.UserId != "" {
+		query = fmt.Sprintf(`
+			SELECT p.id, p.slug, p.title, p.difficulty, p.topic, p.xp,
+			       COALESCE(p.set_id::text, '') AS set_id,
+			       COALESCE(pus.status, 'Unsolved') AS user_status
+			FROM   problems p
+			LEFT JOIN problem_user_status pus ON pus.problem_id = p.id AND pus.user_id = $%d
+			%s
+			ORDER  BY p.created_at DESC
+			%s
+		`, userIdParamIndex, whereSQL, limitOffset)
+	} else {
+		query = fmt.Sprintf(`
+			SELECT p.id, p.slug, p.title, p.difficulty, p.topic, p.xp,
+			       COALESCE(p.set_id::text, '') AS set_id,
+			       'Unsolved' AS user_status
+			FROM   problems p
+			%s
+			ORDER  BY p.created_at DESC
+			%s
+		`, whereSQL, limitOffset)
+	}
 
 	rows, err := r.pool.Query(ctx, query, paginationArgs...)
 	if err != nil {
@@ -78,7 +102,7 @@ func (r *ProblemRepository) ListProblems(ctx context.Context, req *problemv1.Lis
 	var problems []*problemv1.Problem
 	for rows.Next() {
 		p := &problemv1.Problem{}
-		if err := rows.Scan(&p.Id, &p.Slug, &p.Title, &p.Difficulty, &p.Topic, &p.Xp, &p.SetId); err != nil {
+		if err := rows.Scan(&p.Id, &p.Slug, &p.Title, &p.Difficulty, &p.Topic, &p.Xp, &p.SetId, &p.UserStatus); err != nil {
 			return nil, fmt.Errorf("scan problem row: %w", err)
 		}
 		problems = append(problems, p)

@@ -34,7 +34,7 @@ func (c *ProgressClients) GetUserProgress(p graphql.ResolveParams) (interface{},
 	setProgress := make([]interface{}, 0, len(resp.SetProgress))
 	for _, sp := range resp.SetProgress {
 		setProgress = append(setProgress, map[string]interface{}{
-			"setId":    sp.SetId,
+			"setId":    mapUUIDToSimpleID(sp.SetId),
 			"title":    sp.Title,
 			"progress": sp.Progress,
 			"solved":   sp.Solved,

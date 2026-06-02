@@ -38,8 +38,8 @@ func (c *ProblemCache) available() bool {
 // ── List Problems ────────────────────────────────────────────────────────────
 
 func listKey(req *problemv1.ListProblemsRequest) string {
-	return fmt.Sprintf("problems:list:%s:%s:%s:%d:%d",
-		req.SetId, req.Topic, req.Difficulty, req.Page, req.PageSize)
+	return fmt.Sprintf("problems:list:%s:%s:%s:%d:%d:%s",
+		req.SetId, req.Topic, req.Difficulty, req.Page, req.PageSize, req.UserId)
 }
 
 func (c *ProblemCache) GetListProblems(ctx context.Context, req *problemv1.ListProblemsRequest) (*problemv1.ListProblemsResponse, error) {

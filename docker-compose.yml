@@ -54,9 +54,9 @@ services:
       - sh
       - -c
       - |
-        /migrate -path=/migrations/problem-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable' up && \
-        /migrate -path=/migrations/submission-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable' up && \
-        /migrate -path=/migrations/progress-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable' up
+        /migrate -path=/migrations/problem-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable&x-migrations-table=schema_migrations_problem' up && \
+        /migrate -path=/migrations/submission-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable&x-migrations-table=schema_migrations_submission' up && \
+        /migrate -path=/migrations/progress-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable&x-migrations-table=schema_migrations_progress' up
     depends_on:
       postgres:
         condition: service_healthy
