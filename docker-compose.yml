@@ -153,9 +153,24 @@ services:
       HTTP_PORT: "8081"
       LOG_LEVEL: info
     ports:
-      - "8081:8081"
+      - "8085:8081"
     depends_on:
       nats:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_DSN: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
+      GRPC_PORT: "50055"
+      LOG_LEVEL: info
+    ports:
+      - "50055:50055"
+    depends_on:
+      postgres:
         condition: service_healthy
 
   api-gateway:
@@ -169,9 +184,9 @@ services:
       SUBMISSION_SERVICE_ADDR: submission-service:50053
       EXECUTION_SERVICE_ADDR: execution-service:50052
       PROGRESS_SERVICE_ADDR: progress-service:50054
+      USER_SERVICE_ADDR: user-service:50055
       NOTIFICATION_SERVICE_URL: http://notification-service:8081
       JWT_SECRET: dev-secret-change-in-production
-      POSTGRES_DSN: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
       ALLOWED_ORIGINS: "*"
       DEV_MODE: "true"
       LOG_LEVEL: info
@@ -183,6 +198,7 @@ services:
       - execution-service
       - progress-service
       - notification-service
+      - user-service
 
 volumes:
   postgres_data:

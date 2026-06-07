@@ -9,4 +9,5 @@ use (
 	./services/progress-service
 	./services/submission-service
 	./services/notification-service
+	./services/user-service
 )

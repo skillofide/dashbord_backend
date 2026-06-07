@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -13,20 +12,20 @@ import (
 	"time"
 
 	gqlhandler "github.com/graphql-go/handler"
-	pgx "github.com/jackc/pgx/v5"
-	pgxpool "github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	pkgauth "github.com/skillofide/pkg/auth"
-	pkgdb "github.com/skillofide/pkg/database"
 	pkglog "github.com/skillofide/pkg/logger"
 	"github.com/skillofide/proto/codec"
 	executionv1 "github.com/skillofide/proto/execution/v1"
 	problemv1 "github.com/skillofide/proto/problem/v1"
 	progressv1 "github.com/skillofide/proto/progress/v1"
 	submissionv1 "github.com/skillofide/proto/submission/v1"
+	userv1 "github.com/skillofide/proto/user/v1"
 
 	"github.com/skillofide/api-gateway/graph/generated"
 	"github.com/skillofide/api-gateway/graph/resolvers"
@@ -39,23 +38,10 @@ func main() {
 	log := pkglog.New(cfg.logLevel)
 	defer log.Sync() //nolint:errcheck
 
-	// ── PostgreSQL ──────────────────────────────────────────────────────────
-	var pgPool *pgxpool.Pool
-	if cfg.postgresDSN != "" {
-		pool, err := pkgdb.NewPostgresPool(context.Background(), cfg.postgresDSN)
-		if err != nil {
-			log.Error("connect postgres for login database", zap.Error(err))
-		} else {
-			pgPool = pool
-			defer pgPool.Close()
-			log.Info("postgres connected for users database")
-
-			// Ensure users table and seed data
-			if err := ensureUsersTable(context.Background(), pgPool, log); err != nil {
-				log.Error("ensure users table failed", zap.Error(err))
-			}
-		}
-	}
+	// ── User Service gRPC Connection ──────────────────────────────────────────
+	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	userConn := mustDial(cfg.userServiceAddr, dialOpts, log)
+	defer userConn.Close()
 
 	// ── Auth validator ────────────────────────────────────────────────────────
 	var jwtValidator *pkgauth.Validator
@@ -70,7 +56,6 @@ func main() {
 	}
 
 	// ── gRPC connections ──────────────────────────────────────────────────────
-	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
 	probConn := mustDial(cfg.problemServiceAddr, dialOpts, log)
 	defer probConn.Close()
@@ -120,7 +105,8 @@ func main() {
 	mux.Handle("/graphql", gqlHandler)
 
 	// REST Login endpoint
-	mux.HandleFunc("/login", handleLogin(pgPool, cfg.jwtSecret, log))
+	userSvcClient := userv1.NewUserServiceClient(userConn)
+	mux.HandleFunc("/login", handleLogin(userSvcClient, cfg.jwtSecret, log))
 
 	// WebSocket proxy to notification-service
 	if cfg.notificationServiceURL != "" {
@@ -191,10 +177,10 @@ type config struct {
 	submissionServiceAddr  string
 	executionServiceAddr   string
 	progressServiceAddr    string
+	userServiceAddr        string
 	notificationServiceURL string
 	jwtSecret              string
 	jwtPublicKey           string
-	postgresDSN            string
 	allowedOrigins         string
 	devMode                bool
 	logLevel               string
@@ -207,10 +193,10 @@ func loadConfig() config {
 		submissionServiceAddr:  env("SUBMISSION_SERVICE_ADDR", "localhost:50053"),
 		executionServiceAddr:   env("EXECUTION_SERVICE_ADDR", "localhost:50052"),
 		progressServiceAddr:    env("PROGRESS_SERVICE_ADDR", "localhost:50054"),
+		userServiceAddr:        env("USER_SERVICE_ADDR", "localhost:50055"),
 		notificationServiceURL: env("NOTIFICATION_SERVICE_URL", "http://localhost:8081"),
 		jwtSecret:              env("JWT_SECRET", "dev-secret-change-in-production"),
 		jwtPublicKey:           env("JWT_PUBLIC_KEY", ""),
-		postgresDSN:            env("POSTGRES_DSN", ""),
 		allowedOrigins:         env("ALLOWED_ORIGINS", "*"),
 		devMode:                env("DEV_MODE", "true") == "true",
 		logLevel:               env("LOG_LEVEL", "info"),
@@ -224,37 +210,7 @@ func env(key, fallback string) string {
 	return fallback
 }
 
-// ─── DB Seeding & Login Handler ──────────────────────────────────────────────
-
-func ensureUsersTable(ctx context.Context, pool *pgxpool.Pool, log *zap.Logger) error {
-	_, err := pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS users (
-			id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			email      TEXT NOT NULL UNIQUE,
-			name       TEXT NOT NULL,
-			password   TEXT NOT NULL,
-			role       TEXT NOT NULL DEFAULT 'student',
-			created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-			updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-		);
-	`)
-	if err != nil {
-		return fmt.Errorf("create users table: %w", err)
-	}
-
-	// Seed default user
-	_, err = pool.Exec(ctx, `
-		INSERT INTO users (email, name, password, role)
-		VALUES ('admin@skillofied.com', 'Admin User', 'skillofied123', 'admin')
-		ON CONFLICT (email) DO NOTHING;
-	`)
-	if err != nil {
-		return fmt.Errorf("seed default user: %w", err)
-	}
-
-	log.Info("users table verified and seeded successfully")
-	return nil
-}
+// ─── Login Handler ──────────────────────────────────────────────
 
 type loginRequest struct {
 	Email    string `json:"email"`
@@ -273,7 +229,7 @@ type profileInfo struct {
 	Role  string `json:"role"`
 }
 
-func handleLogin(pool *pgxpool.Pool, jwtSecret string, log *zap.Logger) http.HandlerFunc {
+func handleLogin(userSvc userv1.UserServiceClient, jwtSecret string, log *zap.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Handle CORS preflight options
 		if r.Method == http.MethodOptions {
@@ -286,48 +242,30 @@ func handleLogin(pool *pgxpool.Pool, jwtSecret string, log *zap.Logger) http.Han
 			return
 		}
 
-		if pool == nil {
-			log.Error("login request failed: postgres database unavailable")
-			http.Error(w, `{"error":"Database connection unavailable"}`, http.StatusInternalServerError)
-			return
-		}
-
 		var req loginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, `{"error":"Invalid request body"}`, http.StatusBadRequest)
 			return
 		}
 
-		var user profileInfo
-		var dbPassword string
-		err := pool.QueryRow(r.Context(), `
-			SELECT id::text, email, name, password, role
-			FROM   users
-			WHERE  email = $1
-		`, req.Email).Scan(&user.ID, &user.Email, &user.Name, &dbPassword, &user.Role)
-
+		resp, err := userSvc.VerifyUser(r.Context(), &userv1.VerifyUserRequest{
+			Email:    req.Email,
+			Password: req.Password,
+		})
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if st, ok := status.FromError(err); ok && st.Code() == codes.Unauthenticated {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte(`{"error":"Invalid email or password"}`)) //nolint:errcheck
 				return
 			}
-			log.Error("login database query error", zap.Error(err))
+			log.Error("login verification failed", zap.Error(err))
 			http.Error(w, `{"error":"Internal server error"}`, http.StatusInternalServerError)
 			return
 		}
 
-		// Simple plain text comparison for manual seeds
-		if req.Password != dbPassword {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"error":"Invalid email or password"}`)) //nolint:errcheck
-			return
-		}
-
 		// Generate token
-		token, err := pkgauth.GenerateToken(user.ID, user.Email, user.Role, jwtSecret, 24*time.Hour)
+		token, err := pkgauth.GenerateToken(resp.Id, resp.Email, resp.Role, jwtSecret, 24*time.Hour)
 		if err != nil {
 			log.Error("token generation failed", zap.Error(err))
 			http.Error(w, `{"error":"Failed to generate auth token"}`, http.StatusInternalServerError)
@@ -337,7 +275,12 @@ func handleLogin(pool *pgxpool.Pool, jwtSecret string, log *zap.Logger) http.Han
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(loginResponse{
 			Token: token,
-			User:  user,
+			User: profileInfo{
+				ID:    resp.Id,
+				Email: resp.Email,
+				Name:  resp.Name,
+				Role:  resp.Role,
+			},
 		}) //nolint:errcheck
 	}
 }
