@@ -166,6 +166,85 @@ var submitResultType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var userProfileType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "UserProfile",
+	Fields: graphql.Fields{
+		"userId":                &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"gender":                &graphql.Field{Type: graphql.String},
+		"dob":                   &graphql.Field{Type: graphql.String},
+		"whatsapp":              &graphql.Field{Type: graphql.String},
+		"phone":                 &graphql.Field{Type: graphql.String},
+		"experience":            &graphql.Field{Type: graphql.String},
+		"workExperience":        &graphql.Field{Type: graphql.String},
+		"careerGap":             &graphql.Field{Type: graphql.String},
+		"currentState":          &graphql.Field{Type: graphql.String},
+		"currentCity":           &graphql.Field{Type: graphql.String},
+		"preferredLocations":    &graphql.Field{Type: graphql.NewList(graphql.String)},
+		"githubLink":            &graphql.Field{Type: graphql.String},
+		"linkedinLink":          &graphql.Field{Type: graphql.String},
+		"isWorkingProfessional": &graphql.Field{Type: graphql.Boolean},
+		"resumeName":            &graphql.Field{Type: graphql.String},
+		"edu10SchoolName":       &graphql.Field{Type: graphql.String},
+		"edu10YearOfPassout":    &graphql.Field{Type: graphql.String},
+		"edu10MarksPercent":     &graphql.Field{Type: graphql.String},
+		"edu12SchoolName":       &graphql.Field{Type: graphql.String},
+		"edu12YearOfPassout":    &graphql.Field{Type: graphql.String},
+		"edu12MarksPercent":     &graphql.Field{Type: graphql.String},
+		"ugUniversityRollNo":    &graphql.Field{Type: graphql.String},
+		"ugCollegeName":         &graphql.Field{Type: graphql.String},
+		"ugCourseName":          &graphql.Field{Type: graphql.String},
+		"ugBranch":              &graphql.Field{Type: graphql.String},
+		"ugYearOfPassout":       &graphql.Field{Type: graphql.String},
+		"ugMarksPercent":        &graphql.Field{Type: graphql.String},
+		"ugCgpa":                &graphql.Field{Type: graphql.String},
+		"ugActiveBacklogs":      &graphql.Field{Type: graphql.String},
+		"pgHasCertificate":      &graphql.Field{Type: graphql.Boolean},
+	},
+})
+
+var userProfileInputType = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "UserProfileInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"gender":                &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"dob":                   &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"whatsapp":              &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"phone":                 &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"experience":            &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"workExperience":        &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"careerGap":             &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"currentState":          &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"currentCity":           &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"preferredLocations":    &graphql.InputObjectFieldConfig{Type: graphql.NewList(graphql.String)},
+		"githubLink":            &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"linkedinLink":          &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"isWorkingProfessional": &graphql.InputObjectFieldConfig{Type: graphql.Boolean},
+		"resumeName":            &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"edu10SchoolName":       &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"edu10YearOfPassout":    &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"edu10MarksPercent":     &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"edu12SchoolName":       &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"edu12YearOfPassout":    &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"edu12MarksPercent":     &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"ugUniversityRollNo":    &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"ugCollegeName":         &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"ugCourseName":          &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"ugBranch":              &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"ugYearOfPassout":       &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"ugMarksPercent":        &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"ugCgpa":                &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"ugActiveBacklogs":      &graphql.InputObjectFieldConfig{Type: graphql.String},
+		"pgHasCertificate":      &graphql.InputObjectFieldConfig{Type: graphql.Boolean},
+	},
+})
+
+var upsertProfileResultType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "UpsertProfileResult",
+	Fields: graphql.Fields{
+		"success": &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
+		"message": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+	},
+})
+
 // ─── Schema Builder ───────────────────────────────────────────────────────────
 
 // Clients bundles all service clients needed by the schema.
@@ -173,6 +252,7 @@ type Clients struct {
 	Problems    *resolvers.ProblemClients
 	Submissions *resolvers.SubmissionClients
 	Progress    *resolvers.ProgressClients
+	User        *resolvers.UserClients
 }
 
 // BuildSchema constructs the full GraphQL schema wiring resolvers to types.
@@ -222,6 +302,10 @@ func BuildSchema(clients *Clients) (graphql.Schema, error) {
 				Type:    userProgressType,
 				Resolve: clients.Progress.GetUserProgress,
 			},
+			"getProfile": {
+				Type:    userProfileType,
+				Resolve: clients.User.GetProfile,
+			},
 		},
 	})
 
@@ -245,6 +329,13 @@ func BuildSchema(clients *Clients) (graphql.Schema, error) {
 					"code":      {Type: graphql.NewNonNull(graphql.String)},
 				},
 				Resolve: clients.Submissions.RunCode,
+			},
+			"upsertProfile": {
+				Type: upsertProfileResultType,
+				Args: graphql.FieldConfigArgument{
+					"profile": {Type: graphql.NewNonNull(userProfileInputType)},
+				},
+				Resolve: clients.User.UpsertProfile,
 			},
 		},
 	})

@@ -42,6 +42,7 @@ func main() {
 	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	userConn := mustDial(cfg.userServiceAddr, dialOpts, log)
 	defer userConn.Close()
+	userSvcClient := userv1.NewUserServiceClient(userConn)
 
 	// ── Auth validator ────────────────────────────────────────────────────────
 	var jwtValidator *pkgauth.Validator
@@ -84,6 +85,10 @@ func main() {
 			ProgressSvc: progressv1.NewProgressServiceClient(progConn),
 			Log:         log,
 		},
+		User: &resolvers.UserClients{
+			UserSvc: userSvcClient,
+			Log:     log,
+		},
 	}
 
 	schema, err := generated.BuildSchema(clients)
@@ -105,8 +110,10 @@ func main() {
 	mux.Handle("/graphql", gqlHandler)
 
 	// REST Login endpoint
-	userSvcClient := userv1.NewUserServiceClient(userConn)
 	mux.HandleFunc("/login", handleLogin(userSvcClient, cfg.jwtSecret, log))
+
+	// REST Profile endpoints
+	mux.HandleFunc("/profile", handleProfile(userSvcClient, log))
 
 	// WebSocket proxy to notification-service
 	if cfg.notificationServiceURL != "" {
@@ -215,6 +222,56 @@ func env(key, fallback string) string {
 type loginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+// ─── Profile Handler ─────────────────────────────────────────────
+
+func handleProfile(userSvc userv1.UserServiceClient, log *zap.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		// OPTIONS (CORS preflight handled by CORS middleware, but handle gracefully)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Authenticated user
+		userID := middleware.UserIDFromContext(r.Context())
+		if userID == "" {
+			http.Error(w, `{"error":"authentication required"}`, http.StatusUnauthorized)
+			return
+		}
+
+		switch r.Method {
+		case http.MethodGet:
+			resp, err := userSvc.GetProfile(r.Context(), &userv1.GetProfileRequest{UserID: userID})
+			if err != nil {
+				log.Error("get profile failed", zap.Error(err))
+				http.Error(w, `{"error":"failed to get profile"}`, http.StatusInternalServerError)
+				return
+			}
+			json.NewEncoder(w).Encode(resp.Profile) //nolint:errcheck
+
+		case http.MethodPut:
+			var p userv1.UserProfile
+			if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+				http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+				return
+			}
+			p.UserID = userID // enforce user_id from JWT, never from body
+			resp, err := userSvc.UpsertProfile(r.Context(), &userv1.UpsertProfileRequest{Profile: &p})
+			if err != nil {
+				log.Error("upsert profile failed", zap.Error(err))
+				http.Error(w, `{"error":"failed to save profile"}`, http.StatusInternalServerError)
+				return
+			}
+			json.NewEncoder(w).Encode(resp) //nolint:errcheck
+
+		default:
+			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
+		}
+	}
 }
 
 type loginResponse struct {

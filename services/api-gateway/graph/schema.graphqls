@@ -123,6 +123,76 @@ type RunCodeResult {
   runtimeMs: Int!
 }
 
+type UserProfile {
+  userId: String!
+  gender: String!
+  dob: String!
+  whatsapp: String!
+  phone: String!
+  experience: String!
+  workExperience: String!
+  careerGap: String!
+  currentState: String!
+  currentCity: String!
+  preferredLocations: [String!]!
+  githubLink: String!
+  linkedinLink: String!
+  isWorkingProfessional: Boolean!
+  resumeName: String!
+  edu10SchoolName: String!
+  edu10YearOfPassout: String!
+  edu10MarksPercent: String!
+  edu12SchoolName: String!
+  edu12YearOfPassout: String!
+  edu12MarksPercent: String!
+  ugUniversityRollNo: String!
+  ugCollegeName: String!
+  ugCourseName: String!
+  ugBranch: String!
+  ugYearOfPassout: String!
+  ugMarksPercent: String!
+  ugCgpa: String!
+  ugActiveBacklogs: String!
+  pgHasCertificate: Boolean!
+}
+
+input UserProfileInput {
+  gender: String
+  dob: String
+  whatsapp: String
+  phone: String
+  experience: String
+  workExperience: String
+  careerGap: String
+  currentState: String
+  currentCity: String
+  preferredLocations: [String!]
+  githubLink: String
+  linkedinLink: String
+  isWorkingProfessional: Boolean
+  resumeName: String
+  edu10SchoolName: String
+  edu10YearOfPassout: String
+  edu10MarksPercent: String
+  edu12SchoolName: String
+  edu12YearOfPassout: String
+  edu12MarksPercent: String
+  ugUniversityRollNo: String
+  ugCollegeName: String
+  ugCourseName: String
+  ugBranch: String
+  ugYearOfPassout: String
+  ugMarksPercent: String
+  ugCgpa: String
+  ugActiveBacklogs: String
+  pgHasCertificate: Boolean
+}
+
+type UpsertProfileResult {
+  success: Boolean!
+  message: String!
+}
+
 # ─── Queries ──────────────────────────────────────────────────────────────────
 
 type Query {
@@ -132,6 +202,7 @@ type Query {
   getSubmission(id: String!): Submission
   listSubmissions(problemId: String, page: Int, pageSize: Int): ListSubmissionsResult!
   getUserProgress: UserProgress!
+  getProfile: UserProfile
 }
 
 # ─── Mutations ────────────────────────────────────────────────────────────────
@@ -139,4 +210,5 @@ type Query {
 type Mutation {
   submitCode(problemId: String!, language: String!, code: String!): SubmitResult!
   runCode(problemId: String!, language: String!, code: String!): RunCodeResult!
+  upsertProfile(profile: UserProfileInput!): UpsertProfileResult!
 }

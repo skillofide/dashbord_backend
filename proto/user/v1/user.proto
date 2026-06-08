@@ -7,6 +7,8 @@ option go_package = "skillofide/proto/user/v1;userv1";
 service UserService {
   rpc VerifyUser(VerifyUserRequest) returns (VerifyUserResponse);
   rpc CreateOrUpdateUser(CreateOrUpdateUserRequest) returns (CreateOrUpdateUserResponse);
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc UpsertProfile(UpsertProfileRequest) returns (UpsertProfileResponse);
 }
 
 message VerifyUserRequest {
@@ -31,4 +33,68 @@ message CreateOrUpdateUserRequest {
 message CreateOrUpdateUserResponse {
   bool success = 1;
   string message = 2;
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+
+message GetProfileRequest {
+  string user_id = 1;
+}
+
+message GetProfileResponse {
+  UserProfile profile = 1;
+}
+
+message UpsertProfileRequest {
+  UserProfile profile = 1;
+}
+
+message UpsertProfileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UserProfile {
+  string user_id = 1;
+
+  // Personal Info
+  string gender     = 2;
+  string dob        = 3;
+  string whatsapp   = 4;
+  string phone      = 5;
+  string experience = 6;
+
+  // Generic Details
+  string work_experience        = 7;
+  string career_gap             = 8;
+  string current_state          = 9;
+  string current_city           = 10;
+  repeated string preferred_locations = 11;
+  string github_link            = 12;
+  string linkedin_link          = 13;
+  bool   is_working_professional = 14;
+  string resume_name            = 15;
+
+  // 10th Grade
+  string edu10_school_name    = 16;
+  string edu10_year_of_passout = 17;
+  string edu10_marks_percent  = 18;
+
+  // 12th / PUC / Intermediate / Diploma
+  string edu12_school_name    = 19;
+  string edu12_year_of_passout = 20;
+  string edu12_marks_percent  = 21;
+
+  // UG Detail
+  string ug_university_roll_no = 22;
+  string ug_college_name       = 23;
+  string ug_course_name        = 24;
+  string ug_branch             = 25;
+  string ug_year_of_passout    = 26;
+  string ug_marks_percent      = 27;
+  string ug_cgpa               = 28;
+  string ug_active_backlogs    = 29;
+
+  // PG Detail
+  bool pg_has_certificate = 30;
 }

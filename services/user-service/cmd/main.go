@@ -47,6 +47,13 @@ func main() {
 	}
 	log.Info("users table verified and seeded successfully")
 
+	// Ensure user_profiles table
+	if err := repo.EnsureProfileTable(ctx); err != nil {
+		log.Fatal("ensure user_profiles table failed", zap.Error(err))
+	}
+	log.Info("user_profiles table verified successfully")
+
+
 	h := handler.New(repo, log)
 
 	// ── gRPC server ──────────────────────────────────────────────────────────
