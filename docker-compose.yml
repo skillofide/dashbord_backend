@@ -187,7 +187,7 @@ services:
       USER_SERVICE_ADDR: user-service:50055
       NOTIFICATION_SERVICE_URL: http://notification-service:8081
       JWT_SECRET: dev-secret-change-in-production
-      ALLOWED_ORIGINS: "*"
+      ALLOWED_ORIGINS: "d12z9kppz632u1.cloudfront.net"
       DEV_MODE: "true"
       LOG_LEVEL: info
     ports:
