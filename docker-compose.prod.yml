@@ -3,25 +3,15 @@
 # Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
 # RDS Endpoint: skillofide-db.czisgkemmwll.ap-south-1.rds.amazonaws.com
-# All secrets come from environment variables — set them via .env file or
-# inject them via ECS Task Definition secrets / AWS Secrets Manager.
+# All secrets come from environment variables.
 # ==========================================================================
 
 services:
   # ─── Infrastructure overrides ─────────────────────────────────────────────
   postgres:
-    # In production, remove the local postgres container entirely.
-    # Use Amazon RDS instead. Comment out this entire block and set
-    # POSTGRES_DSN to point to your RDS endpoint.
-    image: postgres:16-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports: []   # No external exposure in production — internal only
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    # Disable local postgres in production to save resource since we use Amazon RDS.
+    deploy:
+      replicas: 0
 
   redis:
     restart: always
@@ -39,6 +29,8 @@ services:
 
   # ─── Microservice overrides ───────────────────────────────────────────────
   problem-service:
+    image: ${ECR_REGISTRY}/skillofide-problem-service:latest
+    build: ~
     restart: always
     environment:
       POSTGRES_DSN: ${POSTGRES_DSN}
@@ -46,6 +38,8 @@ services:
       LOG_LEVEL: warn
 
   execution-service:
+    image: ${ECR_REGISTRY}/skillofide-execution-service:latest
+    build: ~
     restart: always
     environment:
       PROBLEM_SERVICE_ADDR: problem-service:50051
@@ -53,6 +47,8 @@ services:
       LOG_LEVEL: warn
 
   submission-service:
+    image: ${ECR_REGISTRY}/skillofide-submission-service:latest
+    build: ~
     restart: always
     environment:
       POSTGRES_DSN: ${POSTGRES_DSN}
@@ -60,6 +56,8 @@ services:
       LOG_LEVEL: warn
 
   progress-service:
+    image: ${ECR_REGISTRY}/skillofide-progress-service:latest
+    build: ~
     restart: always
     environment:
       POSTGRES_DSN: ${POSTGRES_DSN}
@@ -67,18 +65,24 @@ services:
       LOG_LEVEL: warn
 
   notification-service:
+    image: ${ECR_REGISTRY}/skillofide-notification-service:latest
+    build: ~
     restart: always
     environment:
       NATS_URL: ${NATS_URL}
       LOG_LEVEL: warn
 
   user-service:
+    image: ${ECR_REGISTRY}/skillofide-user-service:latest
+    build: ~
     restart: always
     environment:
       POSTGRES_DSN: ${POSTGRES_DSN}
       LOG_LEVEL: warn
 
   api-gateway:
+    image: ${ECR_REGISTRY}/skillofide-api-gateway:latest
+    build: ~
     restart: always
     environment:
       HTTP_PORT: "8080"
@@ -88,9 +92,7 @@ services:
       PROGRESS_SERVICE_ADDR: progress-service:50054
       USER_SERVICE_ADDR: user-service:50055
       NOTIFICATION_SERVICE_URL: http://notification-service:8081
-      # ── MUST be set from secrets in production ──
       JWT_SECRET: ${JWT_SECRET}
-      # ── Set this to your frontend domain(s) ──
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       DEV_MODE: "false"
       LOG_LEVEL: warn
