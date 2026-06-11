@@ -105,17 +105,49 @@ func RoleFromContext(ctx context.Context) string {
 
 // CORS returns a middleware that adds CORS headers for the GraphQL endpoint.
 func CORS(allowedOrigins string) func(http.Handler) http.Handler {
+	// Parse allowed origins once at middleware initialization for O(1) lookups
+	var originsMap map[string]bool
+	allowAll := false
+
+	origins := strings.Split(allowedOrigins, ",")
+	for i := range origins {
+		origins[i] = strings.TrimSpace(origins[i])
+		if origins[i] == "*" {
+			allowAll = true
+		}
+	}
+
+	if !allowAll {
+		originsMap = make(map[string]bool, len(origins))
+		for _, o := range origins {
+			if o != "" {
+				originsMap[o] = true
+			}
+		}
+	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
-			if allowedOrigins == "*" || strings.Contains(allowedOrigins, origin) {
-				w.Header().Set("Access-Control-Allow-Origin", origin)
-			} else {
-				w.Header().Set("Access-Control-Allow-Origin", allowedOrigins)
+			if origin != "" {
+				var isAllowed bool
+				if allowAll {
+					isAllowed = true
+				} else {
+					isAllowed = originsMap[origin]
+				}
+
+				if isAllowed {
+					w.Header().Set("Access-Control-Allow-Origin", origin)
+					// When Access-Control-Allow-Credentials is true, the Access-Control-Allow-Origin
+					// cannot be wildcard "*", so we dynamically reflect the allowed origin.
+					w.Header().Set("Access-Control-Allow-Credentials", "true")
+				}
 			}
+
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept")
+			w.Header().Set("Access-Control-Max-Age", "86400")
 
 			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusNoContent)
