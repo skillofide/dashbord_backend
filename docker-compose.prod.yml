@@ -13,6 +13,15 @@ services:
     deploy:
       replicas: 0
 
+  db-migrate:
+    entrypoint:
+      - sh
+      - -c
+      - |
+        /migrate -path=/migrations/problem-service -database "$${POSTGRES_DSN}&x-migrations-table=schema_migrations_problem" up && \
+        /migrate -path=/migrations/submission-service -database "$${POSTGRES_DSN}&x-migrations-table=schema_migrations_submission" up && \
+        /migrate -path=/migrations/progress-service -database "$${POSTGRES_DSN}&x-migrations-table=schema_migrations_progress" up
+
   redis:
     restart: always
     command: >
