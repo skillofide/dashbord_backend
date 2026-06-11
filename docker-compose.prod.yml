@@ -1,0 +1,96 @@
+# ==========================================================================
+# Production docker-compose overrides for dashbord_backend
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# RDS Endpoint: skillofide-db.czisgkemmwll.ap-south-1.rds.amazonaws.com
+# All secrets come from environment variables — set them via .env file or
+# inject them via ECS Task Definition secrets / AWS Secrets Manager.
+# ==========================================================================
+
+services:
+  # ─── Infrastructure overrides ─────────────────────────────────────────────
+  postgres:
+    # In production, remove the local postgres container entirely.
+    # Use Amazon RDS instead. Comment out this entire block and set
+    # POSTGRES_DSN to point to your RDS endpoint.
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports: []   # No external exposure in production — internal only
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    restart: always
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --requirepass ${REDIS_PASSWORD}
+    ports: []   # No external exposure — internal only
+
+  nats:
+    restart: always
+    ports: []   # No external exposure — internal only
+
+  # ─── Microservice overrides ───────────────────────────────────────────────
+  problem-service:
+    restart: always
+    environment:
+      POSTGRES_DSN: ${POSTGRES_DSN}
+      REDIS_ADDR: ${REDIS_ADDR}
+      LOG_LEVEL: warn
+
+  execution-service:
+    restart: always
+    environment:
+      PROBLEM_SERVICE_ADDR: problem-service:50051
+      NATS_URL: ${NATS_URL}
+      LOG_LEVEL: warn
+
+  submission-service:
+    restart: always
+    environment:
+      POSTGRES_DSN: ${POSTGRES_DSN}
+      NATS_URL: ${NATS_URL}
+      LOG_LEVEL: warn
+
+  progress-service:
+    restart: always
+    environment:
+      POSTGRES_DSN: ${POSTGRES_DSN}
+      REDIS_ADDR: ${REDIS_ADDR}
+      LOG_LEVEL: warn
+
+  notification-service:
+    restart: always
+    environment:
+      NATS_URL: ${NATS_URL}
+      LOG_LEVEL: warn
+
+  user-service:
+    restart: always
+    environment:
+      POSTGRES_DSN: ${POSTGRES_DSN}
+      LOG_LEVEL: warn
+
+  api-gateway:
+    restart: always
+    environment:
+      HTTP_PORT: "8080"
+      PROBLEM_SERVICE_ADDR: problem-service:50051
+      SUBMISSION_SERVICE_ADDR: submission-service:50053
+      EXECUTION_SERVICE_ADDR: execution-service:50052
+      PROGRESS_SERVICE_ADDR: progress-service:50054
+      USER_SERVICE_ADDR: user-service:50055
+      NOTIFICATION_SERVICE_URL: http://notification-service:8081
+      # ── MUST be set from secrets in production ──
+      JWT_SECRET: ${JWT_SECRET}
+      # ── Set this to your frontend domain(s) ──
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      DEV_MODE: "false"
+      LOG_LEVEL: warn
