@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"time"
 
@@ -275,14 +276,24 @@ console.log(isPalindrome(s));
 const fs = require('fs');
 const input = fs.readFileSync('/dev/stdin', 'utf-8').trim();
 try {
-    const parsed = JSON.parse(input);
-    if (typeof solveChallenge === 'function') {
-        console.log(JSON.stringify(solveChallenge(parsed)));
+    const code = fs.readFileSync(__filename, 'utf-8');
+    const match = code.match(/function\s+([a-zA-Z0-9_]+)\s*\(/);
+    const funcName = match ? match[1] : 'solveChallenge';
+    let args;
+    try {
+        args = JSON.parse("[" + input + "]");
+    } catch(e) {
+        args = [input];
+    }
+    const func = eval(funcName);
+    const result = func.apply(null, args);
+    if (result !== undefined) {
+        console.log(JSON.stringify(result));
+    } else if (args.length > 0 && typeof args[0] === 'object') {
+        console.log(JSON.stringify(args[0]));
     }
 } catch (e) {
-    if (typeof solveChallenge === 'function') {
-        console.log(solveChallenge(input));
-    }
+    console.error(e);
 }
 `
 		}
@@ -327,15 +338,26 @@ print(str(isPalindrome(s)).lower())
 `
 		default:
 			driver = `
-import sys, json
-input_data = sys.stdin.read().trim()
+import sys, json, re
+input_data = sys.stdin.read().strip()
 try:
-    parsed = json.loads(input_data)
-    if 'solveChallenge' in globals():
-        print(json.dumps(solveChallenge(parsed)))
-except:
-    if 'solveChallenge' in globals():
-        print(solveChallenge(input_data))
+    try:
+        args = json.loads("[" + input_data + "]")
+    except:
+        args = [input_data]
+    with open(__file__, "r", encoding="utf-8") as f:
+        code = f.read()
+    match = re.search(r'def\s+([a-zA-Z0-9_]+)\s*\(', code)
+    func_name = match.group(1) if match else 'solveChallenge'
+    if func_name in globals():
+        func = globals()[func_name]
+        result = func(*args)
+        if result is not None:
+            print(json.dumps(result))
+        elif len(args) > 0 and isinstance(args[0], (list, dict)):
+            print(json.dumps(args[0]))
+except Exception as e:
+    print(e, file=sys.stderr)
 `
 		}
 		return code + "\n" + driver
@@ -420,8 +442,106 @@ except:
         java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(System.in));
         String input = br.readLine();
         if (input == null) return;
+        input = input.trim();
         Solution sol = new Solution();
-        System.out.println(sol.solveChallenge(input.trim()));
+        java.lang.reflect.Method targetMethod = null;
+        for (java.lang.reflect.Method m : Solution.class.getDeclaredMethods()) {
+            if (!m.getName().equals("main") && !m.getName().equals("solveChallenge")) {
+                targetMethod = m;
+                break;
+            }
+        }
+        if (targetMethod == null) {
+            System.out.println(sol.solveChallenge(input));
+            return;
+        }
+        Class<?>[] paramTypes = targetMethod.getParameterTypes();
+        Object[] parsedArgs = new Object[paramTypes.length];
+        String[] parts;
+        if (paramTypes.length == 1) {
+            parts = new String[]{input};
+        } else {
+            java.util.List<String> list = new java.util.ArrayList<>();
+            int bracketCount = 0;
+            boolean inQuotes = false;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (c == '"' && (i == 0 || input.charAt(i-1) != '\\')) inQuotes = !inQuotes;
+                if (!inQuotes) {
+                    if (c == '[') bracketCount++;
+                    else if (c == ']') bracketCount--;
+                }
+                if (c == ',' && bracketCount == 0 && !inQuotes) {
+                    list.add(sb.toString().trim());
+                    sb = new StringBuilder();
+                } else {
+                    sb.append(c);
+                }
+            }
+            list.add(sb.toString().trim());
+            parts = list.toArray(new String[0]);
+        }
+        for (int i = 0; i < paramTypes.length; i++) {
+            parsedArgs[i] = parseJavaValue(parts[i], paramTypes[i]);
+        }
+        Object result = targetMethod.invoke(sol, parsedArgs);
+        if (targetMethod.getReturnType() == void.class) {
+            printJavaValue(parsedArgs[0]);
+        } else {
+            printJavaValue(result);
+        }
+    }
+    private static Object parseJavaValue(String val, Class<?> type) throws Exception {
+        val = val.trim();
+        if (type == int.class || type == Integer.class) {
+            return Integer.parseInt(val);
+        } else if (type == long.class || type == Long.class) {
+            return Long.parseLong(val);
+        } else if (type == double.class || type == Double.class) {
+            return Double.parseDouble(val);
+        } else if (type == boolean.class || type == Boolean.class) {
+            return Boolean.parseBoolean(val);
+        } else if (type == String.class) {
+            if (val.startsWith("\"") && val.endsWith("\"")) {
+                val = val.substring(1, val.length() - 1);
+            }
+            return val;
+        } else if (type == int[].class) {
+            if (val.startsWith("[")) val = val.substring(1);
+            if (val.endsWith("]")) val = val.substring(0, val.length() - 1);
+            if (val.trim().isEmpty()) return new int[0];
+            String[] tokens = val.split(",");
+            int[] arr = new int[tokens.length];
+            for (int i = 0; i < tokens.length; i++) arr[i] = Integer.parseInt(tokens[i].trim());
+            return arr;
+        } else if (type == String[].class) {
+            if (val.startsWith("[")) val = val.substring(1);
+            if (val.endsWith("]")) val = val.substring(0, val.length() - 1);
+            if (val.trim().isEmpty()) return new String[0];
+            String[] tokens = val.split(",");
+            for (int i = 0; i < tokens.length; i++) {
+                tokens[i] = tokens[i].trim();
+                if (tokens[i].startsWith("\"") && tokens[i].endsWith("\"")) {
+                    tokens[i] = tokens[i].substring(1, tokens[i].length() - 1);
+                }
+            }
+            return tokens;
+        }
+        return null;
+    }
+    private static void printJavaValue(Object val) {
+        if (val == null) {
+            System.out.println("null");
+        } else if (val instanceof int[]) {
+            System.out.println(java.util.Arrays.toString((int[]) val).replace(" ", ""));
+        } else if (val instanceof Object[]) {
+            System.out.println(java.util.Arrays.deepToString((Object[]) val).replace(" ", ""));
+        } else if (val instanceof String) {
+            System.out.println("\"" + val + "\"");
+        } else {
+            System.out.println(val.toString());
+        }
     }
 `
 		}
@@ -521,20 +641,196 @@ int main() {
 }
 `
 		default:
-			driver = `
+			funcName := "solveChallenge"
+			retType := "void"
+			hasParams := false
+
+			re := regexp.MustCompile(`(std::)?(vector<[^>]+>|string|int|long\s+long|double|bool|void)\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)`)
+			matches := re.FindStringSubmatch(code)
+			if len(matches) >= 5 {
+				retType = matches[2]
+				funcName = matches[3]
+				paramsStr := matches[4]
+				if strings.TrimSpace(paramsStr) != "" {
+					hasParams = true
+				}
+			}
+
+			var paramParsers []string
+			var paramNames []string
+			if hasParams {
+				paramSpecs := strings.Split(matches[4], ",")
+				for idx, spec := range paramSpecs {
+					spec = strings.TrimSpace(spec)
+					parts := strings.Fields(spec)
+					if len(parts) >= 2 {
+						pType := strings.Join(parts[:len(parts)-1], " ")
+						pName := fmt.Sprintf("arg%d", idx)
+						paramNames = append(paramNames, pName)
+
+						if pType == "int" {
+							paramParsers = append(paramParsers, fmt.Sprintf("int %s; ss >> %s; ss.ignore(1);", pName, pName))
+						} else if pType == "long long" {
+							paramParsers = append(paramParsers, fmt.Sprintf("long long %s; ss >> %s; ss.ignore(1);", pName, pName))
+						} else if pType == "double" {
+							paramParsers = append(paramParsers, fmt.Sprintf("double %s; ss >> %s; ss.ignore(1);", pName, pName))
+						} else if pType == "bool" {
+							paramParsers = append(paramParsers, fmt.Sprintf("bool %s; ss >> std::boolalpha >> %s; ss.ignore(1);", pName, pName))
+						} else if pType == "string" || pType == "std::string" {
+							paramParsers = append(paramParsers, fmt.Sprintf("std::string %s; std::getline(ss, %s, ',');", pName, pName))
+						} else if strings.Contains(pType, "vector<int>") {
+							paramParsers = append(paramParsers, fmt.Sprintf(`
+        std::string vecStr%d;
+        std::getline(ss, vecStr%d, ']');
+        if (vecStr%d.front() == '[') vecStr%d = vecStr%d.substr(1);
+        std::vector<int> %s;
+        std::stringstream vecSS%d(vecStr%d);
+        std::string item%d;
+        while (std::getline(vecSS%d, item%d, ',')) {
+            if (!item%d.empty()) %s.push_back(std::stoi(item%d));
+        }
+        ss.ignore(1);
+`, idx, idx, idx, idx, idx, pName, idx, idx, idx, idx, idx, idx, pName, idx))
+						} else {
+							paramParsers = append(paramParsers, fmt.Sprintf("std::string %s; ss >> %s;", pName, pName))
+						}
+					}
+				}
+			}
+
+			callStr := fmt.Sprintf("sol.%s(%s)", funcName, strings.Join(paramNames, ", "))
+			printStr := ""
+			if retType == "void" {
+				if len(paramNames) > 0 && strings.Contains(matches[4], "vector") {
+					printStr = fmt.Sprintf(`
+        %s;
+        std::cout << "[";
+        for (size_t i = 0; i < %s.size(); ++i) {
+            std::cout << %s[i] << (i == %s.size() - 1 ? "" : ",");
+        }
+        std::cout << "]" << std::endl;
+`, callStr, paramNames[0], paramNames[0], paramNames[0])
+				} else {
+					printStr = callStr + ";"
+				}
+			} else if strings.Contains(retType, "vector<int>") {
+				printStr = fmt.Sprintf(`
+        std::vector<int> res = %s;
+        std::cout << "[";
+        for (size_t i = 0; i < res.size(); ++i) {
+            std::cout << res[i] << (i == res.size() - 1 ? "" : ",");
+        }
+        std::cout << "]" << std::endl;
+`, callStr)
+			} else if retType == "string" || retType == "std::string" {
+				printStr = fmt.Sprintf("std::cout << \"\\\"\" << %s << \"\\\"\" << std::endl;", callStr)
+			} else {
+				printStr = fmt.Sprintf("std::cout << %s << std::endl;", callStr)
+			}
+
+			driver = fmt.Sprintf(`
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <vector>
 int main() {
     std::string s;
     if (std::getline(std::cin, s)) {
+        std::stringstream ss(s);
+        %s
         Solution sol;
-        sol.solveChallenge();
+        %s
     }
     return 0;
 }
-`
+`, strings.Join(paramParsers, "\n        "), printStr)
 		}
 		return code + "\n" + driver
+
+	case "go":
+		funcName := "solveChallenge"
+		retType := ""
+		hasParams := false
+
+		re := regexp.MustCompile(`func\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)\s*([a-zA-Z0-9_*&<>\[\]\s]+)?`)
+		matches := re.FindStringSubmatch(code)
+		if len(matches) >= 3 {
+			funcName = matches[1]
+			paramsStr := matches[2]
+			if strings.TrimSpace(paramsStr) != "" {
+				hasParams = true
+			}
+			if len(matches) >= 4 {
+				retType = strings.TrimSpace(matches[3])
+			}
+		}
+
+		var paramParsers []string
+		var paramNames []string
+		if hasParams {
+			paramSpecs := strings.Split(matches[2], ",")
+			for idx, spec := range paramSpecs {
+				spec = strings.TrimSpace(spec)
+				parts := strings.Fields(spec)
+				if len(parts) >= 2 {
+					pName := parts[0]
+					pType := parts[1]
+					paramNames = append(paramNames, pName)
+
+					if pType == "int" {
+						paramParsers = append(paramParsers, fmt.Sprintf("var %s int; fmt.Fscanf(reader, \"%%d\", &%s)", pName, pName))
+					} else if pType == "string" {
+						paramParsers = append(paramParsers, fmt.Sprintf("var %s string; fmt.Fscanf(reader, \"%%q\", &%s)", pName, pName))
+					} else if pType == "[]int" {
+						paramParsers = append(paramParsers, fmt.Sprintf(`
+	var arrStr%d string
+	fmt.Fscan(reader, &arrStr%d)
+	arrStr%d = strings.Trim(arrStr%d, "[]")
+	var %s []int
+	if len(arrStr%d) > 0 {
+		for _, item := range strings.Split(arrStr%d, ",") {
+			val, _ := strconv.Atoi(strings.TrimSpace(item))
+			%s = append(%s, val)
+		}
+	}
+`, idx, idx, idx, idx, pName, idx, idx, pName, pName))
+					} else {
+						paramParsers = append(paramParsers, fmt.Sprintf("var %s string; fmt.Fscan(reader, &%s)", pName, pName))
+					}
+				}
+			}
+		}
+
+		callStr := fmt.Sprintf("%s(%s)", funcName, strings.Join(paramNames, ", "))
+		printStr := ""
+		if retType == "" {
+			if len(paramNames) > 0 && strings.Contains(matches[2], "[]") {
+				printStr = fmt.Sprintf(`
+	%s
+	fmt.Println(strings.ReplaceAll(fmt.Sprintf("%%v", %s), " ", ","))
+`, callStr, paramNames[0])
+			} else {
+				printStr = callStr
+			}
+		} else if strings.Contains(retType, "[]") {
+			printStr = fmt.Sprintf(`
+	res := %s
+	fmt.Println(strings.ReplaceAll(fmt.Sprintf("%%v", res), " ", ","))
+`, callStr)
+		} else {
+			printStr = fmt.Sprintf("fmt.Println(%s)", callStr)
+		}
+
+		goMain := fmt.Sprintf(`
+func main() {
+	reader := strings.NewReader(os.Getenv("USER_INPUT"))
+	%s
+	%s
+}
+`, strings.Join(paramParsers, "\n\t"), printStr)
+
+		code = strings.Replace(code, "package main", "package main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n\t\"strconv\"\n\t\"os\"\n)", 1)
+		return code + "\n" + goMain
 	}
 
 	return code
