@@ -69,28 +69,7 @@ func main() {
 
 	fmt.Println("Connected to PostgreSQL database for seeding...")
 
-	// Clear existing tables
-	tables := []string{
-		"starter_codes",
-		"test_cases",
-		"examples",
-		"hints",
-		"problem_constraints",
-		"problem_tags",
-		"problem_user_status",
-		"problems",
-		"practice_sets",
-	}
-
-	for _, table := range tables {
-		_, err := conn.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
-		if err != nil {
-			fmt.Printf("Failed to truncate table %s: %v\n", table, err)
-		}
-	}
-	fmt.Println("Cleared existing problem tables.")
-
-	// 1. Insert practice sets
+	// 1. Insert/Update practice sets (UPSERT to preserve user status and data)
 	sets := []PracticeSet{
 		{
 			ID:         "54574a34-9a68-4e65-ab9a-af05db4ca001",
@@ -119,13 +98,19 @@ func main() {
 		_, err := conn.Exec(ctx, `
 			INSERT INTO practice_sets (id, title, level, level_color, bg_color, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, now(), now())
+			ON CONFLICT (id) DO UPDATE SET
+				title = EXCLUDED.title,
+				level = EXCLUDED.level,
+				level_color = EXCLUDED.level_color,
+				bg_color = EXCLUDED.bg_color,
+				updated_at = now()
 		`, s.ID, s.Title, s.Level, s.LevelColor, s.BgColor)
 		if err != nil {
-			fmt.Printf("Failed to insert practice set %s: %v\n", s.Title, err)
+			fmt.Printf("Failed to insert/update practice set %s: %v\n", s.Title, err)
 			os.Exit(1)
 		}
 	}
-	fmt.Println("Seeded practice sets.")
+	fmt.Println("Seeded/updated practice sets.")
 
 	// 2. Define problems
 	problems := []Problem{
@@ -3360,13 +3345,29 @@ func solveChallenge(input string) string {
 	}
 
 	for _, p := range problems {
-		// Insert problem
+		// Delete existing dependent rows for this problem to prevent duplicate key or constraint conflicts
+		_, _ = conn.Exec(ctx, "DELETE FROM problem_tags WHERE problem_id = $1", p.ID)
+		_, _ = conn.Exec(ctx, "DELETE FROM examples WHERE problem_id = $1", p.ID)
+		_, _ = conn.Exec(ctx, "DELETE FROM hints WHERE problem_id = $1", p.ID)
+		_, _ = conn.Exec(ctx, "DELETE FROM starter_codes WHERE problem_id = $1", p.ID)
+		_, _ = conn.Exec(ctx, "DELETE FROM test_cases WHERE problem_id = $1", p.ID)
+
+		// Insert/Update problem
 		_, err := conn.Exec(ctx, `
 			INSERT INTO problems (id, slug, title, difficulty, topic, xp, statement, set_id, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now())
+			ON CONFLICT (id) DO UPDATE SET
+				slug = EXCLUDED.slug,
+				title = EXCLUDED.title,
+				difficulty = EXCLUDED.difficulty,
+				topic = EXCLUDED.topic,
+				xp = EXCLUDED.xp,
+				statement = EXCLUDED.statement,
+				set_id = EXCLUDED.set_id,
+				updated_at = now()
 		`, p.ID, p.Slug, p.Title, p.Difficulty, p.Topic, p.XP, p.Statement, p.SetID)
 		if err != nil {
-			fmt.Printf("Failed to insert problem %s: %v\n", p.Title, err)
+			fmt.Printf("Failed to insert/update problem %s: %v\n", p.Title, err)
 			os.Exit(1)
 		}
 
