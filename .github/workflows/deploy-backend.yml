@@ -139,6 +139,16 @@ jobs:
             
             # Recreate containers with new images
             docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+
+            # Pull and tag runner images (used by execution-service sandbox)
+            docker pull ${{ env.ECR_REGISTRY }}/skillofide-runner-python:latest
+            docker tag ${{ env.ECR_REGISTRY }}/skillofide-runner-python:latest skillofide/runner-python:latest
+            docker pull ${{ env.ECR_REGISTRY }}/skillofide-runner-javascript:latest
+            docker tag ${{ env.ECR_REGISTRY }}/skillofide-runner-javascript:latest skillofide/runner-javascript:latest
+            docker pull ${{ env.ECR_REGISTRY }}/skillofide-runner-java:latest
+            docker tag ${{ env.ECR_REGISTRY }}/skillofide-runner-java:latest skillofide/runner-java:latest
+            docker pull ${{ env.ECR_REGISTRY }}/skillofide-runner-cpp:latest
+            docker tag ${{ env.ECR_REGISTRY }}/skillofide-runner-cpp:latest skillofide/runner-cpp:latest
           "
 
 
