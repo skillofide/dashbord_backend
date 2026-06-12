@@ -41,9 +41,9 @@ func Auth(validator *pkgauth.Validator, log *zap.Logger, publicPaths ...string) 
 				token = r.URL.Query().Get("token") // fallback for WebSocket
 			}
 
-			// For /graphql: parse token if present but don't block if missing
+			// For /api/graphql: parse token if present but don't block if missing
 			// (individual resolvers enforce auth per-field)
-			if r.URL.Path == "/graphql" {
+			if r.URL.Path == "/api/graphql" {
 				var uid string
 				if token != "" {
 					claims, err := validator.Validate(strings.TrimPrefix(token, "Bearer "))

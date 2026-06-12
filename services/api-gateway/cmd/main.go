@@ -107,13 +107,13 @@ func main() {
 	mux := http.NewServeMux()
 
 	// GraphQL endpoint
-	mux.Handle("/graphql", gqlHandler)
+	mux.Handle("/api/graphql", gqlHandler)
 
 	// REST Login endpoint
-	mux.HandleFunc("/login", handleLogin(userSvcClient, cfg.jwtSecret, log))
+	mux.HandleFunc("/api/login", handleLogin(userSvcClient, cfg.jwtSecret, log))
 
 	// REST Profile endpoints
-	mux.HandleFunc("/profile", handleProfile(userSvcClient, log))
+	mux.HandleFunc("/api/profile", handleProfile(userSvcClient, log))
 
 	// WebSocket proxy to notification-service
 	if cfg.notificationServiceURL != "" {
@@ -127,13 +127,13 @@ func main() {
 	}
 
 	// Health check
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok"}`)) //nolint:errcheck
 	})
 
 	// ── Apply middleware chain ────────────────────────────────────────────────
-	authMW := middleware.Auth(jwtValidator, log, "/health", "/login") // JWT is parsed for /graphql; resolvers decide per-field auth
+	authMW := middleware.Auth(jwtValidator, log, "/api/health", "/api/login") // JWT is parsed for /graphql; resolvers decide per-field auth
 	corsMW := middleware.CORS(cfg.allowedOrigins)
 
 	handler := corsMW(authMW(mux))
