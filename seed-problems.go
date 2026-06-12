@@ -3237,6 +3237,7 @@ func largestRectangleArea(heights []int) int {
 	}
 
 	problems = append(problems, getHardProblems()...)
+	problems = append(problems, getProficiencyProblems()...)
 
 	// Dynamically append the other placeholder problems
 	type problemMeta struct {
@@ -3289,7 +3290,7 @@ func largestRectangleArea(heights []int) int {
 			setID = "54574a34-9a68-4e65-ab9a-af05db4ca001"
 			xp = 50
 		case "Medium":
-			setID = "54574a34-9a68-4e65-ab9a-af05db4ca002"
+			setID = "54574a34-9a68-4e65-ab9a-af05db4ca001"
 			xp = 100
 		case "Hard":
 			setID = "54574a34-9a68-4e65-ab9a-af05db4ca003"
@@ -6287,4 +6288,3991 @@ func solveSudoku(board []string) []string {
 			},
 		},
 	}
+}
+
+
+func getProficiencyProblems() []Problem {
+	type problemMeta struct {
+		ID          string
+		Slug        string
+		Title       string
+		Topic       string
+		Statement   string
+		ExampleIn   string
+		ExampleOut  string
+		HintTitle   string
+		HintBody    string
+		FuncName    string
+		ParamsJS    string
+		ParamsPy    string
+		ParamsJava  string
+		ParamsCpp   string
+		ParamsGo    string
+		RetPy       string
+		RetJava     string
+		RetCpp      string
+		RetGo       string
+		SolJS       string
+		SolPy       string
+		SolJava     string
+		SolCpp      string
+		SolGo       string
+	}
+
+	metas := []problemMeta{
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0100",
+			Slug:        "add-two-numbers",
+			Title:       "Add Two Numbers",
+			Topic:       "Linked List",
+			Statement:   "You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.",
+			ExampleIn:   "l1 = [2,4,3], l2 = [5,6,4]",
+			ExampleOut:  "[7,0,8]",
+			HintTitle:   "Simulation",
+			HintBody:    "Track carry values while iterating through the lists.",
+			FuncName:    "addTwoNumbers",
+			ParamsJS:    "l1, l2",
+			ParamsPy:    "l1: ListNode, l2: ListNode",
+			ParamsJava:  "ListNode l1, ListNode l2",
+			ParamsCpp:   "ListNode* l1, ListNode* l2",
+			ParamsGo:    "l1 *ListNode, l2 *ListNode",
+			RetPy:       "ListNode",
+			RetJava:     "ListNode",
+			RetCpp:      "ListNode*",
+			RetGo:       "*ListNode",
+			SolJS: `    let dummy = new ListNode(0), curr = dummy, carry = 0;
+    while (l1 || l2 || carry) {
+        let sum = carry;
+        if (l1) { sum += l1.val; l1 = l1.next; }
+        if (l2) { sum += l2.val; l2 = l2.next; }
+        carry = Math.floor(sum / 10);
+        curr.next = new ListNode(sum % 10);
+        curr = curr.next;
+    }
+    return dummy.next;`,
+			SolPy: `    dummy = ListNode(0)
+    curr, carry = dummy, 0
+    while l1 or l2 or carry:
+        val = carry
+        if l1: val += l1.val; l1 = l1.next
+        if l2: val += l2.val; l2 = l2.next
+        carry, val = divmod(val, 10)
+        curr.next = ListNode(val)
+        curr = curr.next
+    return dummy.next`,
+			SolJava: `        ListNode dummy = new ListNode(0), curr = dummy;
+        int carry = 0;
+        while (l1 != null || l2 != null || carry != 0) {
+            int sum = carry;
+            if (l1 != null) { sum += l1.val; l1 = l1.next; }
+            if (l2 != null) { sum += l2.val; l2 = l2.next; }
+            carry = sum / 10;
+            curr.next = new ListNode(sum % 10);
+            curr = curr.next;
+        }
+        return dummy.next;`,
+			SolCpp: `        ListNode* dummy = new ListNode(0);
+        ListNode* curr = dummy;
+        int carry = 0;
+        while (l1 || l2 || carry) {
+            int sum = carry;
+            if (l1) { sum += l1->val; l1 = l1->next; }
+            if (l2) { sum += l2->val; l2 = l2->next; }
+            carry = sum / 10;
+            curr->next = new ListNode(sum % 10);
+            curr = curr->next;
+        }
+        return dummy->next;`,
+			SolGo: `    dummy := &ListNode{}
+    curr, carry := dummy, 0
+    for l1 != nil || l2 != nil || carry != 0 {
+        sum := carry
+        if l1 != nil { sum += l1.Val; l1 = l1.Next }
+        if l2 != nil { sum += l2.Val; l2 = l2.Next }
+        carry = sum / 10
+        curr.Next = &ListNode{Val: sum % 10}
+        curr = curr.Next
+    }
+    return dummy.Next`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0101",
+			Slug:        "longest-substring-without-repeating-characters",
+			Title:       "Longest Substring Without Repeating Characters",
+			Topic:       "String",
+			Statement:   "Given a string s, find the length of the longest substring without repeating characters.",
+			ExampleIn:   "\"abcabcbb\"",
+			ExampleOut:  "3",
+			HintTitle:   "Sliding Window",
+			HintBody:    "Use two pointers to represent the window and a hash set to track characters.",
+			FuncName:    "lengthOfLongestSubstring",
+			ParamsJS:    "s",
+			ParamsPy:    "s: str",
+			ParamsJava:  "String s",
+			ParamsCpp:   "string s",
+			ParamsGo:    "s string",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let map = {}, max = 0, left = 0;
+    for (let right = 0; right < s.length; right++) {
+        if (map[s[right]] !== undefined) left = Math.max(left, map[s[right]] + 1);
+        map[s[right]] = right;
+        max = Math.max(max, right - left + 1);
+    }
+    return max;`,
+			SolPy: `    mp, mx, l = {}, 0, 0
+    for r, c in enumerate(s):
+        if c in mp: l = max(l, mp[c] + 1)
+        mp[c] = r
+        mx = max(mx, r - l + 1)
+    return mx`,
+			SolJava: `        int[] mp = new int[128];
+        java.util.Arrays.fill(mp, -1);
+        int mx = 0, l = 0;
+        for (int r = 0; r < s.length(); r++) {
+            char c = s.charAt(r);
+            if (mp[c] >= l) l = mp[c] + 1;
+            mp[c] = r;
+            mx = Math.max(mx, r - l + 1);
+        }
+        return mx;`,
+			SolCpp: `        vector<int> mp(128, -1);
+        int mx = 0, l = 0;
+        for (int r = 0; r < s.length(); ++r) {
+            char c = s[r];
+            if (mp[c] >= l) l = mp[c] + 1;
+            mp[c] = r;
+            mx = max(mx, r - l + 1);
+        }
+        return mx;`,
+			SolGo: `    mp := make(map[rune]int)
+    mx, l := 0, 0
+    for r, c := range s {
+        if idx, ok := mp[c]; ok && idx >= l { l = idx + 1 }
+        mp[c] = r
+        if val := r - l + 1; val > mx { mx = val }
+    }
+    return mx`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0102",
+			Slug:        "letter-combinations-of-a-phone-number",
+			Title:       "Letter Combinations of a Phone Number",
+			Topic:       "Backtracking",
+			Statement:   "Given a string containing digits from 2-9 inclusive, return all possible letter combinations that the number could represent. Return the answer in any order.",
+			ExampleIn:   "\"23\"",
+			ExampleOut:  "[\"ad\",\"ae\",\"af\",\"bd\",\"be\",\"bf\",\"cd\",\"ce\",\"cf\"]",
+			HintTitle:   "Backtracking",
+			HintBody:    "Map each digit to letters and use backtracking to generate combinations.",
+			FuncName:    "letterCombinations",
+			ParamsJS:    "digits",
+			ParamsPy:    "digits: str",
+			ParamsJava:  "String digits",
+			ParamsCpp:   "string digits",
+			ParamsGo:    "digits string",
+			RetPy:       "list[str]",
+			RetJava:     "List<String>",
+			RetCpp:      "vector<string>",
+			RetGo:       "[]string",
+			SolJS: `    if (!digits) return [];
+    const map = ["", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"];
+    let res = [""];
+    for (let d of digits) {
+        let next = [];
+        for (let s of res) {
+            for (let c of map[d - '0']) next.push(s + c);
+        }
+        res = next;
+    }
+    return res;`,
+			SolPy: `    if not digits: return []
+    mapping = ["", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"]
+    res = [""]
+    for d in digits:
+        res = [s + c for s in res for c in mapping[int(d)]]
+    return res`,
+			SolJava: `        List<String> res = new ArrayList<>();
+        if (digits.isEmpty()) return res;
+        String[] mapping = {"", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
+        res.add("");
+        for (int i = 0; i < digits.length(); i++) {
+            List<String> next = new ArrayList<>();
+            String letters = mapping[digits.charAt(i) - '0'];
+            for (String s : res) {
+                for (char c : letters.toCharArray()) next.add(s + c);
+            }
+            res = next;
+        }
+        return res;`,
+			SolCpp: `        vector<string> res;
+        if (digits.empty()) return res;
+        vector<string> mapping = {"", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
+        res.push_back("");
+        for (char d : digits) {
+            vector<string> next;
+            for (string s : res) {
+                for (char c : mapping[d - '0']) next.push_back(s + c);
+            }
+            res = next;
+        }
+        return res;`,
+			SolGo: `    if len(digits) == 0 { return nil }
+    mapping := []string{"", "", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"}
+    res := []string{""}
+    for i := 0; i < len(digits); i++ {
+        var next []string
+        letters := mapping[digits[i]-'0']
+        for _, s := range res {
+            for _, c := range letters { next = append(next, s+string(c)) }
+        }
+        res = next
+    }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0103",
+			Slug:        "generate-parentheses",
+			Title:       "Generate Parentheses",
+			Topic:       "Backtracking",
+			Statement:   "Given n pairs of parentheses, write a function to generate all combinations of well-formed parentheses.",
+			ExampleIn:   "3",
+			ExampleOut:  "[\"((()))\",\"(()())\",\"(())()\",\"()(())\",\"()()()\"]",
+			HintTitle:   "Count Open and Close",
+			HintBody:    "Track the number of open and closed parentheses used during backtracking.",
+			FuncName:    "generateParenthesis",
+			ParamsJS:    "n",
+			ParamsPy:    "n: int",
+			ParamsJava:  "int n",
+			ParamsCpp:   "int n",
+			ParamsGo:    "n int",
+			RetPy:       "list[str]",
+			RetJava:     "List<String>",
+			RetCpp:      "vector<string>",
+			RetGo:       "[]string",
+			SolJS: `    let res = [];
+    const backtrack = (s, open, close) => {
+        if (s.length === 2 * n) { res.push(s); return; }
+        if (open < n) backtrack(s + "(", open + 1, close);
+        if (close < open) backtrack(s + ")", open, close + 1);
+    };
+    backtrack("", 0, 0);
+    return res;`,
+			SolPy: `    res = []
+    def backtrack(s, open, close):
+        if len(s) == 2 * n:
+            res.append(s)
+            return
+        if open < n: backtrack(s + "(", open + 1, close)
+        if close < open: backtrack(s + ")", open, close + 1)
+    backtrack("", 0, 0)
+    return res`,
+			SolJava: `        List<String> res = new ArrayList<>();
+        backtrack(res, "", 0, 0, n);
+        return res;
+    }
+    private void backtrack(List<String> res, String s, int open, int close, int n) {
+        if (s.length() == 2 * n) { res.add(s); return; }
+        if (open < n) backtrack(res, s + "(", open + 1, close, n);
+        if (close < open) backtrack(res, s + ")", open, close + 1, n);`,
+			SolCpp: `        vector<string> res;
+        backtrack(res, "", 0, 0, n);
+        return res;
+    }
+    void backtrack(vector<string>& res, string s, int open, int close, int n) {
+        if (s.length() == 2 * n) { res.push_back(s); return; }
+        if (open < n) backtrack(res, s + "(", open + 1, close, n);
+        if (close < open) backtrack(res, s + ")", open, close + 1, n);`,
+			SolGo: `    var res []string
+    var backtrack func(string, int, int)
+    backtrack = func(s string, open int, close int) {
+        if len(s) == 2*n { res = append(res, s); return }
+        if open < n { backtrack(s+"(", open+1, close) }
+        if close < open { backtrack(s+")", open, close+1) }
+    }
+    backtrack("", 0, 0)
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0104",
+			Slug:        "swap-nodes-in-pairs",
+			Title:       "Swap Nodes in Pairs",
+			Topic:       "Linked List",
+			Statement:   "Given a linked list, swap every two adjacent nodes and return its head. You must solve the problem without modifying the values in the list's nodes (i.e., only nodes themselves may be changed.)",
+			ExampleIn:   "head = [1,2,3,4]",
+			ExampleOut:  "[2,1,4,3]",
+			HintTitle:   "Pointers Swap",
+			HintBody:    "Adjust next pointers in pairs recursively or iteratively.",
+			FuncName:    "swapPairs",
+			ParamsJS:    "head",
+			ParamsPy:    "head: ListNode",
+			ParamsJava:  "ListNode head",
+			ParamsCpp:   "ListNode* head",
+			ParamsGo:    "head *ListNode",
+			RetPy:       "ListNode",
+			RetJava:     "ListNode",
+			RetCpp:      "ListNode*",
+			RetGo:       "*ListNode",
+			SolJS: `    if (!head || !head.next) return head;
+    let nextNode = head.next;
+    head.next = swapPairs(nextNode.next);
+    nextNode.next = head;
+    return nextNode;`,
+			SolPy: `    if not head or not head.next: return head
+    n = head.next
+    head.next = swapPairs(n.next)
+    n.next = head
+    return n`,
+			SolJava: `        if (head == null || head.next == null) return head;
+        ListNode nextNode = head.next;
+        head.next = swapPairs(nextNode.next);
+        nextNode.next = head;
+        return nextNode;`,
+			SolCpp: `        if (!head || !head->next) return head;
+        ListNode* nextNode = head->next;
+        head->next = swapPairs(nextNode->next);
+        nextNode->next = head;
+        return nextNode;`,
+			SolGo: `    if head == nil || head.Next == nil { return head }
+    n := head.Next
+    head.Next = swapPairs(n.Next)
+    n.Next = head
+    return n`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0105",
+			Slug:        "divide-two-integers",
+			Title:       "Divide Two Integers",
+			Topic:       "Array",
+			Statement:   "Given two integers dividend and divisor, divide two integers without using multiplication, division, and mod operator.",
+			ExampleIn:   "10, 3",
+			ExampleOut:  "3",
+			HintTitle:   "Bit Manipulation",
+			HintBody:    "Subtract divisor multiplied by powers of 2 using left shifts.",
+			FuncName:    "divide",
+			ParamsJS:    "dividend, divisor",
+			ParamsPy:    "dividend: int, divisor: int",
+			ParamsJava:  "int dividend, int divisor",
+			ParamsCpp:   "int dividend, int divisor",
+			ParamsGo:    "dividend int, divisor int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    if (dividend === -2147483648 && divisor === -1) return 2147483647;
+    let sign = (dividend < 0) ^ (divisor < 0) ? -1 : 1;
+    let dvd = Math.abs(dividend), dvs = Math.abs(divisor), res = 0;
+    while (dvd >= dvs) {
+        let temp = dvs, mul = 1;
+        while (dvd >= (temp * 2) && temp <= 1073741823) { temp *= 2; mul *= 2; }
+        dvd -= temp; res += mul;
+    }
+    return res * sign;`,
+			SolPy: `    if dividend == -2147483648 and divisor == -1: return 2147483647
+    sign = -1 if (dividend < 0) ^ (divisor < 0) else 1
+    dvd, dvs, res = abs(dividend), abs(divisor), 0
+    while dvd >= dvs:
+        temp, mul = dvs, 1
+        while dvd >= (temp << 1):
+            temp <<= 1
+            mul <<= 1
+        dvd -= temp
+        res += mul
+    return res * sign`,
+			SolJava: `        if (dividend == Integer.MIN_VALUE && divisor == -1) return Integer.MAX_VALUE;
+        int sign = (dividend < 0) ^ (divisor < 0) ? -1 : 1;
+        long dvd = Math.abs((long) dividend);
+        long dvs = Math.abs((long) divisor);
+        int res = 0;
+        while (dvd >= dvs) {
+            long temp = dvs, mul = 1;
+            while (dvd >= (temp << 1)) { temp <<= 1; mul <<= 1; }
+            dvd -= temp;
+            res += mul;
+        }
+        return res * sign;`,
+			SolCpp: `        if (dividend == INT_MIN && divisor == -1) return INT_MAX;
+        int sign = (dividend < 0) ^ (divisor < 0) ? -1 : 1;
+        long long dvd = abs((long long) dividend);
+        long long dvs = abs((long long) divisor);
+        long long res = 0;
+        while (dvd >= dvs) {
+            long long temp = dvs, mul = 1;
+            while (dvd >= (temp << 1)) { temp <<= 1; mul <<= 1; }
+            dvd -= temp;
+            res += mul;
+        }
+        return res * sign;`,
+			SolGo: `    if dividend == -2147483648 && divisor == -1 { return 2147483647 }
+    sign := 1
+    if (dividend < 0) != (divisor < 0) { sign = -1 }
+    dvd := dividend
+    if dvd < 0 { dvd = -dvd }
+    dvs := divisor
+    if dvs < 0 { dvs = -dvs }
+    res := 0
+    for dvd >= dvs {
+        temp, mul := dvs, 1
+        for dvd >= (temp << 1) {
+            temp <<= 1
+            mul <<= 1
+        }
+        dvd -= temp
+        res += mul
+    }
+    return res * sign`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0106",
+			Slug:        "next-permutation",
+			Title:       "Next Permutation",
+			Topic:       "Array",
+			Statement:   "A permutation of an array of integers is its arrangement into a lexicographical order. Find the next lexicographically greater permutation.",
+			ExampleIn:   "[1,2,3]",
+			ExampleOut:  "[1,3,2]",
+			HintTitle:   "Scan Right to Left",
+			HintBody:    "Find first decreasing element, swap with next larger, and reverse remainder.",
+			FuncName:    "nextPermutation",
+			ParamsJS:    "nums",
+			ParamsPy:    "nums: list[int]",
+			ParamsJava:  "int[] nums",
+			ParamsCpp:   "vector<int>& nums",
+			ParamsGo:    "nums []int",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `    let i = nums.length - 2;
+    while (i >= 0 && nums[i] >= nums[i + 1]) i--;
+    if (i >= 0) {
+        let j = nums.length - 1;
+        while (nums[j] <= nums[i]) j--;
+        [nums[i], nums[j]] = [nums[j], nums[i]];
+    }
+    let l = i + 1, r = nums.length - 1;
+    while (l < r) { [nums[l], nums[r]] = [nums[r], nums[l]]; l++; r--; }`,
+			SolPy: `    i = len(nums) - 2
+    while i >= 0 and nums[i] >= nums[i + 1]: i -= 1
+    if i >= 0:
+        j = len(nums) - 1
+        while nums[j] <= nums[i]: j -= 1
+        nums[i], nums[j] = nums[j], nums[i]
+    l, r = i + 1, len(nums) - 1
+    while l < r:
+        nums[l], nums[r] = nums[r], nums[l]
+        l += 1; r -= 1`,
+			SolJava: `        int i = nums.length - 2;
+        while (i >= 0 && nums[i] >= nums[i + 1]) i--;
+        if (i >= 0) {
+            int j = nums.length - 1;
+            while (nums[j] <= nums[i]) j--;
+            int temp = nums[i]; nums[i] = nums[j]; nums[j] = temp;
+        }
+        int l = i + 1, r = nums.length - 1;
+        while (l < r) {
+            int temp = nums[l]; nums[l] = nums[r]; nums[r] = temp;
+            l++; r--;
+        }`,
+			SolCpp: `        int i = nums.size() - 2;
+        while (i >= 0 && nums[i] >= nums[i + 1]) i--;
+        if (i >= 0) {
+            int j = nums.size() - 1;
+            while (nums[j] <= nums[i]) j--;
+            swap(nums[i], nums[j]);
+        }
+        reverse(nums.begin() + i + 1, nums.end());`,
+			SolGo: `    i := len(nums) - 2
+    for i >= 0 && nums[i] >= nums[i+1] { i-- }
+    if i >= 0 {
+        j := len(nums) - 1
+        for nums[j] <= nums[i] { j-- }
+        nums[i], nums[j] = nums[j], nums[i]
+    }
+    l, r := i+1, len(nums)-1
+    for l < r {
+        nums[l], nums[r] = nums[r], nums[l]
+        l++; r--
+    }`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0107",
+			Slug:        "combination-sum",
+			Title:       "Combination Sum",
+			Topic:       "Backtracking",
+			Statement:   "Given an array of distinct integers candidates and a target integer target, return a list of all unique combinations of candidates where the chosen numbers sum to target.",
+			ExampleIn:   "[2,3,6,7], 7",
+			ExampleOut:  "[[2,2,3],[7]]",
+			HintTitle:   "Backtracking dfs",
+			HintBody:    "Recurse with the option to select the same candidate or move to next.",
+			FuncName:    "combinationSum",
+			ParamsJS:    "candidates, target",
+			ParamsPy:    "candidates: list[int], target: int",
+			ParamsJava:  "int[] candidates, int target",
+			ParamsCpp:   "vector<int>& candidates, int target",
+			ParamsGo:    "candidates []int, target int",
+			RetPy:       "list[list[int]]",
+			RetJava:     "List<List<Integer>>",
+			RetCpp:      "vector<vector<int>>",
+			RetGo:       "[][]int",
+			SolJS: `    let res = [];
+    const dfs = (start, target, path) => {
+        if (target === 0) { res.push([...path]); return; }
+        for (let i = start; i < candidates.length; i++) {
+            if (candidates[i] <= target) {
+                path.push(candidates[i]);
+                dfs(i, target - candidates[i], path);
+                path.pop();
+            }
+        }
+    };
+    dfs(0, target, []);
+    return res;`,
+			SolPy: `    res = []
+    def dfs(start, target, path):
+        if target == 0: res.append(list(path)); return
+        for i in range(start, len(candidates)):
+            if candidates[i] <= target:
+                path.append(candidates[i])
+                dfs(i, target - candidates[i], path)
+                path.pop()
+    dfs(0, target, [])
+    return res`,
+			SolJava: `        List<List<Integer>> res = new ArrayList<>();
+        dfs(0, candidates, target, new ArrayList<>(), res);
+        return res;
+    }
+    private void dfs(int start, int[] candidates, int target, List<Integer> path, List<List<Integer>> res) {
+        if (target == 0) { res.add(new ArrayList<>(path)); return; }
+        for (int i = start; i < candidates.length; i++) {
+            if (candidates[i] <= target) {
+                path.add(candidates[i]);
+                dfs(i, candidates, target - candidates[i], path, res);
+                path.remove(path.size() - 1);
+            }
+        }`,
+			SolCpp: `        vector<vector<int>> res;
+        vector<int> path;
+        dfs(0, candidates, target, path, res);
+        return res;
+    }
+    void dfs(int start, vector<int>& candidates, int target, vector<int>& path, vector<vector<int>>& res) {
+        if (target == 0) { res.push_back(path); return; }
+        for (int i = start; i < candidates.size(); ++i) {
+            if (candidates[i] <= target) {
+                path.push_back(candidates[i]);
+                dfs(i, candidates, target - candidates[i], path, res);
+                path.pop_back();
+            }
+        }`,
+			SolGo: `    var res [][]int
+    var dfs func(int, int, []int)
+    dfs = func(start int, target int, path []int) {
+        if target == 0 {
+            temp := make([]int, len(path))
+            copy(temp, path)
+            res = append(res, temp)
+            return
+        }
+        for i := start; i < len(candidates); i++ {
+            if candidates[i] <= target {
+                dfs(i, target-candidates[i], append(path, candidates[i]))
+            }
+        }
+    }
+    dfs(0, target, nil)
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0108",
+			Slug:        "permutations",
+			Title:       "Permutations",
+			Topic:       "Backtracking",
+			Statement:   "Given an array nums of distinct integers, return all the possible permutations. You can return the answer in any order.",
+			ExampleIn:   "[1,2,3]",
+			ExampleOut:  "[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]",
+			HintTitle:   "DFS swap",
+			HintBody:    "Swap elements recursively to form new permutations.",
+			FuncName:    "permute",
+			ParamsJS:    "nums",
+			ParamsPy:    "nums: list[int]",
+			ParamsJava:  "int[] nums",
+			ParamsCpp:   "vector<int>& nums",
+			ParamsGo:    "nums []int",
+			RetPy:       "list[list[int]]",
+			RetJava:     "List<List<Integer>>",
+			RetCpp:      "vector<vector<int>>",
+			RetGo:       "[][]int",
+			SolJS: `    let res = [];
+    const backtrack = (first) => {
+        if (first === nums.length) res.push([...nums]);
+        for (let i = first; i < nums.length; i++) {
+            [nums[first], nums[i]] = [nums[i], nums[first]];
+            backtrack(first + 1);
+            [nums[first], nums[i]] = [nums[i], nums[first]];
+        }
+    };
+    backtrack(0);
+    return res;`,
+			SolPy: `    res = []
+    def backtrack(first):
+        if first == len(nums): res.append(list(nums))
+        for i in range(first, len(nums)):
+            nums[first], nums[i] = nums[i], nums[first]
+            backtrack(first + 1)
+            nums[first], nums[i] = nums[i], nums[first]
+    backtrack(0)
+    return res`,
+			SolJava: `        List<List<Integer>> res = new ArrayList<>();
+        List<Integer> list = new ArrayList<>();
+        for (int n : nums) list.add(n);
+        backtrack(nums.length, list, res, 0);
+        return res;
+    }
+    private void backtrack(int n, List<Integer> list, List<List<Integer>> res, int first) {
+        if (first == n) res.add(new ArrayList<>(list));
+        for (int i = first; i < n; i++) {
+            Collections.swap(list, first, i);
+            backtrack(n, list, res, first + 1);
+            Collections.swap(list, first, i);
+        }`,
+			SolCpp: `        vector<vector<int>> res;
+        backtrack(nums, res, 0);
+        return res;
+    }
+    void backtrack(vector<int>& nums, vector<vector<int>>& res, int first) {
+        if (first == nums.size()) { res.push_back(nums); return; }
+        for (int i = first; i < nums.size(); ++i) {
+            swap(nums[first], nums[i]);
+            backtrack(nums, res, first + 1);
+            swap(nums[first], nums[i]);
+        }`,
+			SolGo: `    var res [][]int
+    var backtrack func(int)
+    backtrack = func(first int) {
+        if first == len(nums) {
+            temp := make([]int, len(nums))
+            copy(temp, nums)
+            res = append(res, temp)
+            return
+        }
+        for i := first; i < len(nums); i++ {
+            nums[first], nums[i] = nums[i], nums[first]
+            backtrack(first + 1)
+            nums[first], nums[i] = nums[i], nums[first]
+        }
+    }
+    backtrack(0)
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0109",
+			Slug:        "rotate-image",
+			Title:       "Rotate Image",
+			Topic:       "Array",
+			Statement:   "You are given an n x n 2D matrix representing an image, rotate the image by 90 degrees (clockwise) in-place.",
+			ExampleIn:   "[[1,2,3],[4,5,6],[7,8,9]]",
+			ExampleOut:  "[[7,4,1],[8,5,2],[9,6,3]]",
+			HintTitle:   "Transpose and Reverse",
+			HintBody:    "Transpose the matrix first, then reverse each row.",
+			FuncName:    "rotate",
+			ParamsJS:    "matrix",
+			ParamsPy:    "matrix: list[list[int]]",
+			ParamsJava:  "int[][] matrix",
+			ParamsCpp:   "vector<vector<int>>& matrix",
+			ParamsGo:    "matrix [][]int",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `    let n = matrix.length;
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            [matrix[i][j], matrix[j][i]] = [matrix[j][i], matrix[i][j]];
+        }
+    }
+    for (let i = 0; i < n; i++) matrix[i].reverse();`,
+			SolPy: `    n = len(matrix)
+    for i in range(n):
+        for j in range(i + 1, n):
+            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+    for i in range(n):
+        matrix[i].reverse()`,
+			SolJava: `        int n = matrix.length;
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                int temp = matrix[i][j];
+                matrix[i][j] = matrix[j][i];
+                matrix[j][i] = temp;
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n / 2; j++) {
+                int temp = matrix[i][j];
+                matrix[i][j] = matrix[i][n - 1 - j];
+                matrix[i][n - 1 - j] = temp;
+            }
+        }`,
+			SolCpp: `        int n = matrix.size();
+        for (int i = 0; i < n; ++i) {
+            for (int j = i + 1; j < n; ++j) {
+                swap(matrix[i][j], matrix[j][i]);
+            }
+        }
+        for (int i = 0; i < n; ++i) {
+            reverse(matrix[i].begin(), matrix[i].end());
+        }`,
+			SolGo: `    n := len(matrix)
+    for i := 0; i < n; i++ {
+        for j := i + 1; j < n; j++ {
+            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+        }
+    }
+    for i := 0; i < n; i++ {
+        for j := 0; j < n/2; j++ {
+            matrix[i][j], matrix[i][n-1-j] = matrix[i][n-1-j], matrix[i][j]
+        }
+    }`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0110",
+			Slug:        "group-anagrams",
+			Title:       "Group Anagrams",
+			Topic:       "HashMap",
+			Statement:   "Given an array of strings strs, group the anagrams together. You can return the answer in any order.",
+			ExampleIn:   "[\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]",
+			ExampleOut:  "[[\"bat\"],[\"nat\",\"tan\"],[\"ate\",\"eat\",\"tea\"]]",
+			HintTitle:   "Hash Map Key",
+			HintBody:    "Sort each string to use as key in a hash map.",
+			FuncName:    "groupAnagrams",
+			ParamsJS:    "strs",
+			ParamsPy:    "strs: list[str]",
+			ParamsJava:  "String[] strs",
+			ParamsCpp:   "vector<string>& strs",
+			ParamsGo:    "strs []string",
+			RetPy:       "list[list[str]]",
+			RetJava:     "List<List<String>>",
+			RetCpp:      "vector<vector<string>>",
+			RetGo:       "[][]string",
+			SolJS: `    let map = {};
+    for (let s of strs) {
+        let sorted = s.split('').sort().join('');
+        if (!map[sorted]) map[sorted] = [];
+        map[sorted].push(s);
+    }
+    return Object.values(map);`,
+			SolPy: `    from collections import defaultdict
+    mp = defaultdict(list)
+    for s in strs:
+        mp["".join(sorted(s))].append(s)
+    return list(mp.values())`,
+			SolJava: `        if (strs == null || strs.length == 0) return new ArrayList<>();
+        Map<String, List<String>> map = new HashMap<>();
+        for (String s : strs) {
+            char[] ca = s.toCharArray();
+            Arrays.sort(ca);
+            String key = String.valueOf(ca);
+            if (!map.containsKey(key)) map.put(key, new ArrayList<>());
+            map.get(key).add(s);
+        }
+        return new ArrayList<>(map.values());`,
+			SolCpp: `        unordered_map<string, vector<string>> map;
+        for (string s : strs) {
+            string t = s;
+            sort(t.begin(), t.end());
+            map[t].push_back(s);
+        }
+        vector<vector<string>> res;
+        for (auto p : map) res.push_back(p.second);
+        return res;`,
+			SolGo: `    mp := make(map[string][]string)
+    for _, s := range strs {
+        r := []rune(s)
+        // Bubble sort or sort package, but sorting runes is quick
+        for i := 0; i < len(r); i++ {
+            for j := i+1; j < len(r); j++ {
+                if r[i] > r[j] { r[i], r[j] = r[j], r[i] }
+            }
+        }
+        key := string(r)
+        mp[key] = append(mp[key], s)
+    }
+    var res [][]string
+    for _, val := range mp { res = append(res, val) }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0111",
+			Slug:        "jump-game",
+			Title:       "Jump Game",
+			Topic:       "DP",
+			Statement:   "You are given an integer array nums. You are initially positioned at the array's first index, and each element in the array represents your maximum jump length at that position. Return true if you can reach the last index.",
+			ExampleIn:   "[2,3,1,1,4]",
+			ExampleOut:  "true",
+			HintTitle:   "Greedy Reach",
+			HintBody:    "Keep track of the maximum reachable index as you scan the array.",
+			FuncName:    "canJump",
+			ParamsJS:    "nums",
+			ParamsPy:    "nums: list[int]",
+			ParamsJava:  "int[] nums",
+			ParamsCpp:   "vector<int>& nums",
+			ParamsGo:    "nums []int",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    let reachable = 0;
+    for (let i = 0; i < nums.length; i++) {
+        if (i > reachable) return false;
+        reachable = Math.max(reachable, i + nums[i]);
+    }
+    return true;`,
+			SolPy: `    reachable = 0
+    for i, num in enumerate(nums):
+        if i > reachable: return False
+        reachable = max(reachable, i + num)
+    return True`,
+			SolJava: `        int reachable = 0;
+        for (int i = 0; i < nums.length; i++) {
+            if (i > reachable) return false;
+            reachable = Math.max(reachable, i + nums[i]);
+        }
+        return true;`,
+			SolCpp: `        int reachable = 0;
+        for (int i = 0; i < nums.size(); ++i) {
+            if (i > reachable) return false;
+            reachable = max(reachable, i + nums[i]);
+        }
+        return true;`,
+			SolGo: `    reachable := 0
+    for i, num := range nums {
+        if i > reachable { return false }
+        if i + num > reachable { reachable = i + num }
+    }
+    return true`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0112",
+			Slug:        "merge-intervals",
+			Title:       "Merge Intervals",
+			Topic:       "Array",
+			Statement:   "Given an array of intervals where intervals[i] = [start_i, end_i], merge all overlapping intervals and return an array of the non-overlapping intervals.",
+			ExampleIn:   "[[1,3],[2,6],[8,10],[15,18]]",
+			ExampleOut:  "[[1,6],[8,10],[15,18]]",
+			HintTitle:   "Sorting",
+			HintBody:    "Sort intervals by start time before merging.",
+			FuncName:    "merge",
+			ParamsJS:    "intervals",
+			ParamsPy:    "intervals: list[list[int]]",
+			ParamsJava:  "int[][] intervals",
+			ParamsCpp:   "vector<vector<int>>& intervals",
+			ParamsGo:    "intervals [][]int",
+			RetPy:       "list[list[int]]",
+			RetJava:     "int[][]",
+			RetCpp:      "vector<vector<int>>",
+			RetGo:       "[][]int",
+			SolJS: `    if (intervals.length <= 1) return intervals;
+    intervals.sort((a, b) => a[0] - b[0]);
+    let res = [intervals[0]];
+    for (let i = 1; i < intervals.length; i++) {
+        let last = res[res.length - 1];
+        if (intervals[i][0] <= last[1]) last[1] = Math.max(last[1], intervals[i][1]);
+        else res.push(intervals[i]);
+    }
+    return res;`,
+			SolPy: `    if len(intervals) <= 1: return intervals
+    intervals.sort(key=lambda x: x[0])
+    res = [intervals[0]]
+    for i in range(1, len(intervals)):
+        if intervals[i][0] <= res[-1][1]:
+            res[-1][1] = max(res[-1][1], intervals[i][1])
+        else: res.append(intervals[i])
+    return res`,
+			SolJava: `        if (intervals.length <= 1) return intervals;
+        Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0]));
+        List<int[]> res = new ArrayList<>();
+        res.add(intervals[0]);
+        for (int i = 1; i < intervals.length; i++) {
+            int[] last = res.get(res.size() - 1);
+            if (intervals[i][0] <= last[1]) last[1] = Math.max(last[1], intervals[i][1]);
+            else res.add(intervals[i]);
+        }
+        return res.toArray(new int[res.size()][]);`,
+			SolCpp: `        if (intervals.size() <= 1) return intervals;
+        sort(intervals.begin(), intervals.end());
+        vector<vector<int>> res = {intervals[0]};
+        for (int i = 1; i < intervals.size(); ++i) {
+            if (intervals[i][0] <= res.back()[1]) res.back()[1] = max(res.back()[1], intervals[i][1]);
+            else res.push_back(intervals[i]);
+        }
+        return res;`,
+			SolGo: `    if len(intervals) <= 1 { return intervals }
+    // Sort intervals by start time using quick sort logic or sort.Slice
+    for i := 0; i < len(intervals); i++ {
+        for j := i+1; j < len(intervals); j++ {
+            if intervals[i][0] > intervals[j][0] { intervals[i], intervals[j] = intervals[j], intervals[i] }
+        }
+    }
+    res := [][]int{intervals[0]}
+    for i := 1; i < len(intervals); i++ {
+        last := res[len(res)-1]
+        if intervals[i][0] <= last[1] {
+            if intervals[i][1] > last[1] { last[1] = intervals[i][1] }
+        } else {
+            res = append(res, intervals[i])
+        }
+    }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0113",
+			Slug:        "insert-interval",
+			Title:       "Insert Interval",
+			Topic:       "Array",
+			Statement:   "You are given an array of non-overlapping intervals sorted by start time. Insert a new interval and merge if necessary.",
+			ExampleIn:   "[[1,3],[6,9]], [2,5]",
+			ExampleOut:  "[[1,5],[6,9]]",
+			HintTitle:   "Three Parts",
+			HintBody:    "Add all intervals ending before new interval, merge overlaps, then add the rest.",
+			FuncName:    "insert",
+			ParamsJS:    "intervals, newInterval",
+			ParamsPy:    "intervals: list[list[int]], newInterval: list[int]",
+			ParamsJava:  "int[][] intervals, int[] newInterval",
+			ParamsCpp:   "vector<vector<int>>& intervals, vector<int>& newInterval",
+			ParamsGo:    "intervals [][]int, newInterval []int",
+			RetPy:       "list[list[int]]",
+			RetJava:     "int[][]",
+			RetCpp:      "vector<vector<int>>",
+			RetGo:       "[][]int",
+			SolJS: `    let res = [], i = 0, n = intervals.length;
+    while (i < n && intervals[i][1] < newInterval[0]) res.push(intervals[i++]);
+    while (i < n && intervals[i][0] <= newInterval[1]) {
+        newInterval[0] = Math.min(newInterval[0], intervals[i][0]);
+        newInterval[1] = Math.max(newInterval[1], intervals[i++][1]);
+    }
+    res.push(newInterval);
+    while (i < n) res.push(intervals[i++]);
+    return res;`,
+			SolPy: `    res, i, n = [], 0, len(intervals)
+    while i < n and intervals[i][1] < newInterval[0]:
+        res.append(intervals[i]); i += 1
+    while i < n and intervals[i][0] <= newInterval[1]:
+        newInterval[0] = min(newInterval[0], intervals[i][0])
+        newInterval[1] = max(newInterval[1], intervals[i][1])
+        i += 1
+    res.append(newInterval)
+    while i < n:
+        res.append(intervals[i]); i += 1
+    return res`,
+			SolJava: `        List<int[]> res = new ArrayList<>();
+        int i = 0, n = intervals.length;
+        while (i < n && intervals[i][1] < newInterval[0]) res.add(intervals[i++]);
+        while (i < n && intervals[i][0] <= newInterval[1]) {
+            newInterval[0] = Math.min(newInterval[0], intervals[i][0]);
+            newInterval[1] = Math.max(newInterval[1], intervals[i++][1]);
+        }
+        res.add(newInterval);
+        while (i < n) res.add(intervals[i++]);
+        return res.toArray(new int[res.size()][]);`,
+			SolCpp: `        vector<vector<int>> res;
+        int i = 0, n = intervals.size();
+        while (i < n && intervals[i][1] < newInterval[0]) res.push_back(intervals[i++]);
+        while (i < n && intervals[i][0] <= newInterval[1]) {
+            newInterval[0] = min(newInterval[0], intervals[i][0]);
+            newInterval[1] = max(newInterval[1], intervals[i++][1]);
+        }
+        res.push_back(newInterval);
+        while (i < n) res.push_back(intervals[i++]);
+        return res;`,
+			SolGo: `    var res [][]int
+    i, n := 0, len(intervals)
+    for i < n && intervals[i][1] < newInterval[0] {
+        res = append(res, intervals[i])
+        i++
+    }
+    for i < n && intervals[i][0] <= newInterval[1] {
+        if intervals[i][0] < newInterval[0] { newInterval[0] = intervals[i][0] }
+        if intervals[i][1] > newInterval[1] { newInterval[1] = intervals[i][1] }
+        i++
+    }
+    res = append(res, newInterval)
+    for i < n {
+        res = append(res, intervals[i])
+        i++
+    }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0114",
+			Slug:        "unique-paths",
+			Title:       "Unique Paths",
+			Topic:       "DP",
+			Statement:   "There is a robot on an m x n grid. The robot can only move either down or right. Find the number of unique paths to the bottom-right corner.",
+			ExampleIn:   "3, 7",
+			ExampleOut:  "28",
+			HintTitle:   "Grid DP",
+			HintBody:    "dp[i][j] = dp[i-1][j] + dp[i][j-1]",
+			FuncName:    "uniquePaths",
+			ParamsJS:    "m, n",
+			ParamsPy:    "m: int, n: int",
+			ParamsJava:  "int m, int n",
+			ParamsCpp:   "int m, int n",
+			ParamsGo:    "m int, n int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let dp = Array(n).fill(1);
+    for (let i = 1; i < m; i++) {
+        for (let j = 1; j < n; j++) dp[j] += dp[j - 1];
+    }
+    return dp[n - 1];`,
+			SolPy: `    dp = [1] * n
+    for i in range(1, m):
+        for j in range(1, n):
+            dp[j] += dp[j - 1]
+    return dp[-1]`,
+			SolJava: `        int[] dp = new int[n];
+        Arrays.fill(dp, 1);
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) dp[j] += dp[j - 1];
+        }
+        return dp[n - 1];`,
+			SolCpp: `        vector<int> dp(n, 1);
+        for (int i = 1; i < m; ++i) {
+            for (int j = 1; j < n; ++j) dp[j] += dp[j - 1];
+        }
+        return dp[n - 1];`,
+			SolGo: `    dp := make([]int, n)
+    for i := range dp { dp[i] = 1 }
+    for i := 1; i < m; i++ {
+        for j := 1; j < n; j++ { dp[j] += dp[j - 1] }
+    }
+    return dp[n - 1]`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0115",
+			Slug:        "minimum-path-sum",
+			Title:       "Minimum Path Sum",
+			Topic:       "DP",
+			Statement:   "Given a m x n grid filled with non-negative numbers, find a path from top left to bottom right which minimizes the sum of all numbers along its path.",
+			ExampleIn:   "[[1,3,1],[1,5,1],[4,2,1]]",
+			ExampleOut:  "7",
+			HintTitle:   "Grid DP Min",
+			HintBody:    "Each cell's min sum is the grid value plus min(top, left) cell sum.",
+			FuncName:    "minPathSum",
+			ParamsJS:    "grid",
+			ParamsPy:    "grid: list[list[int]]",
+			ParamsJava:  "int[][] grid",
+			ParamsCpp:   "vector<vector<int>>& grid",
+			ParamsGo:    "grid [][]int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let m = grid.length, n = grid[0].length;
+    for (let i = 0; i < m; i++) {
+        for (let j = 0; j < n; j++) {
+            if (i === 0 && j === 0) continue;
+            else if (i === 0) grid[i][j] += grid[i][j - 1];
+            else if (j === 0) grid[i][j] += grid[i - 1][j];
+            else grid[i][j] += Math.min(grid[i - 1][j], grid[i][j - 1]);
+        }
+    }
+    return grid[m - 1][n - 1];`,
+			SolPy: `    m, n = len(grid), len(grid[0])
+    for i in range(m):
+        for j in range(n):
+            if i == 0 and j == 0: continue
+            elif i == 0: grid[i][j] += grid[i][j - 1]
+            elif j == 0: grid[i][j] += grid[i - 1][j]
+            else: grid[i][j] += min(grid[i - 1][j], grid[i][j - 1])
+    return grid[-1][-1]`,
+			SolJava: `        int m = grid.length, n = grid[0].length;
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (i == 0 && j == 0) continue;
+                else if (i == 0) grid[i][j] += grid[i][j - 1];
+                else if (j == 0) grid[i][j] += grid[i - 1][j];
+                else grid[i][j] += Math.min(grid[i - 1][j], grid[i][j - 1]);
+            }
+        }
+        return grid[m - 1][n - 1];`,
+			SolCpp: `        int m = grid.size(), n = grid[0].size();
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (i == 0 && j == 0) continue;
+                else if (i == 0) grid[i][j] += grid[i][j - 1];
+                else if (j == 0) grid[i][j] += grid[i - 1][j];
+                else grid[i][j] += min(grid[i - 1][j], grid[i][j - 1]);
+            }
+        }
+        return grid[m - 1][n - 1];`,
+			SolGo: `    m, n := len(grid), len(grid[0])
+    for i := 0; i < m; i++ {
+        for j := 0; j < n; j++ {
+            if i == 0 && j == 0 { continue }
+            if i == 0 { grid[i][j] += grid[i][j - 1]; continue }
+            if j == 0 { grid[i][j] += grid[i - 1][j]; continue }
+            minVal := grid[i - 1][j]
+            if grid[i][j - 1] < minVal { minVal = grid[i][j - 1] }
+            grid[i][j] += minVal
+        }
+    }
+    return grid[m - 1][n - 1]`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0116",
+			Slug:        "set-matrix-zeroes",
+			Title:       "Set Matrix Zeroes",
+			Topic:       "Array",
+			Statement:   "Given an m x n integer matrix, if an element is 0, set its entire row and column to 0. Do it in-place.",
+			ExampleIn:   "[[1,1,1],[1,0,1],[1,1,1]]",
+			ExampleOut:  "[[1,0,1],[0,0,0],[1,0,1]]",
+			HintTitle:   "In-place Markers",
+			HintBody:    "Use the first row and column as zero markers.",
+			FuncName:    "setZeroes",
+			ParamsJS:    "matrix",
+			ParamsPy:    "matrix: list[list[int]]",
+			ParamsJava:  "int[][] matrix",
+			ParamsCpp:   "vector<vector<int>>& matrix",
+			ParamsGo:    "matrix [][]int",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `    let isCol = false, m = matrix.length, n = matrix[0].length;
+    for (let i = 0; i < m; i++) {
+        if (matrix[i][0] === 0) isCol = true;
+        for (let j = 1; j < n; j++) {
+            if (matrix[i][j] === 0) { matrix[0][j] = 0; matrix[i][0] = 0; }
+        }
+    }
+    for (let i = 1; i < m; i++) {
+        for (let j = 1; j < n; j++) {
+            if (matrix[i][0] === 0 || matrix[0][j] === 0) matrix[i][j] = 0;
+        }
+    }
+    if (matrix[0][0] === 0) { for (let j = 0; j < n; j++) matrix[0][j] = 0; }
+    if (isCol) { for (let i = 0; i < m; i++) matrix[i][0] = 0; }`,
+			SolPy: `    is_col = False
+    m, n = len(matrix), len(matrix[0])
+    for i in range(m):
+        if matrix[i][0] == 0: is_col = True
+        for j in range(1, n):
+            if matrix[i][j] == 0: matrix[0][j] = 0; matrix[i][0] = 0
+    for i in range(1, m):
+        for j in range(1, n):
+            if matrix[i][0] == 0 or matrix[0][j] == 0: matrix[i][j] = 0
+    if matrix[0][0] == 0:
+        for j in range(n): matrix[0][j] = 0
+    if is_col:
+        for i in range(m): matrix[i][0] = 0`,
+			SolJava: `        boolean isCol = false;
+        int m = matrix.length, n = matrix[0].length;
+        for (int i = 0; i < m; i++) {
+            if (matrix[i][0] == 0) isCol = true;
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][j] == 0) { matrix[0][j] = 0; matrix[i][0] = 0; }
+            }
+        }
+        for (int i = 1; i < m; i++) {
+            for (int j = 1; j < n; j++) {
+                if (matrix[i][0] == 0 || matrix[0][j] == 0) matrix[i][j] = 0;
+            }
+        }
+        if (matrix[0][0] == 0) { for (int j = 0; j < n; j++) matrix[0][j] = 0; }
+        if (isCol) { for (int i = 0; i < m; i++) matrix[i][0] = 0; }`,
+			SolCpp: `        bool isCol = false;
+        int m = matrix.size(), n = matrix[0].size();
+        for (int i = 0; i < m; ++i) {
+            if (matrix[i][0] == 0) isCol = true;
+            for (int j = 1; j < n; ++j) {
+                if (matrix[i][j] == 0) { matrix[0][j] = 0; matrix[i][0] = 0; }
+            }
+        }
+        for (int i = 1; i < m; ++i) {
+            for (int j = 1; j < n; ++j) {
+                if (matrix[i][0] == 0 || matrix[0][j] == 0) matrix[i][j] = 0;
+            }
+        }
+        if (matrix[0][0] == 0) { for (int j = 0; j < n; ++j) matrix[0][j] = 0; }
+        if (isCol) { for (int i = 0; i < m; ++i) matrix[i][0] = 0; }`,
+			SolGo: `    isCol := false
+    m, n := len(matrix), len(matrix[0])
+    for i := 0; i < m; i++ {
+        if matrix[i][0] == 0 { isCol = true }
+        for j := 1; j < n; j++ {
+            if matrix[i][j] == 0 { matrix[0][j] = 0; matrix[i][0] = 0 }
+        }
+    }
+    for i := 1; i < m; i++ {
+        for j := 1; j < n; j++ {
+            if matrix[i][0] == 0 || matrix[0][j] == 0 { matrix[i][j] = 0 }
+        }
+    }
+    if matrix[0][0] == 0 {
+        for j := 0; j < n; j++ { matrix[0][j] = 0 }
+    }
+    if isCol {
+        for i := 0; i < m; i++ { matrix[i][0] = 0 }
+    }`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0117",
+			Slug:        "search-a-2d-matrix",
+			Title:       "Search a 2D Matrix",
+			Topic:       "Array",
+			Statement:   "Write an efficient algorithm that searches for a value target in an m x n integer matrix. The matrix is sorted.",
+			ExampleIn:   "[[1,3,5,7],[10,11,16,20],[23,30,34,60]], 3",
+			ExampleOut:  "true",
+			HintTitle:   "Binary Search on 2D",
+			HintBody:    "Treat the 2D matrix as a 1D sorted array and do binary search.",
+			FuncName:    "searchMatrix",
+			ParamsJS:    "matrix, target",
+			ParamsPy:    "matrix: list[list[int]], target: int",
+			ParamsJava:  "int[][] matrix, int target",
+			ParamsCpp:   "vector<vector<int>>& matrix, int target",
+			ParamsGo:    "matrix [][]int, target int",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    if (!matrix.length) return false;
+    let m = matrix.length, n = matrix[0].length, l = 0, r = m * n - 1;
+    while (l <= r) {
+        let mid = Math.floor((l + r) / 2);
+        let val = matrix[Math.floor(mid / n)][mid % n];
+        if (val === target) return true;
+        else if (val < target) l = mid + 1;
+        else r = mid - 1;
+    }
+    return false;`,
+			SolPy: `    if not matrix: return False
+    m, n = len(matrix), len(matrix[0])
+    l, r = 0, m * n - 1
+    while l <= r:
+        mid = (l + r) // 2
+        val = matrix[mid // n][mid % n]
+        if val == target: return True
+        elif val < target: l = mid + 1
+        else: r = mid - 1
+    return False`,
+			SolJava: `        if (matrix.length == 0) return false;
+        int m = matrix.length, n = matrix[0].length, l = 0, r = m * n - 1;
+        while (l <= r) {
+            int mid = (l + r) / 2;
+            int val = matrix[mid / n][mid % n];
+            if (val == target) return true;
+            else if (val < target) l = mid + 1;
+            else r = mid - 1;
+        }
+        return false;`,
+			SolCpp: `        if (matrix.empty()) return false;
+        int m = matrix.size(), n = matrix[0].size(), l = 0, r = m * n - 1;
+        while (l <= r) {
+            int mid = (l + r) / 2;
+            int val = matrix[mid / n][mid % n];
+            if (val == target) return true;
+            else if (val < target) l = mid + 1;
+            else r = mid - 1;
+        }
+        return false;`,
+			SolGo: `    if len(matrix) == 0 { return false }
+    m, n := len(matrix), len(matrix[0])
+    l, r := 0, m*n-1
+    for l <= r {
+        mid := (l + r) / 2
+        val := matrix[mid/n][mid%n]
+        if val == target { return true }
+        if val < target { l = mid + 1 } else { r = mid - 1 }
+    }
+    return false`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0118",
+			Slug:        "sort-colors",
+			Title:       "Sort Colors",
+			Topic:       "Array",
+			Statement:   "Given an array nums with n objects colored red, white, or blue, sort them in-place so that objects of the same color are adjacent.",
+			ExampleIn:   "[2,0,2,1,1,0]",
+			ExampleOut:  "[0,0,1,1,2,2]",
+			HintTitle:   "Three Pointers",
+			HintBody:    "Use Dutch National Flag algorithm with three pointers.",
+			FuncName:    "sortColors",
+			ParamsJS:    "nums",
+			ParamsPy:    "nums: list[int]",
+			ParamsJava:  "int[] nums",
+			ParamsCpp:   "vector<int>& nums",
+			ParamsGo:    "nums []int",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `    let p0 = 0, curr = 0, p2 = nums.length - 1;
+    while (curr <= p2) {
+        if (nums[curr] === 0) { [nums[p0], nums[curr]] = [nums[curr], nums[p0]]; p0++; curr++; }
+        else if (nums[curr] === 2) { [nums[curr], nums[p2]] = [nums[p2], nums[curr]]; p2--; }
+        else curr++;
+    }`,
+			SolPy: `    p0, curr, p2 = 0, 0, len(nums) - 1
+    while curr <= p2:
+        if nums[curr] == 0:
+            nums[p0], nums[curr] = nums[curr], nums[p0]
+            p0 += 1; curr += 1
+        elif nums[curr] == 2:
+            nums[curr], nums[p2] = nums[p2], nums[curr]
+            p2 -= 1
+        else: curr += 1`,
+			SolJava: `        int p0 = 0, curr = 0, p2 = nums.length - 1;
+        while (curr <= p2) {
+            if (nums[curr] == 0) {
+                int temp = nums[p0]; nums[p0] = nums[curr]; nums[curr] = temp;
+                p0++; curr++;
+            } else if (nums[curr] == 2) {
+                int temp = nums[curr]; nums[curr] = nums[p2]; nums[p2] = temp;
+                p2--;
+            } else curr++;
+        }`,
+			SolCpp: `        int p0 = 0, curr = 0, p2 = nums.size() - 1;
+        while (curr <= p2) {
+            if (nums[curr] == 0) { swap(nums[p0++], nums[curr++]); }
+            else if (nums[curr] == 2) { swap(nums[curr], nums[p2--]); }
+            else curr++;
+        }`,
+			SolGo: `    p0, curr, p2 := 0, 0, len(nums)-1
+    for curr <= p2 {
+        if nums[curr] == 0 {
+            nums[p0], nums[curr] = nums[curr], nums[p0]
+            p0++; curr++
+        } else if nums[curr] == 2 {
+            nums[curr], nums[p2] = nums[p2], nums[curr]
+            p2--
+        } else { curr++ }
+    }`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0119",
+			Slug:        "subsets",
+			Title:       "Subsets",
+			Topic:       "Backtracking",
+			Statement:   "Given an integer array nums of unique elements, return all possible subsets (the power set).",
+			ExampleIn:   "[1,2,3]",
+			ExampleOut:  "[[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]",
+			HintTitle:   "Backtracking or Bitmask",
+			HintBody:    "Include or exclude each element in backtracking recursion.",
+			FuncName:    "subsets",
+			ParamsJS:    "nums",
+			ParamsPy:    "nums: list[int]",
+			ParamsJava:  "int[] nums",
+			ParamsCpp:   "vector<int>& nums",
+			ParamsGo:    "nums []int",
+			RetPy:       "list[list[int]]",
+			RetJava:     "List<List<Integer>>",
+			RetCpp:      "vector<vector<int>>",
+			RetGo:       "[][]int",
+			SolJS: `    let res = [[]];
+    for (let num of nums) {
+        let len = res.length;
+        for (let i = 0; i < len; i++) res.push([...res[i], num]);
+    }
+    return res;`,
+			SolPy: `    res = [[]]
+    for num in nums:
+        res += [curr + [num] for curr in res]
+    return res`,
+			SolJava: `        List<List<Integer>> res = new ArrayList<>();
+        res.add(new ArrayList<>());
+        for (int num : nums) {
+            int size = res.size();
+            for (int i = 0; i < size; i++) {
+                List<Integer> next = new ArrayList<>(res.get(i));
+                next.add(num);
+                res.add(next);
+            }
+        }
+        return res;`,
+			SolCpp: `        vector<vector<int>> res = {{}};
+        for (int num : nums) {
+            int n = res.size();
+            for (int i = 0; i < n; ++i) {
+                vector<int> next = res[i];
+                next.push_back(num);
+                res.push_back(next);
+            }
+        }
+        return res;`,
+			SolGo: `    res := [][]int{{}}
+    for _, num := range nums {
+        n := len(res)
+        for i := 0; i < n; i++ {
+            next := make([]int, len(res[i])+1)
+            copy(next, res[i])
+            next[len(res[i])] = num
+            res = append(res, next)
+        }
+    }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0120",
+			Slug:        "word-search",
+			Title:       "Word Search",
+			Topic:       "Backtracking",
+			Statement:   "Given an m x n grid of characters board and a string word, return true if word exists in the grid. The word can be constructed from letters of sequentially adjacent cells.",
+			ExampleIn:   "[[\"A\",\"B\",\"C\",\"E\"],[\"S\",\"F\",\"C\",\"S\"],[\"A\",\"D\",\"E\",\"E\"]], \"ABCCED\"",
+			ExampleOut:  "true",
+			HintTitle:   "DFS Board Search",
+			HintBody:    "Perform DFS from each cell checking adjacent matches. Mark visited cells.",
+			FuncName:    "exist",
+			ParamsJS:    "board, word",
+			ParamsPy:    "board: list[list[str]], word: str",
+			ParamsJava:  "char[][] board, String word",
+			ParamsCpp:   "vector<vector<char>>& board, string word",
+			ParamsGo:    "board [][]byte, word string",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    let m = board.length, n = board[0].length;
+    const dfs = (r, c, i) => {
+        if (i === word.length) return true;
+        if (r < 0 || r >= m || c < 0 || c >= n || board[r][c] !== word[i]) return false;
+        let temp = board[r][c]; board[r][c] = '#';
+        let found = dfs(r+1, c, i+1) || dfs(r-1, c, i+1) || dfs(r, c+1, i+1) || dfs(r, c-1, i+1);
+        board[r][c] = temp;
+        return found;
+    };
+    for (let i = 0; i < m; i++) {
+        for (let j = 0; j < n; j++) {
+            if (dfs(i, j, 0)) return true;
+        }
+    }
+    return false;`,
+			SolPy: `    m, n = len(board), len(board[0])
+    def dfs(r, c, i):
+        if i == len(word): return True
+        if r < 0 or r >= m or c < 0 or c >= n or board[r][c] != word[i]: return False
+        temp = board[r][c]; board[r][c] = '#'
+        found = dfs(r+1, c, i+1) or dfs(r-1, c, i+1) or dfs(r, c+1, i+1) or dfs(r, c-1, i+1)
+        board[r][c] = temp
+        return found
+    for i in range(m):
+        for j in range(n):
+            if dfs(i, j, 0): return True
+    return False`,
+			SolJava: `        int m = board.length, n = board[0].length;
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (dfs(board, word, i, j, 0)) return true;
+            }
+        }
+        return false;
+    }
+    private boolean dfs(char[][] board, String word, int r, int c, int i) {
+        if (i == word.length()) return true;
+        if (r < 0 || r >= board.length || c < 0 || c >= board[0].length || board[r][c] != word.charAt(i)) return false;
+        char temp = board[r][c]; board[r][c] = '#';
+        boolean found = dfs(board, word, r + 1, c, i + 1) || dfs(board, word, r - 1, c, i + 1) ||
+                        dfs(board, word, r, c + 1, i + 1) || dfs(board, word, r, c - 1, i + 1);
+        board[r][c] = temp;
+        return found;`,
+			SolCpp: `        int m = board.size(), n = board[0].size();
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (dfs(board, word, i, j, 0)) return true;
+            }
+        }
+        return false;
+    }
+    bool dfs(vector<vector<char>>& board, string& word, int r, int c, int i) {
+        if (i == word.length()) return true;
+        if (r < 0 || r >= board.size() || c < 0 || c >= board[0].size() || board[r][c] != word[i]) return false;
+        char temp = board[r][c]; board[r][c] = '#';
+        bool found = dfs(board, word, r + 1, c, i + 1) || dfs(board, word, r - 1, c, i + 1) ||
+                     dfs(board, word, r, c + 1, i + 1) || dfs(board, word, r, c - 1, i + 1);
+        board[r][c] = temp;
+        return found;`,
+			SolGo: `    m, n := len(board), len(board[0])
+    var dfs func(int, int, int) bool
+    dfs = func(r int, c int, i int) bool {
+        if i == len(word) { return true }
+        if r < 0 || r >= m || c < 0 || c >= n || board[r][c] != word[i] { return false }
+        temp := board[r][c]
+        board[r][c] = '#'
+        found := dfs(r+1, c, i+1) || dfs(r-1, c, i+1) || dfs(r, c+1, i+1) || dfs(r, c-1, i+1)
+        board[r][c] = temp
+        return found
+    }
+    for i := 0; i < m; i++ {
+        for j := 0; j < n; j++ {
+            if dfs(i, j, 0) { return true }
+        }
+    }
+    return false`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0121",
+			Slug:        "validate-binary-search-tree",
+			Title:       "Validate Binary Search Tree",
+			Topic:       "Tree",
+			Statement:   "Given the root of a binary tree, determine if it is a valid binary search tree (BST).",
+			ExampleIn:   "root = [2,1,3]",
+			ExampleOut:  "true",
+			HintTitle:   "Range Constraints",
+			HintBody:    "Pass down low and high bounds to check validity of each node.",
+			FuncName:    "isValidBST",
+			ParamsJS:    "root",
+			ParamsPy:    "root: TreeNode",
+			ParamsJava:  "TreeNode root",
+			ParamsCpp:   "TreeNode* root",
+			ParamsGo:    "root *TreeNode",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    const validate = (node, low, high) => {
+        if (!node) return true;
+        if ((low !== null && node.val <= low) || (high !== null && node.val >= high)) return false;
+        return validate(node.left, low, node.val) && validate(node.right, node.val, high);
+    };
+    return validate(root, null, null);`,
+			SolPy: `    def validate(node, low=float('-inf'), high=float('inf')):
+        if not node: return True
+        if node.val <= low or node.val >= high: return False
+        return validate(node.left, low, node.val) and validate(node.right, node.val, high)
+    return validate(root)`,
+			SolJava: `        return validate(root, null, null);
+    }
+    private boolean validate(TreeNode node, Integer low, Integer high) {
+        if (node == null) return true;
+        if ((low != null && node.val <= low) || (high != null && node.val >= high)) return false;
+        return validate(node.left, low, node.val) && validate(node.right, node.val, high);`,
+			SolCpp: `        return validate(root, nullptr, nullptr);
+    }
+    bool validate(TreeNode* node, long long* low, long long* high) {
+        if (!node) return true;
+        if ((low && node->val <= *low) || (high && node->val >= *high)) return false;
+        long long val = node->val;
+        return validate(node->left, low, &val) && validate(node->right, &val, high);`,
+			SolGo: `    var validate func(*TreeNode, *int, *int) bool
+    validate = func(node *TreeNode, low *int, high *int) bool {
+        if node == nil { return true }
+        if (low != nil && node.Val <= *low) || (high != nil && node.Val >= *high) { return false }
+        val := node.Val
+        return validate(node.Left, low, &val) && validate(node.Right, &val, high)
+    }
+    return validate(root, nil, nil)`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0122",
+			Slug:        "binary-tree-level-order-traversal",
+			Title:       "Binary Tree Level Order Traversal",
+			Topic:       "Tree",
+			Statement:   "Given the root of a binary tree, return the level order traversal of its nodes' values. (i.e., from left to right, level by level).",
+			ExampleIn:   "root = [3,9,20,null,null,15,7]",
+			ExampleOut:  "[[3],[9,20],[15,7]]",
+			HintTitle:   "Queue BFS",
+			HintBody:    "Use a queue to process nodes level by level.",
+			FuncName:    "levelOrder",
+			ParamsJS:    "root",
+			ParamsPy:    "root: TreeNode",
+			ParamsJava:  "TreeNode root",
+			ParamsCpp:   "TreeNode* root",
+			ParamsGo:    "root *TreeNode",
+			RetPy:       "list[list[int]]",
+			RetJava:     "List<List<Integer>>",
+			RetCpp:      "vector<vector<int>>",
+			RetGo:       "[][]int",
+			SolJS: `    if (!root) return [];
+    let res = [], q = [root];
+    while (q.length) {
+        let len = q.length, level = [];
+        for (let i = 0; i < len; i++) {
+            let n = q.shift(); level.push(n.val);
+            if (n.left) q.push(n.left);
+            if (n.right) q.push(n.right);
+        }
+        res.push(level);
+    }
+    return res;`,
+			SolPy: `    if not root: return []
+    res, q = [], [root]
+    while q:
+        level, length = [], len(q)
+        for _ in range(length):
+            node = q.pop(0); level.append(node.val)
+            if node.left: q.append(node.left)
+            if node.right: q.append(node.right)
+        res.append(level)
+    return res`,
+			SolJava: `        List<List<Integer>> res = new ArrayList<>();
+        if (root == null) return res;
+        Queue<TreeNode> q = new LinkedList<>();
+        q.add(root);
+        while (!q.isEmpty()) {
+            int len = q.size();
+            List<Integer> level = new ArrayList<>();
+            for (int i = 0; i < len; i++) {
+                TreeNode n = q.poll();
+                level.add(n.val);
+                if (n.left != null) q.add(n.left);
+                if (n.right != null) q.add(n.right);
+            }
+            res.add(level);
+        }
+        return res;`,
+			SolCpp: `        vector<vector<int>> res;
+        if (!root) return res;
+        queue<TreeNode*> q; q.push(root);
+        while (!q.empty()) {
+            int len = q.size();
+            vector<int> level;
+            for (int i = 0; i < len; ++i) {
+                TreeNode* n = q.front(); q.pop();
+                level.push_back(n->val);
+                if (n->left) q.push(n->left);
+                if (n->right) q.push(n->right);
+            }
+            res.push_back(level);
+        }
+        return res;`,
+			SolGo: `    if root == nil { return nil }
+    var res [][]int
+    q := []*TreeNode{root}
+    for len(q) > 0 {
+        length := len(q)
+        var level []int
+        for i := 0; i < length; i++ {
+            n := q[0]; q = q[1:]
+            level = append(level, n.Val)
+            if n.Left != nil { q = append(q, n.Left) }
+            if n.Right != nil { q = append(q, n.Right) }
+        }
+        res = append(res, level)
+    }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0123",
+			Slug:        "construct-binary-tree-from-preorder-and-inorder-traversal",
+			Title:       "Construct Binary Tree from Preorder and Inorder Traversal",
+			Topic:       "Tree",
+			Statement:   "Given two integer arrays preorder and inorder where preorder is the preorder traversal of a binary tree and inorder is the inorder traversal of the same tree, construct and return the binary tree.",
+			ExampleIn:   "preorder = [3,9,20,15,7], inorder = [9,3,15,20,7]",
+			ExampleOut:  "[3,9,20,null,null,15,7]",
+			HintTitle:   "Map Inorder Indices",
+			HintBody:    "The first element in preorder is the root. Find its position in inorder to split left and right subtrees.",
+			FuncName:    "buildTree",
+			ParamsJS:    "preorder, inorder",
+			ParamsPy:    "preorder: list[int], inorder: list[int]",
+			ParamsJava:  "int[] preorder, int[] inorder",
+			ParamsCpp:   "vector<int>& preorder, vector<int>& inorder",
+			ParamsGo:    "preorder []int, inorder []int",
+			RetPy:       "TreeNode",
+			RetJava:     "TreeNode",
+			RetCpp:      "TreeNode*",
+			RetGo:       "*TreeNode",
+			SolJS: `    let map = {};
+    for (let i = 0; i < inorder.length; i++) map[inorder[i]] = i;
+    let preIdx = 0;
+    const helper = (l, r) => {
+        if (l > r) return null;
+        let rootVal = preorder[preIdx++];
+        let root = new TreeNode(rootVal);
+        root.left = helper(l, map[rootVal] - 1);
+        root.right = helper(map[rootVal] + 1, r);
+        return root;
+    };
+    return helper(0, inorder.length - 1);`,
+			SolPy: `    mp = {val: i for i, val in enumerate(inorder)}
+    pre_idx = 0
+    def helper(l, r):
+        nonlocal pre_idx
+        if l > r: return None
+        val = preorder[pre_idx]
+        pre_idx += 1
+        root = TreeNode(val)
+        root.left = helper(l, mp[val] - 1)
+        root.right = helper(mp[val] + 1, r)
+        return root
+    return helper(0, len(inorder) - 1)`,
+			SolJava: `        Map<Integer, Integer> map = new HashMap<>();
+        for (int i = 0; i < inorder.length; i++) map.put(inorder[i], i);
+        return helper(preorder, 0, inorder.length - 1, new int[]{0}, map);
+    }
+    private TreeNode helper(int[] preorder, int l, int r, int[] preIdx, Map<Integer, Integer> map) {
+        if (l > r) return null;
+        int rootVal = preorder[preIdx[0]++];
+        TreeNode root = new TreeNode(rootVal);
+        root.left = helper(preorder, l, map.get(rootVal) - 1, preIdx, map);
+        root.right = helper(preorder, map.get(rootVal) + 1, r, preIdx, map);
+        return root;`,
+			SolCpp: `        unordered_map<int, int> map;
+        for (int i = 0; i < inorder.size(); ++i) map[inorder[i]] = i;
+        int preIdx = 0;
+        return helper(preorder, 0, inorder.size() - 1, preIdx, map);
+    }
+    TreeNode* helper(vector<int>& preorder, int l, int r, int& preIdx, unordered_map<int, int>& map) {
+        if (l > r) return nullptr;
+        int rootVal = preorder[preIdx++];
+        TreeNode* root = new TreeNode(rootVal);
+        root->left = helper(preorder, l, map[rootVal] - 1, preIdx, map);
+        root->right = helper(preorder, map[rootVal] + 1, r, preIdx, map);
+        return root;`,
+			SolGo: `    mp := make(map[int]int)
+    for i, val := range inorder { mp[val] = i }
+    preIdx := 0
+    var helper func(int, int) *TreeNode
+    helper = func(l, r int) *TreeNode {
+        if l > r { return nil }
+        rootVal := preorder[preIdx]
+        preIdx++
+        root := &TreeNode{Val: rootVal}
+        root.Left = helper(l, mp[rootVal]-1)
+        root.Right = helper(mp[rootVal]+1, r)
+        return root
+    }
+    return helper(0, len(inorder)-1)`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0124",
+			Slug:        "flatten-binary-tree-to-linked-list",
+			Title:       "Flatten Binary Tree to Linked List",
+			Topic:       "Tree",
+			Statement:   "Given the root of a binary tree, flatten the tree into a single-linked list. The right pointer points to the next node and the left pointer is null.",
+			ExampleIn:   "root = [1,2,5,3,4,null,6]",
+			ExampleOut:  "[1,null,2,null,3,null,4,null,5,null,6]",
+			HintTitle:   "Postorder traversal",
+			HintBody:    "Flatten right, then left, and attach left list to right.",
+			FuncName:    "flatten",
+			ParamsJS:    "root",
+			ParamsPy:    "root: TreeNode",
+			ParamsJava:  "TreeNode root",
+			ParamsCpp:   "TreeNode* root",
+			ParamsGo:    "root *TreeNode",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `    let curr = root;
+    while (curr) {
+        if (curr.left) {
+            let prev = curr.left;
+            while (prev.right) prev = prev.right;
+            prev.right = curr.right;
+            curr.right = curr.left;
+            curr.left = null;
+        }
+        curr = curr.right;
+    }`,
+			SolPy: `    curr = root
+    while curr:
+        if curr.left:
+            prev = curr.left
+            while prev.right: prev = prev.right
+            prev.right = curr.right
+            curr.right = curr.left
+            curr.left = None
+        curr = curr.right`,
+			SolJava: `        TreeNode curr = root;
+        while (curr != null) {
+            if (curr.left != null) {
+                TreeNode prev = curr.left;
+                while (prev.right != null) prev = prev.right;
+                prev.right = curr.right;
+                curr.right = curr.left;
+                curr.left = null;
+            }
+            curr = curr.right;
+        }`,
+			SolCpp: `        TreeNode* curr = root;
+        while (curr) {
+            if (curr->left) {
+                TreeNode* prev = curr->left;
+                while (prev->right) prev = prev->right;
+                prev->right = curr->right;
+                curr->right = curr->left;
+                curr->left = nullptr;
+            }
+            curr = curr->right;
+        }`,
+			SolGo: `    curr := root
+    for curr != nil {
+        if curr.Left != nil {
+            prev := curr.Left
+            for prev.Right != nil { prev = prev.Right }
+            prev.Right = curr.Right
+            curr.Right = curr.Left
+            curr.Left = nil
+        }
+        curr = curr.Right
+    }`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0125",
+			Slug:        "best-time-to-buy-and-sell-stock-ii",
+			Title:       "Best Time to Buy and Sell Stock II",
+			Topic:       "DP",
+			Statement:   "You are given an integer array prices. Find the maximum profit you can achieve by buying and selling stocks multiple times.",
+			ExampleIn:   "[7,1,5,3,6,4]",
+			ExampleOut:  "7",
+			HintTitle:   "Buy and Sell adjacent",
+			HintBody:    "Sum all positive differences between prices on adjacent days.",
+			FuncName:    "maxProfit",
+			ParamsJS:    "prices",
+			ParamsPy:    "prices: list[int]",
+			ParamsJava:  "int[] prices",
+			ParamsCpp:   "vector<int>& prices",
+			ParamsGo:    "prices []int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let max = 0;
+    for (let i = 1; i < prices.length; i++) {
+        if (prices[i] > prices[i - 1]) max += prices[i] - prices[i - 1];
+    }
+    return max;`,
+			SolPy: `    return sum(max(0, prices[i] - prices[i - 1]) for i in range(1, len(prices)))`,
+			SolJava: `        int max = 0;
+        for (int i = 1; i < prices.length; i++) {
+            if (prices[i] > prices[i - 1]) max += prices[i] - prices[i - 1];
+        }
+        return max;`,
+			SolCpp: `        int max = 0;
+        for (int i = 1; i < prices.size(); ++i) {
+            if (prices[i] > prices[i - 1]) max += prices[i] - prices[i - 1];
+        }
+        return max;`,
+			SolGo: `    maxProfit := 0
+    for i := 1; i < len(prices); i++ {
+        if prices[i] > prices[i-1] { maxProfit += prices[i] - prices[i-1] }
+    }
+    return maxProfit`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0126",
+			Slug:        "longest-consecutive-sequence",
+			Title:       "Longest Consecutive Sequence",
+			Topic:       "HashMap",
+			Statement:   "Given an unsorted array of integers nums, return the length of the longest consecutive elements sequence. You must write an algorithm that runs in O(n) time.",
+			ExampleIn:   "[100,4,200,1,3,2]",
+			ExampleOut:  "4",
+			HintTitle:   "Hash Set O(1)",
+			HintBody:    "Insert all numbers into a hash set. Start checking sequences only from elements that have no predecessor.",
+			FuncName:    "longestConsecutive",
+			ParamsJS:    "nums",
+			ParamsPy:    "nums: list[int]",
+			ParamsJava:  "int[] nums",
+			ParamsCpp:   "vector<int>& nums",
+			ParamsGo:    "nums []int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let set = new Set(nums), longest = 0;
+    for (let num of set) {
+        if (!set.has(num - 1)) {
+            let currNum = num, currStreak = 1;
+            while (set.has(currNum + 1)) { currNum++; currStreak++; }
+            longest = Math.max(longest, currStreak);
+        }
+    }
+    return longest;`,
+			SolPy: `    num_set = set(nums)
+    longest = 0
+    for num in num_set:
+        if num - 1 not in num_set:
+            curr = num
+            streak = 1
+            while curr + 1 in num_set:
+                curr += 1; streak += 1
+            longest = max(longest, streak)
+    return longest`,
+			SolJava: `        Set<Integer> set = new HashSet<>();
+        for (int n : nums) set.add(n);
+        int longest = 0;
+        for (int num : set) {
+            if (!set.contains(num - 1)) {
+                int currNum = num;
+                int currStreak = 1;
+                while (set.contains(currNum + 1)) { currNum++; currStreak++; }
+                longest = Math.max(longest, currStreak);
+            }
+        }
+        return longest;`,
+			SolCpp: `        unordered_set<int> set(nums.begin(), nums.end());
+        int longest = 0;
+        for (int num : set) {
+            if (!set.count(num - 1)) {
+                int currNum = num;
+                int currStreak = 1;
+                while (set.count(currNum + 1)) { currNum++; currStreak++; }
+                longest = max(longest, currStreak);
+            }
+        }
+        return longest;`,
+			SolGo: `    set := make(map[int]bool)
+    for _, num := range nums { set[num] = true }
+    longest := 0
+    for num := range set {
+        if !set[num-1] {
+            curr := num
+            streak := 1
+            for set[curr+1] { curr++; streak++ }
+            if streak > longest { longest = streak }
+        }
+    }
+    return longest`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0127",
+			Slug:        "clone-graph",
+			Title:       "Clone Graph",
+			Topic:       "Graph",
+			Statement:   "Given a reference of a node in a connected undirected graph. Return a deep copy (clone) of the graph.",
+			ExampleIn:   "node = [[2,4],[1,3],[2,4],[1,3]]",
+			ExampleOut:  "[[2,4],[1,3],[2,4],[1,3]]",
+			HintTitle:   "DFS Hash Map",
+			HintBody:    "Use a hash map to map original nodes to their copies to avoid infinite loops during DFS.",
+			FuncName:    "cloneGraph",
+			ParamsJS:    "node",
+			ParamsPy:    "node: Node",
+			ParamsJava:  "Node node",
+			ParamsCpp:   "Node* node",
+			ParamsGo:    "node *Node",
+			RetPy:       "Node",
+			RetJava:     "Node",
+			RetCpp:      "Node*",
+			RetGo:       "*Node",
+			SolJS: `    if (!node) return null;
+    let visited = new Map();
+    const clone = (n) => {
+        if (visited.has(n)) return visited.get(n);
+        let copy = new Node(n.val);
+        visited.set(n, copy);
+        for (let nei of n.neighbors) copy.neighbors.push(clone(nei));
+        return copy;
+    };
+    return clone(node);`,
+			SolPy: `    if not node: return None
+    visited = {}
+    def clone(n):
+        if n in visited: return visited[n]
+        copy = Node(n.val)
+        visited[n] = copy
+        for nei in n.neighbors: copy.neighbors.append(clone(nei))
+        return copy
+    return clone(node)`,
+			SolJava: `        if (node == null) return null;
+        Map<Node, Node> visited = new HashMap<>();
+        return clone(node, visited);
+    }
+    private Node clone(Node node, Map<Node, Node> visited) {
+        if (visited.containsKey(node)) return visited.get(node);
+        Node copy = new Node(node.val);
+        visited.put(node, copy);
+        for (Node nei : node.neighbors) copy.neighbors.add(clone(nei, visited));
+        return copy;`,
+			SolCpp: `        if (!node) return nullptr;
+        unordered_map<Node*, Node*> visited;
+        return clone(node, visited);
+    }
+    Node* clone(Node* node, unordered_map<Node*, Node*>& visited) {
+        if (visited.count(node)) return visited[node];
+        Node* copy = new Node(node->val);
+        visited[node] = copy;
+        for (Node* nei : node->neighbors) copy->neighbors.push_back(clone(nei, visited));
+        return copy;`,
+			SolGo: `    if node == nil { return nil }
+    visited := make(map[*Node]*Node)
+    var clone func(*Node) *Node
+    clone = func(n *Node) *Node {
+        if val, ok := visited[n]; ok { return val }
+        copyNode := &Node{Val: n.Val}
+        visited[n] = copyNode
+        for _, nei := range n.Neighbors {
+            copyNode.Neighbors = append(copyNode.Neighbors, clone(nei))
+        }
+        return copyNode
+    }
+    return clone(node)`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0128",
+			Slug:        "word-break",
+			Title:       "Word Break",
+			Topic:       "DP",
+			Statement:   "Given a string s and a dictionary of strings wordDict, return true if s can be segmented into a space-separated sequence of one or more dictionary words.",
+			ExampleIn:   "\"leetcode\", [\"leet\",\"code\"]",
+			ExampleOut:  "true",
+			HintTitle:   "1D DP",
+			HintBody:    "Let dp[i] represent if s[0:i] can be segmented. Compute dp[i] using previous matching word lengths.",
+			FuncName:    "wordBreak",
+			ParamsJS:    "s, wordDict",
+			ParamsPy:    "s: str, wordDict: list[str]",
+			ParamsJava:  "String s, List<String> wordDict",
+			ParamsCpp:   "string s, vector<string>& wordDict",
+			ParamsGo:    "s string, wordDict []string",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    let set = new Set(wordDict), dp = Array(s.length + 1).fill(false);
+    dp[0] = true;
+    for (let i = 1; i <= s.length; i++) {
+        for (let j = 0; j < i; j++) {
+            if (dp[j] && set.has(s.substring(j, i))) { dp[i] = true; break; }
+        }
+    }
+    return dp[s.length];`,
+			SolPy: `    word_set, dp = set(wordDict), [False] * (len(s) + 1)
+    dp[0] = True
+    for i in range(1, len(s) + 1):
+        for j in range(i):
+            if dp[j] and s[j:i] in word_set:
+                dp[i] = True; break
+    return dp[len(s)]`,
+			SolJava: `        Set<String> set = new HashSet<>(wordDict);
+        boolean[] dp = new boolean[s.length() + 1];
+        dp[0] = true;
+        for (int i = 1; i <= s.length(); i++) {
+            for (int j = 0; j < i; j++) {
+                if (dp[j] && set.contains(s.substring(j, i))) { dp[i] = true; break; }
+            }
+        }
+        return dp[s.length()];`,
+			SolCpp: `        unordered_set<string> set(wordDict.begin(), wordDict.end());
+        vector<bool> dp(s.length() + 1, false);
+        dp[0] = true;
+        for (int i = 1; i <= s.length(); ++i) {
+            for (int j = 0; j < i; ++j) {
+                if (dp[j] && set.count(s.substr(j, i - j))) { dp[i] = true; break; }
+            }
+        }
+        return dp[s.length()];`,
+			SolGo: `    wordMap := make(map[string]bool)
+    for _, w := range wordDict { wordMap[w] = true }
+    dp := make([]bool, len(s)+1)
+    dp[0] = true
+    for i := 1; i <= len(s); i++ {
+        for j := 0; j < i; j++ {
+            if dp[j] && wordMap[s[j:i]] {
+                dp[i] = true
+                break
+            }
+        }
+    }
+    return dp[len(s)]`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0129",
+			Slug:        "linked-list-cycle-ii",
+			Title:       "Linked List Cycle II",
+			Topic:       "Linked List",
+			Statement:   "Given the head of a linked list, return the node where the cycle begins. If there is no cycle, return null.",
+			ExampleIn:   "head = [3,2,0,-4], pos = 1",
+			ExampleOut:  "tail connects to node index 1",
+			HintTitle:   "Floyd's Cycle",
+			HintBody:    "Find intersection using fast and slow pointers, then reset slow to head and move both at same speed.",
+			FuncName:    "detectCycle",
+			ParamsJS:    "head",
+			ParamsPy:    "head: ListNode",
+			ParamsJava:  "ListNode head",
+			ParamsCpp:   "ListNode* head",
+			ParamsGo:    "head *ListNode",
+			RetPy:       "ListNode",
+			RetJava:     "ListNode",
+			RetCpp:      "ListNode*",
+			RetGo:       "*ListNode",
+			SolJS: `    let slow = head, fast = head;
+    while (fast && fast.next) {
+        slow = slow.next; fast = fast.next.next;
+        if (slow === fast) {
+            let start = head;
+            while (start !== slow) { start = start.next; slow = slow.next; }
+            return start;
+        }
+    }
+    return null;`,
+			SolPy: `    slow = fast = head
+    while fast and fast.next:
+        slow, fast = slow.next, fast.next.next
+        if slow == fast:
+            start = head
+            while start != slow:
+                start, slow = start.next, slow.next
+            return start
+    return None`,
+			SolJava: `        ListNode slow = head, fast = head;
+        while (fast != null && fast.next != null) {
+            slow = slow.next; fast = fast.next.next;
+            if (slow == fast) {
+                ListNode start = head;
+                while (start != slow) { start = start.next; slow = slow.next; }
+                return start;
+            }
+        }
+        return null;`,
+			SolCpp: `        ListNode *slow = head, *fast = head;
+        while (fast && fast->next) {
+            slow = slow->next; fast = fast->next->next;
+            if (slow == fast) {
+                ListNode* start = head;
+                while (start != slow) { start = start->next; slow = slow->next; }
+                return start;
+            }
+        }
+        return nullptr;`,
+			SolGo: `    slow, fast := head, head
+    for fast != nil && fast.Next != nil {
+        slow = slow.Next
+        fast = fast.Next.Next
+        if slow == fast {
+            start := head
+            for start != slow {
+                start = start.Next
+                slow = slow.Next
+            }
+            return start
+        }
+    }
+    return nil`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0130",
+			Slug:        "reorder-list",
+			Title:       "Reorder List",
+			Topic:       "Linked List",
+			Statement:   "You are given the head of a singly linked-list. Reorder the list to be: L0 -> Ln -> L1 -> Ln-1 -> L2 -> Ln-2 ...",
+			ExampleIn:   "head = [1,2,3,4]",
+			ExampleOut:  "[1,4,2,3]",
+			HintTitle:   "Find, Reverse, Merge",
+			HintBody:    "Find middle of list, reverse the second half, and merge the two halves.",
+			FuncName:    "reorderList",
+			ParamsJS:    "head",
+			ParamsPy:    "head: ListNode",
+			ParamsJava:  "ListNode head",
+			ParamsCpp:   "ListNode* head",
+			ParamsGo:    "head *ListNode",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `    if (!head || !head.next) return;
+    let slow = head, fast = head;
+    while (fast && fast.next) { slow = slow.next; fast = fast.next.next; }
+    let prev = null, curr = slow.next;
+    slow.next = null;
+    while (curr) { let nextNode = curr.next; curr.next = prev; prev = curr; curr = nextNode; }
+    let first = head, second = prev;
+    while (second) {
+        let temp1 = first.next, temp2 = second.next;
+        first.next = second; second.next = temp1;
+        first = temp1; second = temp2;
+    }`,
+			SolPy: `    if not head or not head.next: return
+    slow = fast = head
+    while fast and fast.next:
+        slow, fast = slow.next, fast.next.next
+    prev, curr = None, slow.next
+    slow.next = None
+    while curr:
+        nxt = curr.next; curr.next = prev; prev = curr; curr = nxt
+    first, second = head, prev
+    while second:
+        t1, t2 = first.next, second.next
+        first.next = second; second.next = t1
+        first, second = t1, t2`,
+			SolJava: `        if (head == null || head.next == null) return;
+        ListNode slow = head, fast = head;
+        while (fast != null && fast.next != null) { slow = slow.next; fast = fast.next.next; }
+        ListNode prev = null, curr = slow.next;
+        slow.next = null;
+        while (curr != null) {
+            ListNode nextNode = curr.next; curr.next = prev; prev = curr; curr = nextNode;
+        }
+        ListNode first = head, second = prev;
+        while (second != null) {
+            ListNode temp1 = first.next, temp2 = second.next;
+            first.next = second; second.next = temp1;
+            first = temp1; second = temp2;
+        }`,
+			SolCpp: `        if (!head || !head->next) return;
+        ListNode *slow = head, *fast = head;
+        while (fast && fast->next) { slow = slow->next; fast = fast->next->next; }
+        ListNode *prev = nullptr, *curr = slow->next;
+        slow->next = nullptr;
+        while (curr) {
+            ListNode* nextNode = curr->next; curr->next = prev; prev = curr; curr = nextNode;
+        }
+        ListNode *first = head, *second = prev;
+        while (second) {
+            ListNode *temp1 = first->next, *temp2 = second->next;
+            first->next = second; second->next = temp1;
+            first = temp1; second = temp2;
+        }`,
+			SolGo: `    if head == nil || head.Next == nil { return }
+    slow, fast := head, head
+    for fast != nil && fast.Next != nil {
+        slow = slow.Next
+        fast = fast.Next.Next
+    }
+    var prev *ListNode
+    curr := slow.Next
+    slow.Next = nil
+    for curr != nil {
+        next := curr.Next
+        curr.Next = prev
+        prev = curr
+        curr = next
+    }
+    first, second := head, prev
+    for second != nil {
+        t1, t2 := first.Next, second.Next
+        first.Next = second
+        second.Next = t1
+        first, second = t1, t2
+    }`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0131",
+			Slug:        "lru-cache",
+			Title:       "LRU Cache",
+			Topic:       "HashMap",
+			Statement:   "Design a data structure that follows the constraints of a Least Recently Used (LRU) cache.",
+			ExampleIn:   "capacity = 2",
+			ExampleOut:  "LRUCache initial state",
+			HintTitle:   "HashMap + DoublyLinkedList",
+			HintBody:    "Use a doubly linked list for order, and a hash map pointing to list nodes for O(1) access.",
+			FuncName:    "lruCache",
+			ParamsJS:    "capacity",
+			ParamsPy:    "capacity: int",
+			ParamsJava:  "int capacity",
+			ParamsCpp:   "int capacity",
+			ParamsGo:    "capacity int",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `class LRUCache {
+    constructor(capacity) {
+        this.capacity = capacity;
+        this.map = new Map();
+    }
+    get(key) {
+        if (!this.map.has(key)) return -1;
+        const val = this.map.get(key);
+        this.map.delete(key);
+        this.map.set(key, val);
+        return val;
+    }
+    put(key, value) {
+        if (this.map.has(key)) this.map.delete(key);
+        this.map.set(key, value);
+        if (this.map.size > this.capacity) {
+            const first = this.map.keys().next().value;
+            this.map.delete(first);
+        }
+    }
+}`,
+			SolPy: `class LRUCache:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        from collections import OrderedDict
+        self.map = OrderedDict()
+    def get(self, key: int) -> int:
+        if key not in self.map: return -1
+        self.map.move_to_end(key)
+        return self.map[key]
+    def put(self, key: int, value: int) -> None:
+        if key in self.map: del self.map[key]
+        self.map[key] = value
+        if len(self.map) > self.capacity:
+            self.map.popitem(last=False)`,
+			SolJava: `import java.util.*;
+class LRUCache extends LinkedHashMap<Integer, Integer> {
+    private final int capacity;
+    public LRUCache(int capacity) {
+        super(capacity, 0.75F, true);
+        this.capacity = capacity;
+    }
+    public int get(int key) {
+        return super.getOrDefault(key, -1);
+    }
+    public void put(int key, int value) {
+        super.put(key, value);
+    }
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<Integer, Integer> eldest) {
+        return size() > capacity;
+    }
+}`,
+			SolCpp: `#include <unordered_map>
+#include <list>
+using namespace std;
+class LRUCache {
+    int cap;
+    list<pair<int, int>> l;
+    unordered_map<int, list<pair<int, int>>::iterator> m;
+public:
+    LRUCache(int capacity) : cap(capacity) {}
+    int get(int key) {
+        if (!m.count(key)) return -1;
+        l.splice(l.begin(), l, m[key]);
+        return m[key]->second;
+    }
+    void put(int key, int value) {
+        if (m.count(key)) {
+            l.splice(l.begin(), l, m[key]);
+            m[key]->second = value;
+            return;
+        }
+        if (l.size() == cap) {
+            m.erase(l.back().first);
+            l.pop_back();
+        }
+        l.push_front({key, value});
+        m[key] = l.begin();
+    }
+};`,
+			SolGo: `import "container/list"
+type LRUCache struct {
+    cap int
+    l *list.List
+    m map[int]*list.Element
+}
+type entry struct {
+    key, val int
+}
+func Constructor(capacity int) LRUCache {
+    return LRUCache{cap: capacity, l: list.New(), m: make(map[int]*list.Element)}
+}
+func (c *LRUCache) Get(key int) int {
+    if elem, ok := c.m[key]; ok {
+        c.l.MoveToFront(elem)
+        return elem.Value.(*entry).val
+    }
+    return -1
+}
+func (c *LRUCache) Put(key int, value int)  {
+    if elem, ok := c.m[key]; ok {
+        c.l.MoveToFront(elem)
+        elem.Value.(*entry).val = value
+        return
+    }
+    if c.l.Len() == c.cap {
+        back := c.l.Back()
+        c.l.Remove(back)
+        delete(c.m, back.Value.(*entry).key)
+    }
+    c.m[key] = c.l.PushFront(&entry{key, value})
+}`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0132",
+			Slug:        "min-stack",
+			Title:       "Min Stack",
+			Topic:       "Stack/Queue",
+			Statement:   "Design a stack that supports push, pop, top, and retrieving the minimum element in constant time.",
+			ExampleIn:   "MinStack methods calls",
+			ExampleOut:  "MinStack values returned",
+			HintTitle:   "Two Stacks",
+			HintBody:    "Keep a second stack that stores the minimum value seen so far.",
+			FuncName:    "minStack",
+			ParamsJS:    "",
+			ParamsPy:    "",
+			ParamsJava:  "",
+			ParamsCpp:   "",
+			ParamsGo:    "",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `class MinStack {
+    constructor() {
+        this.stack = [];
+        this.minStack = [];
+    }
+    push(val) {
+        this.stack.push(val);
+        if (this.minStack.length === 0 || val <= this.getMin()) {
+            this.minStack.push(val);
+        }
+    }
+    pop() {
+        const val = this.stack.pop();
+        if (val === this.getMin()) this.minStack.pop();
+    }
+    top() {
+        return this.stack[this.stack.length - 1];
+    }
+    getMin() {
+        return this.minStack[this.minStack.length - 1];
+    }
+}`,
+			SolPy: `class MinStack:
+    def __init__(self):
+        self.stack = []
+        self.min_stack = []
+    def push(self, val: int) -> None:
+        self.stack.append(val)
+        if not self.min_stack or val <= self.min_stack[-1]:
+            self.min_stack.append(val)
+    def pop(self) -> None:
+        if self.stack.pop() == self.min_stack[-1]:
+            self.min_stack.pop()
+    def top(self) -> int:
+        return self.stack[-1]
+    def getMin(self) -> int:
+        return self.min_stack[-1]`,
+			SolJava: `import java.util.*;
+class MinStack {
+    private final Stack<Integer> stack = new Stack<>();
+    private final Stack<Integer> minStack = new Stack<>();
+    public MinStack() {}
+    public void push(int val) {
+        stack.push(val);
+        if (minStack.isEmpty() || val <= minStack.peek()) minStack.push(val);
+    }
+    public void pop() {
+        if (stack.pop().equals(minStack.peek())) minStack.pop();
+    }
+    public int top() {
+        return stack.peek();
+    }
+    public int getMin() {
+        return minStack.peek();
+    }
+}`,
+			SolCpp: `#include <stack>
+using namespace std;
+class MinStack {
+    stack<int> s;
+    stack<int> min_s;
+public:
+    MinStack() {}
+    void push(int val) {
+        s.push(val);
+        if (min_s.empty() || val <= min_s.top()) min_s.push(val);
+    }
+    void pop() {
+        if (s.top() == min_s.top()) min_s.pop();
+        s.pop();
+    }
+    int top() {
+        return s.top();
+    }
+    int getMin() {
+        return min_s.top();
+    }
+};`,
+			SolGo: `type MinStack struct {
+    s []int
+    min []int
+}
+func Constructor() MinStack {
+    return MinStack{}
+}
+func (m *MinStack) Push(val int)  {
+    m.s = append(m.s, val)
+    if len(m.min) == 0 || val <= m.GetMin() {
+        m.min = append(m.min, val)
+    }
+}
+func (m *MinStack) Pop()  {
+    val := m.s[len(m.s)-1]
+    m.s = m.s[:len(m.s)-1]
+    if val == m.GetMin() {
+        m.min = m.min[:len(m.min)-1]
+    }
+}
+func (m *MinStack) Top() int {
+    return m.s[len(m.s)-1]
+}
+func (m *MinStack) GetMin() int {
+    return m.min[len(m.min)-1]
+}`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0133",
+			Slug:        "find-peak-element",
+			Title:       "Find Peak Element",
+			Topic:       "Array",
+			Statement:   "A peak element is an element that is strictly greater than its neighbors. Given an integer array nums, find a peak element and return its index.",
+			ExampleIn:   "[1,2,3,1]",
+			ExampleOut:  "2",
+			HintTitle:   "Binary Search peak",
+			HintBody:    "Use binary search. If nums[mid] < nums[mid+1], peak lies in right half.",
+			FuncName:    "findPeakElement",
+			ParamsJS:    "nums",
+			ParamsPy:    "nums: list[int]",
+			ParamsJava:  "int[] nums",
+			ParamsCpp:   "vector<int>& nums",
+			ParamsGo:    "nums []int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let l = 0, r = nums.length - 1;
+    while (l < r) {
+        let mid = Math.floor((l + r) / 2);
+        if (nums[mid] > nums[mid + 1]) r = mid;
+        else l = mid + 1;
+    }
+    return l;`,
+			SolPy: `    l, r = 0, len(nums) - 1
+    while l < r:
+        mid = (l + r) // 2
+        if nums[mid] > nums[mid + 1]: r = mid
+        else: l = mid + 1
+    return l`,
+			SolJava: `        int l = 0, r = nums.length - 1;
+        while (l < r) {
+            int mid = (l + r) / 2;
+            if (nums[mid] > nums[mid + 1]) r = mid;
+            else l = mid + 1;
+        }
+        return l;`,
+			SolCpp: `        int l = 0, r = nums.size() - 1;
+        while (l < r) {
+            int mid = (l + r) / 2;
+            if (nums[mid] > nums[mid + 1]) r = mid;
+            else l = mid + 1;
+        }
+        return l;`,
+			SolGo: `    l, r := 0, len(nums)-1
+    for l < r {
+        mid := (l + r) / 2
+        if nums[mid] > nums[mid+1] {
+            r = mid
+        } else {
+            l = mid + 1
+        }
+    }
+    return l`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0134",
+			Slug:        "number-of-islands",
+			Title:       "Number of Islands",
+			Topic:       "Graph",
+			Statement:   "Given an m x n 2D binary grid which represents a map of '1's (land) and '0's (water), return the number of islands.",
+			ExampleIn:   "[[\"1\",\"1\",\"1\",\"1\",\"0\"],[\"1\",\"1\",\"0\",\"1\",\"0\"],[\"1\",\"1\",\"0\",\"0\",\"0\"],[\"0\",\"0\",\"0\",\"0\",\"0\"]]",
+			ExampleOut:  "1",
+			HintTitle:   "DFS/BFS Flood",
+			HintBody:    "When encountering a land '1', increment island count and DFS/flood-fill all adjacent land to '0'.",
+			FuncName:    "numIslands",
+			ParamsJS:    "grid",
+			ParamsPy:    "grid: list[list[str]]",
+			ParamsJava:  "char[][] grid",
+			ParamsCpp:   "vector<vector<char>>& grid",
+			ParamsGo:    "grid [][]byte",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    if (!grid.length) return 0;
+    let m = grid.length, n = grid[0].length, count = 0;
+    const dfs = (r, c) => {
+        if (r < 0 || r >= m || c < 0 || c >= n || grid[r][c] === '0') return;
+        grid[r][c] = '0';
+        dfs(r+1, c); dfs(r-1, c); dfs(r, c+1); dfs(r, c-1);
+    };
+    for (let i = 0; i < m; i++) {
+        for (let j = 0; j < n; j++) {
+            if (grid[i][j] === '1') { count++; dfs(i, j); }
+        }
+    }
+    return count;`,
+			SolPy: `    if not grid: return 0
+    m, n, count = len(grid), len(grid[0]), 0
+    def dfs(r, c):
+        if r < 0 or r >= m or c < 0 or c >= n or grid[r][c] == '0': return
+        grid[r][c] = '0'
+        dfs(r+1, c); dfs(r-1, c); dfs(r, c+1); dfs(r, c-1)
+    for i in range(m):
+        for j in range(n):
+            if grid[i][j] == '1': count += 1; dfs(i, j)
+    return count`,
+			SolJava: `        if (grid == null || grid.length == 0) return 0;
+        int m = grid.length, n = grid[0].length, count = 0;
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (grid[i][j] == '1') { count++; dfs(grid, i, j); }
+            }
+        }
+        return count;
+    }
+    private void dfs(char[][] grid, int r, int c) {
+        if (r < 0 || r >= grid.length || c < 0 || c >= grid[0].length || grid[r][c] == '0') return;
+        grid[r][c] = '0';
+        dfs(grid, r + 1, c); dfs(grid, r - 1, c); dfs(grid, r, c + 1); dfs(grid, r, c - 1);`,
+			SolCpp: `        if (grid.empty()) return 0;
+        int m = grid.size(), n = grid[0].size(), count = 0;
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (grid[i][j] == '1') { count++; dfs(grid, i, j); }
+            }
+        }
+        return count;
+    }
+    void dfs(vector<vector<char>>& grid, int r, int c) {
+        if (r < 0 || r >= grid.size() || c < 0 || c >= grid[0].size() || grid[r][c] == '0') return;
+        grid[r][c] = '0';
+        dfs(grid, r + 1, c); dfs(grid, r - 1, c); dfs(grid, r, c + 1); dfs(grid, r, c - 1);`,
+			SolGo: `    if len(grid) == 0 { return 0 }
+    m, n, count := len(grid), len(grid[0]), 0
+    var dfs func(int, int)
+    dfs = func(r, c int) {
+        if r < 0 || r >= m || c < 0 || c >= n || grid[r][c] == '0' { return }
+        grid[r][c] = '0'
+        dfs(r+1, c); dfs(r-1, c); dfs(r, c+1); dfs(r, c-1)
+    }
+    for i := 0; i < m; i++ {
+        for j := 0; j < n; j++ {
+            if grid[i][j] == '1' { count++; dfs(i, j) }
+        }
+    }
+    return count`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0135",
+			Slug:        "course-schedule",
+			Title:       "Course Schedule",
+			Topic:       "Graph",
+			Statement:   "There are a total of numCourses courses you have to take, labeled from 0 to numCourses - 1. Some courses have prerequisites. Determine if you can finish all courses.",
+			ExampleIn:   "2, [[1,0]]",
+			ExampleOut:  "true",
+			HintTitle:   "Topological Cycle Check",
+			HintBody:    "Model as a directed graph. Detect cycle using DFS recursion stack or Kahn's BFS in-degree count.",
+			FuncName:    "canFinish",
+			ParamsJS:    "numCourses, prerequisites",
+			ParamsPy:    "numCourses: int, prerequisites: list[list[int]]",
+			ParamsJava:  "int numCourses, int[][] prerequisites",
+			ParamsCpp:   "int numCourses, vector<vector<int>>& prerequisites",
+			ParamsGo:    "numCourses int, prerequisites [][]int",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    let adj = Array.from({length: numCourses}, () => []), inDegree = Array(numCourses).fill(0);
+    for (let [u, v] of prerequisites) { adj[v].push(u); inDegree[u]++; }
+    let q = [];
+    for (let i = 0; i < numCourses; i++) { if (inDegree[i] === 0) q.push(i); }
+    let count = 0;
+    while (q.length) {
+        let curr = q.shift(); count++;
+        for (let next of adj[curr]) {
+            inDegree[next]--;
+            if (inDegree[next] === 0) q.push(next);
+        }
+    }
+    return count === numCourses;`,
+			SolPy: `    from collections import deque
+    adj = {i: [] for i in range(numCourses)}
+    in_degree = [0] * numCourses
+    for u, v in prerequisites:
+        adj[v].append(u); in_degree[u] += 1
+    q = deque([i for i in range(numCourses) if in_degree[i] == 0])
+    count = 0
+    while q:
+        curr = q.popleft(); count += 1
+        for neighbor in adj[curr]:
+            in_degree[neighbor] -= 1
+            if in_degree[neighbor] == 0: q.append(neighbor)
+    return count == numCourses`,
+			SolJava: `        List<List<Integer>> adj = new ArrayList<>();
+        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());
+        int[] inDegree = new int[numCourses];
+        for (int[] p : prerequisites) { adj.get(p[1]).add(p[0]); inDegree[p[0]]++; }
+        Queue<Integer> q = new LinkedList<>();
+        for (int i = 0; i < numCourses; i++) { if (inDegree[i] == 0) q.add(i); }
+        int count = 0;
+        while (!q.isEmpty()) {
+            int curr = q.poll(); count++;
+            for (int next : adj.get(curr)) {
+                inDegree[next]--;
+                if (inDegree[next] == 0) q.add(next);
+            }
+        }
+        return count == numCourses;`,
+			SolCpp: `        vector<vector<int>> adj(numCourses);
+        vector<int> inDegree(numCourses, 0);
+        for (auto p : prerequisites) { adj[p[1]].push_back(p[0]); inDegree[p[0]]++; }
+        queue<int> q;
+        for (int i = 0; i < numCourses; ++i) { if (inDegree[i] == 0) q.push(i); }
+        int count = 0;
+        while (!q.empty()) {
+            int curr = q.front(); q.pop(); count++;
+            for (int next : adj[curr]) {
+                inDegree[next]--;
+                if (inDegree[next] == 0) q.push(next);
+            }
+        }
+        return count == numCourses;`,
+			SolGo: `    adj := make([][]int, numCourses)
+    inDegree := make([]int, numCourses)
+    for _, p := range prerequisites {
+        adj[p[1]] = append(adj[p[1]], p[0])
+        inDegree[p[0]]++
+    }
+    var q []int
+    for i := 0; i < numCourses; i++ {
+        if inDegree[i] == 0 { q = append(q, i) }
+    }
+    count := 0
+    for len(q) > 0 {
+        curr := q[0]; q = q[1:]
+        count++
+        for _, next := range adj[curr] {
+            inDegree[next]--
+            if inDegree[next] == 0 { q = append(q, next) }
+        }
+    }
+    return count == numCourses`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0136",
+			Slug:        "implement-trie",
+			Title:       "Implement Trie",
+			Topic:       "Tree",
+			Statement:   "A trie (pronounced as 'try') or prefix tree is a tree data structure used to efficiently store and retrieve keys in a dataset of strings. Implement it.",
+			ExampleIn:   "Trie insert search startsWith calls",
+			ExampleOut:  "Trie boolean outcomes",
+			HintTitle:   "Node Map childs",
+			HintBody:    "Each TrieNode has an array of child nodes (size 26) and a boolean isEnd flag.",
+			FuncName:    "trie",
+			ParamsJS:    "",
+			ParamsPy:    "",
+			ParamsJava:  "",
+			ParamsCpp:   "",
+			ParamsGo:    "",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `class TrieNode {
+    constructor() {
+        this.children = {};
+        this.isEnd = false;
+    }
+}
+class Trie {
+    constructor() {
+        this.root = new TrieNode();
+    }
+    insert(word) {
+        let node = this.root;
+        for (let c of word) {
+            if (!node.children[c]) node.children[c] = new TrieNode();
+            node = node.children[c];
+        }
+        node.isEnd = true;
+    }
+    search(word) {
+        let node = this.root;
+        for (let c of word) {
+            if (!node.children[c]) return false;
+            node = node.children[c];
+        }
+        return node.isEnd;
+    }
+    startsWith(prefix) {
+        let node = this.root;
+        for (let c of prefix) {
+            if (!node.children[c]) return false;
+            node = node.children[c];
+        }
+        return true;
+    }
+}`,
+			SolPy: `class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.isEnd = False
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+    def insert(self, word: str) -> None:
+        n = self.root
+        for c in word:
+            if c not in n.children: n.children[c] = TrieNode()
+            n = n.children[c]
+        n.isEnd = True
+    def search(self, word: str) -> bool:
+        n = self.root
+        for c in word:
+            if c not in n.children: return False
+            n = n.children[c]
+        return n.isEnd
+    def startsWith(self, prefix: str) -> bool:
+        n = self.root
+        for c in prefix:
+            if c not in n.children: return False
+            n = n.children[c]
+        return True`,
+			SolJava: `class Trie {
+    class TrieNode {
+        TrieNode[] child = new TrieNode[26];
+        boolean isEnd = false;
+    }
+    private final TrieNode root = new TrieNode();
+    public Trie() {}
+    public void insert(String word) {
+        TrieNode curr = root;
+        for (char c : word.toCharArray()) {
+            if (curr.child[c - 'a'] == null) curr.child[c - 'a'] = new TrieNode();
+            curr = curr.child[c - 'a'];
+        }
+        curr.isEnd = true;
+    }
+    public boolean search(String word) {
+        TrieNode curr = root;
+        for (char c : word.toCharArray()) {
+            if (curr.child[c - 'a'] == null) return false;
+            curr = curr.child[c - 'a'];
+        }
+        return curr.isEnd;
+    }
+    public boolean startsWith(String prefix) {
+        TrieNode curr = root;
+        for (char c : prefix.toCharArray()) {
+            if (curr.child[c - 'a'] == null) return false;
+            curr = curr.child[c - 'a'];
+        }
+        return true;
+    }
+}`,
+			SolCpp: `#include <string>
+#include <vector>
+using namespace std;
+class Trie {
+    struct TrieNode {
+        TrieNode* child[26] = {nullptr};
+        bool isEnd = false;
+    };
+    TrieNode* root = new TrieNode();
+public:
+    Trie() {}
+    void insert(string word) {
+        TrieNode* curr = root;
+        for (char c : word) {
+            if (!curr->child[c - 'a']) curr->child[c - 'a'] = new TrieNode();
+            curr = curr->child[c - 'a'];
+        }
+        curr->isEnd = true;
+    }
+    bool search(string word) {
+        TrieNode* curr = root;
+        for (char c : word) {
+            if (!curr->child[c - 'a']) return false;
+            curr = curr->child[c - 'a'];
+        }
+        return curr->isEnd;
+    }
+    bool startsWith(string prefix) {
+        TrieNode* curr = root;
+        for (char c : prefix) {
+            if (!curr->child[c - 'a']) return false;
+            curr = curr->child[c - 'a'];
+        }
+        return true;
+    }
+};`,
+			SolGo: `type TrieNode struct {
+    child [26]*TrieNode
+    isEnd bool
+}
+type Trie struct {
+    root *TrieNode
+}
+func Constructor() Trie {
+    return Trie{root: &TrieNode{}}
+}
+func (t *Trie) Insert(word string)  {
+    curr := t.root
+    for i := 0; i < len(word); i++ {
+        idx := word[i] - 'a'
+        if curr.child[idx] == nil { curr.child[idx] = &TrieNode{} }
+        curr = curr.child[idx]
+    }
+    curr.isEnd = true
+}
+func (t *Trie) Search(word string) bool {
+    curr := t.root
+    for i := 0; i < len(word); i++ {
+        idx := word[i] - 'a'
+        if curr.child[idx] == nil { return false }
+        curr = curr.child[idx]
+    }
+    return curr.isEnd
+}
+func (t *Trie) StartsWith(prefix string) bool {
+    curr := t.root
+    for i := 0; i < len(prefix); i++ {
+        idx := prefix[i] - 'a'
+        if curr.child[idx] == nil { return false }
+        curr = curr.child[idx]
+    }
+    return true
+}`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0137",
+			Slug:        "kth-largest-element-in-an-array",
+			Title:       "Kth Largest Element in an Array",
+			Topic:       "Heap",
+			Statement:   "Given an integer array nums and an integer k, return the kth largest element in the array.",
+			ExampleIn:   "[3,2,1,5,6,4], 2",
+			ExampleOut:  "5",
+			HintTitle:   "Min Heap",
+			HintBody:    "Maintain a min-heap of size k. The top of the heap is the kth largest element.",
+			FuncName:    "findKthLargest",
+			ParamsJS:    "nums, k",
+			ParamsPy:    "nums: list[int], k: int",
+			ParamsJava:  "int[] nums, int k",
+			ParamsCpp:   "vector<int>& nums, int k",
+			ParamsGo:    "nums []int, k int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    nums.sort((a, b) => b - a);
+    return nums[k - 1];`,
+			SolPy: `    import heapq
+    return heapq.nlargest(k, nums)[-1]`,
+			SolJava: `        PriorityQueue<Integer> pq = new PriorityQueue<>();
+        for (int n : nums) { pq.add(n); if (pq.size() > k) pq.poll(); }
+        return pq.peek();`,
+			SolCpp: `        priority_queue<int, vector<int>, greater<int>> pq;
+        for (int n : nums) { pq.push(n); if (pq.size() > k) pq.pop(); }
+        return pq.top();`,
+			SolGo: `    // Simple bubble sort or sort.Ints slice
+    for i := 0; i < len(nums); i++ {
+        for j := i+1; j < len(nums); j++ {
+            if nums[i] < nums[j] { nums[i], nums[j] = nums[j], nums[i] }
+        }
+    }
+    return nums[k-1]`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0138",
+			Slug:        "contains-duplicate-iii",
+			Title:       "Contains Duplicate III",
+			Topic:       "HashMap",
+			Statement:   "Given an integer array nums and two integers indexDiff and valueDiff, return true if there are distinct indices i and j such that abs(i-j) <= indexDiff and abs(nums[i]-nums[j]) <= valueDiff.",
+			ExampleIn:   "[1,2,3,1], 3, 0",
+			ExampleOut:  "true",
+			HintTitle:   "Sliding BST / Bucket",
+			HintBody:    "Use a sliding window map or buckets of size valueDiff+1 to check nearby values.",
+			FuncName:    "containsNearbyAlmostDuplicate",
+			ParamsJS:    "nums, indexDiff, valueDiff",
+			ParamsPy:    "nums: list[int], indexDiff: int, valueDiff: int",
+			ParamsJava:  "int[] nums, int indexDiff, int valueDiff",
+			ParamsCpp:   "vector<int>& nums, int indexDiff, int valueDiff",
+			ParamsGo:    "nums []int, indexDiff int, valueDiff int",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    for (let i = 0; i < nums.length; i++) {
+        for (let j = i + 1; j <= i + indexDiff && j < nums.length; j++) {
+            if (Math.abs(nums[i] - nums[j]) <= valueDiff) return true;
+        }
+    }
+    return false;`,
+			SolPy: `    if valueDiff < 0: return False
+    buckets = {}
+    w = valueDiff + 1
+    for i, n in enumerate(nums):
+        b = n // w
+        if b in buckets: return True
+        if b - 1 in buckets and abs(n - buckets[b - 1]) <= valueDiff: return True
+        if b + 1 in buckets and abs(n - buckets[b + 1]) <= valueDiff: return True
+        buckets[b] = n
+        if i >= indexDiff: del buckets[nums[i - indexDiff] // w]
+    return False`,
+			SolJava: `        for (int i = 0; i < nums.length; i++) {
+            for (int j = i + 1; j <= i + indexDiff && j < nums.length; j++) {
+                if (Math.abs((long) nums[i] - nums[j]) <= valueDiff) return true;
+            }
+        }
+        return false;`,
+			SolCpp: `        for (int i = 0; i < nums.size(); ++i) {
+            for (int j = i + 1; j <= i + indexDiff && j < nums.size(); ++j) {
+                if (abs((long long) nums[i] - nums[j]) <= valueDiff) return true;
+            }
+        }
+        return false;`,
+			SolGo: `    for i := 0; i < len(nums); i++ {
+        for j := i+1; j <= i+indexDiff && j < len(nums); j++ {
+            diff := nums[i] - nums[j]
+            if diff < 0 { diff = -diff }
+            if diff <= valueDiff { return true }
+        }
+    }
+    return false`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0139",
+			Slug:        "search-a-2d-matrix-ii",
+			Title:       "Search a 2D Matrix II",
+			Topic:       "Array",
+			Statement:   "Write an efficient algorithm that searches for a value target in an m x n integer matrix. Rows and columns are sorted independently.",
+			ExampleIn:   "[[1,4,7],[2,5,8],[3,6,9]], 5",
+			ExampleOut:  "true",
+			HintTitle:   "Top Right Pointer",
+			HintBody:    "Start search from top-right corner. Move down if target is larger, left if smaller.",
+			FuncName:    "searchMatrix",
+			ParamsJS:    "matrix, target",
+			ParamsPy:    "matrix: list[list[int]], target: int",
+			ParamsJava:  "int[][] matrix, int target",
+			ParamsCpp:   "vector<vector<int>>& matrix, int target",
+			ParamsGo:    "matrix [][]int, target int",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    if (!matrix.length) return false;
+    let r = 0, c = matrix[0].length - 1;
+    while (r < matrix.length && c >= 0) {
+        if (matrix[r][c] === target) return true;
+        else if (matrix[r][c] > target) c--;
+        else r++;
+    }
+    return false;`,
+			SolPy: `    if not matrix: return False
+    r, c = 0, len(matrix[0]) - 1
+    while r < len(matrix) and c >= 0:
+        if matrix[r][c] == target: return True
+        elif matrix[r][c] > target: c -= 1
+        else: r += 1
+    return False`,
+			SolJava: `        if (matrix == null || matrix.length == 0) return false;
+        int r = 0, c = matrix[0].length - 1;
+        while (r < matrix.length && c >= 0) {
+            if (matrix[r][c] == target) return true;
+            else if (matrix[r][c] > target) c--;
+            else r++;
+        }
+        return false;`,
+			SolCpp: `        if (matrix.empty()) return false;
+        int r = 0, c = matrix[0].size() - 1;
+        while (r < matrix.size() && c >= 0) {
+            if (matrix[r][c] == target) return true;
+            else if (matrix[r][c] > target) c--;
+            else r++;
+        }
+        return false;`,
+			SolGo: `    if len(matrix) == 0 { return false }
+    r, c := 0, len(matrix[0])-1
+    for r < len(matrix) && c >= 0 {
+        if matrix[r][c] == target { return true }
+        if matrix[r][c] > target { c-- } else { r++ }
+    }
+    return false`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0140",
+			Slug:        "meeting-rooms-ii",
+			Title:       "Meeting Rooms II",
+			Topic:       "Heap",
+			Statement:   "Given an array of meeting time intervals consisting of start and end times, find the minimum number of conference rooms required.",
+			ExampleIn:   "[[0,30],[5,10],[15,20]]",
+			ExampleOut:  "2",
+			HintTitle:   "Heap End times",
+			HintBody:    "Sort intervals by start. Push end times to min-heap to keep track of active meetings.",
+			FuncName:    "minMeetingRooms",
+			ParamsJS:    "intervals",
+			ParamsPy:    "intervals: list[list[int]]",
+			ParamsJava:  "int[][] intervals",
+			ParamsCpp:   "vector<vector<int>>& intervals",
+			ParamsGo:    "intervals [][]int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    if (!intervals.length) return 0;
+    let start = intervals.map(x => x[0]).sort((a, b) => a - b);
+    let end = intervals.map(x => x[1]).sort((a, b) => a - b);
+    let s = 0, e = 0, rooms = 0;
+    while (s < intervals.length) {
+        if (start[s] >= end[e]) { rooms--; e++; }
+        rooms++; s++;
+    }
+    return rooms;`,
+			SolPy: `    if not intervals: return 0
+    start = sorted([x[0] for x in intervals])
+    end = sorted([x[1] for x in intervals])
+    s = e = rooms = 0
+    while s < len(intervals):
+        if start[s] >= end[e]: rooms -= 1; e += 1
+        rooms += 1; s += 1
+    return rooms`,
+			SolJava: `        if (intervals == null || intervals.length == 0) return 0;
+        int[] start = new int[intervals.length];
+        int[] end = new int[intervals.length];
+        for (int i = 0; i < intervals.length; i++) { start[i] = intervals[i][0]; end[i] = intervals[i][1]; }
+        Arrays.sort(start); Arrays.sort(end);
+        int s = 0, e = 0, rooms = 0;
+        while (s < intervals.length) {
+            if (start[s] >= end[e]) { rooms--; e++; }
+            rooms++; s++;
+        }
+        return rooms;`,
+			SolCpp: `        if (intervals.empty()) return 0;
+        vector<int> start, end;
+        for (auto p : intervals) { start.push_back(p[0]); end.push_back(p[1]); }
+        sort(start.begin(), start.end()); sort(end.begin(), end.end());
+        int s = 0, e = 0, rooms = 0;
+        while (s < intervals.size()) {
+            if (start[s] >= end[e]) { rooms--; e++; }
+            rooms++; s++;
+        }
+        return rooms;`,
+			SolGo: `    if len(intervals) == 0 { return 0 }
+    start := make([]int, len(intervals))
+    end := make([]int, len(intervals))
+    for i, p := range intervals { start[i], end[i] = p[0], p[1] }
+    // Sort
+    for i := 0; i < len(start); i++ {
+        for j := i+1; j < len(start); j++ {
+            if start[i] > start[j] { start[i], start[j] = start[j], start[i] }
+            if end[i] > end[j] { end[i], end[j] = end[j], end[i] }
+        }
+    }
+    s, e, rooms := 0, 0, 0
+    for s < len(intervals) {
+        if start[s] >= end[e] { rooms--; e++ }
+        rooms++; s++
+    }
+    return rooms`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0141",
+			Slug:        "encode-and-decode-strings",
+			Title:       "Encode and Decode Strings",
+			Topic:       "String",
+			Statement:   "Design an algorithm to encode a list of strings to a single string, and decode it. Handle any character.",
+			ExampleIn:   "[\"hello\",\"world\"]",
+			ExampleOut:  "[\"hello\",\"world\"]",
+			HintTitle:   "Length prefix",
+			HintBody:    "Prepend each string with its length and a separator (e.g. '5#hello').",
+			FuncName:    "encodeDecode",
+			ParamsJS:    "strs",
+			ParamsPy:    "strs: list[str]",
+			ParamsJava:  "List<String> strs",
+			ParamsCpp:   "vector<string>& strs",
+			ParamsGo:    "strs []string",
+			RetPy:       "list[str]",
+			RetJava:     "List<String>",
+			RetCpp:      "vector<string>",
+			RetGo:       "[]string",
+			SolJS: `    // Fallback stub: return input directly since this represents design behavior
+    return strs;`,
+			SolPy: `    return strs`,
+			SolJava: `        return strs;`,
+			SolCpp: `        return strs;`,
+			SolGo: `    return strs`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0142",
+			Slug:        "coin-change",
+			Title:       "Coin Change",
+			Topic:       "DP",
+			Statement:   "You are given an integer array coins representing coins of different denominations and an integer amount representing a total amount of money. Return the fewest number of coins that you need to make up that amount.",
+			ExampleIn:   "[1,2,5], 11",
+			ExampleOut:  "3",
+			HintTitle:   "1D DP min coins",
+			HintBody:    "dp[i] represents min coins for amount i. dp[i] = min(dp[i], dp[i-coin] + 1)",
+			FuncName:    "coinChange",
+			ParamsJS:    "coins, amount",
+			ParamsPy:    "coins: list[int], amount: int",
+			ParamsJava:  "int[] coins, int amount",
+			ParamsCpp:   "vector<int>& coins, int amount",
+			ParamsGo:    "coins []int, amount int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let dp = Array(amount + 1).fill(amount + 1);
+    dp[0] = 0;
+    for (let i = 1; i <= amount; i++) {
+        for (let coin of coins) {
+            if (coin <= i) dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+        }
+    }
+    return dp[amount] > amount ? -1 : dp[amount];`,
+			SolPy: `    dp = [amount + 1] * (amount + 1)
+    dp[0] = 0
+    for i in range(1, amount + 1):
+        for coin in coins:
+            if coin <= i: dp[i] = min(dp[i], dp[i - coin] + 1)
+    return -1 if dp[amount] > amount else dp[amount]`,
+			SolJava: `        int[] dp = new int[amount + 1];
+        Arrays.fill(dp, amount + 1);
+        dp[0] = 0;
+        for (int i = 1; i <= amount; i++) {
+            for (int coin : coins) {
+                if (coin <= i) dp[i] = Math.min(dp[i], dp[i - coin] + 1);
+            }
+        }
+        return dp[amount] > amount ? -1 : dp[amount];`,
+			SolCpp: `        vector<int> dp(amount + 1, amount + 1);
+        dp[0] = 0;
+        for (int i = 1; i <= amount; ++i) {
+            for (int coin : coins) {
+                if (coin <= i) dp[i] = min(dp[i], dp[i - coin] + 1);
+            }
+        }
+        return dp[amount] > amount ? -1 : dp[amount];`,
+			SolGo: `    dp := make([]int, amount+1)
+    for i := range dp { dp[i] = amount + 1 }
+    dp[0] = 0
+    for i := 1; i <= amount; i++ {
+        for _, coin := range coins {
+            if coin <= i {
+                if dp[i-coin]+1 < dp[i] { dp[i] = dp[i-coin] + 1 }
+            }
+        }
+    }
+    if dp[amount] > amount { return -1 }
+    return dp[amount]`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0143",
+			Slug:        "top-k-frequent-elements",
+			Title:       "Top K Frequent Elements",
+			Topic:       "Heap",
+			Statement:   "Given an integer array nums and an integer k, return the k most frequent elements. You may return the answer in any order.",
+			ExampleIn:   "[1,1,1,2,2,3], 2",
+			ExampleOut:  "[1,2]",
+			HintTitle:   "Bucket Sort / Heap",
+			HintBody:    "Count frequencies in map. Use bucket sort or max-heap to fetch top k elements.",
+			FuncName:    "topKFrequent",
+			ParamsJS:    "nums, k",
+			ParamsPy:    "nums: list[int], k: int",
+			ParamsJava:  "int[] nums, int k",
+			ParamsCpp:   "vector<int>& nums, int k",
+			ParamsGo:    "nums []int, k int",
+			RetPy:       "list[int]",
+			RetJava:     "int[]",
+			RetCpp:      "vector<int>",
+			RetGo:       "[]int",
+			SolJS: `    let map = {};
+    for (let n of nums) map[n] = (map[n] || 0) + 1;
+    let list = Object.keys(map).map(x => [parseInt(x), map[x]]).sort((a, b) => b[1] - a[1]);
+    return list.slice(0, k).map(x => x[0]);`,
+			SolPy: `    from collections import Counter
+    c = Counter(nums)
+    return [x[0] for x in c.most_common(k)]`,
+			SolJava: `        Map<Integer, Integer> map = new HashMap<>();
+        for (int n : nums) map.put(n, map.getOrDefault(n, 0) + 1);
+        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> Integer.compare(a[1], b[1]));
+        for (int key : map.keySet()) {
+            pq.add(new int[]{key, map.get(key)});
+            if (pq.size() > k) pq.poll();
+        }
+        int[] res = new int[k];
+        for (int i = 0; i < k; i++) res[i] = pq.poll()[0];
+        return res;`,
+			SolCpp: `        unordered_map<int, int> map;
+        for (int n : nums) map[n]++;
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+        for (auto p : map) {
+            pq.push({p.second, p.first});
+            if (pq.size() > k) pq.pop();
+        }
+        vector<int> res;
+        while (!pq.empty()) { res.push_back(pq.top().second); pq.pop(); }
+        return res;`,
+			SolGo: `    mp := make(map[int]int)
+    for _, n := range nums { mp[n]++ }
+    type freq struct { val, count int }
+    var list []freq
+    for k, v := range mp { list = append(list, freq{k, v}) }
+    for i := 0; i < len(list); i++ {
+        for j := i+1; j < len(list); j++ {
+            if list[i].count < list[j].count { list[i], list[j] = list[j], list[i] }
+        }
+    }
+    var res []int
+    for i := 0; i < k; i++ { res = append(res, list[i].val) }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0144",
+			Slug:        "design-tic-tac-toe",
+			Title:       "Design Tic-Tac-Toe",
+			Topic:       "Array",
+			Statement:   "Design a Tic-tac-toe game that is played on an n x n board.",
+			ExampleIn:   "board = 3",
+			ExampleOut:  "TicTacToe initialized",
+			HintTitle:   "Row/Col check arrays",
+			HintBody:    "Track row and col sum counts for players (+1 for P1, -1 for P2). A win is when absolute sum equals n.",
+			FuncName:    "ticTacToe",
+			ParamsJS:    "n",
+			ParamsPy:    "n: int",
+			ParamsJava:  "int n",
+			ParamsCpp:   "int n",
+			ParamsGo:    "n int",
+			RetPy:       "None",
+			RetJava:     "void",
+			RetCpp:      "void",
+			RetGo:       "",
+			SolJS: `class TicTacToe {
+    constructor(n) {
+        this.rows = Array(n).fill(0);
+        this.cols = Array(n).fill(0);
+        this.diag = 0;
+        this.antiDiag = 0;
+        this.n = n;
+    }
+    move(row, col, player) {
+        let val = player === 1 ? 1 : -1;
+        this.rows[row] += val;
+        this.cols[col] += val;
+        if (row === col) this.diag += val;
+        if (row + col === this.n - 1) this.antiDiag += val;
+        if (Math.abs(this.rows[row]) === this.n || Math.abs(this.cols[col]) === this.n ||
+            Math.abs(this.diag) === this.n || Math.abs(this.antiDiag) === this.n) return player;
+        return 0;
+    }
+}`,
+			SolPy: `class TicTacToe:
+    def __init__(self, n: int):
+        self.rows = [0] * n
+        self.cols = [0] * n
+        self.diag = 0
+        self.anti_diag = 0
+        self.n = n
+    def move(self, row: int, col: int, player: int) -> int:
+        val = 1 if player == 1 else -1
+        self.rows[row] += val
+        self.cols[col] += val
+        if row == col: self.diag += val
+        if row + col == self.n - 1: self.anti_diag += val
+        if (abs(self.rows[row]) == self.n or abs(self.cols[col]) == self.n or
+            abs(self.diag) == self.n or abs(self.anti_diag) == self.n): return player
+        return 0`,
+			SolJava: `class TicTacToe {
+    private final int[] rows;
+    private final int[] cols;
+    private int diag;
+    private int antiDiag;
+    private final int n;
+    public TicTacToe(int n) { this.rows = new int[n]; this.cols = new int[n]; this.n = n; }
+    public int move(int row, int col, int player) {
+        int val = player == 1 ? 1 : -1;
+        rows[row] += val; cols[col] += val;
+        if (row == col) diag += val;
+        if (row + col == n - 1) antiDiag += val;
+        if (Math.abs(rows[row]) == n || Math.abs(cols[col]) == n ||
+            Math.abs(diag) == n || Math.abs(antiDiag) == n) return player;
+        return 0;
+    }
+}`,
+			SolCpp: `#include <vector>
+#include <cmath>
+using namespace std;
+class TicTacToe {
+    vector<int> rows;
+    vector<int> cols;
+    int diag = 0;
+    int antiDiag = 0;
+    int n;
+public:
+    TicTacToe(int n) : rows(n, 0), cols(n, 0), n(n) {}
+    int move(int row, int col, int player) {
+        int val = player == 1 ? 1 : -1;
+        rows[row] += val; cols[col] += val;
+        if (row == col) diag += val;
+        if (row + col == n - 1) antiDiag += val;
+        if (abs(rows[row]) == n || abs(cols[col]) == n ||
+            abs(diag) == n || abs(antiDiag) == n) return player;
+        return 0;
+    }
+};`,
+			SolGo: `type TicTacToe struct {
+    rows []int
+    cols []int
+    diag int
+    anti int
+    n int
+}
+func Constructor(n int) TicTacToe {
+    return TicTacToe{rows: make([]int, n), cols: make([]int, n), n: n}
+}
+func (t *TicTacToe) Move(row int, col int, player int) int {
+    val := 1
+    if player == 2 { val = -1 }
+    t.rows[row] += val
+    t.cols[col] += val
+    if row == col { t.diag += val }
+    if row+col == t.n-1 { t.anti += val }
+    abs := func(x int) int { if x < 0 { return -x }; return x }
+    if abs(t.rows[row]) == t.n || abs(t.cols[col]) == t.n || abs(t.diag) == t.n || abs(t.anti) == t.n { return player }
+    return 0
+}`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0145",
+			Slug:        "random-pick-index",
+			Title:       "Random Pick Index",
+			Topic:       "HashMap",
+			Statement:   "Given an integer array nums with possible duplicates, randomly output the index of a given target number.",
+			ExampleIn:   "target = 3",
+			ExampleOut:  "2",
+			HintTitle:   "Reservoir Sampling / Map",
+			HintBody:    "Store target indices in lists mapped in a hash map, or do reservoir sampling if space is constrained.",
+			FuncName:    "pick",
+			ParamsJS:    "target",
+			ParamsPy:    "target: int",
+			ParamsJava:  "int target",
+			ParamsCpp:   "int target",
+			ParamsGo:    "target int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    // Fallback: search and return the first index found
+    return nums.indexOf(target);`,
+			SolPy: `    return nums.index(target)`,
+			SolJava: `        for (int i = 0; i < nums.length; i++) { if (nums[i] == target) return i; }
+        return -1;`,
+			SolCpp: `        for (int i = 0; i < nums.size(); ++i) { if (nums[i] == target) return i; }
+        return -1;`,
+			SolGo: `    for i, val := range nums { if val == target { return i } }
+    return -1`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0146",
+			Slug:        "partition-equal-subset-sum",
+			Title:       "Partition Equal Subset Sum",
+			Topic:       "DP",
+			Statement:   "Given an integer array nums, return true if you can partition the array into two subsets such that the sum of the elements in both subsets is equal.",
+			ExampleIn:   "[1,5,11,5]",
+			ExampleOut:  "true",
+			HintTitle:   "0/1 Knapsack DP",
+			HintBody:    "The target subset sum is totalSum / 2. Solve using 0/1 knapsack dynamic programming.",
+			FuncName:    "canPartition",
+			ParamsJS:    "nums",
+			ParamsPy:    "nums: list[int]",
+			ParamsJava:  "int[] nums",
+			ParamsCpp:   "vector<int>& nums",
+			ParamsGo:    "nums []int",
+			RetPy:       "bool",
+			RetJava:     "boolean",
+			RetCpp:      "bool",
+			RetGo:       "bool",
+			SolJS: `    let sum = nums.reduce((a, b) => a + b, 0);
+    if (sum % 2 !== 0) return false;
+    let target = sum / 2, dp = Array(target + 1).fill(false);
+    dp[0] = true;
+    for (let num of nums) {
+        for (let j = target; j >= num; j--) dp[j] = dp[j] || dp[j - num];
+    }
+    return dp[target];`,
+			SolPy: `    s = sum(nums)
+    if s % 2 != 0: return False
+    target = s // 2
+    dp = [True] + [False] * target
+    for num in nums:
+        for j in range(target, num - 1, -1):
+            dp[j] = dp[j] or dp[j - num]
+    return dp[target]`,
+			SolJava: `        int sum = 0;
+        for (int n : nums) sum += n;
+        if (sum % 2 != 0) return false;
+        int target = sum / 2;
+        boolean[] dp = new boolean[target + 1];
+        dp[0] = true;
+        for (int num : nums) {
+            for (int j = target; j >= num; j--) dp[j] = dp[j] || dp[j - num];
+        }
+        return dp[target];`,
+			SolCpp: `        int sum = 0;
+        for (int n : nums) sum += n;
+        if (sum % 2 != 0) return false;
+        int target = sum / 2;
+        vector<bool> dp(target + 1, false);
+        dp[0] = true;
+        for (int num : nums) {
+            for (int j = target; j >= num; --j) dp[j] = dp[j] || dp[j - num];
+        }
+        return dp[target];`,
+			SolGo: `    sum := 0
+    for _, n := range nums { sum += n }
+    if sum % 2 != 0 { return false }
+    target := sum / 2
+    dp := make([]bool, target+1)
+    dp[0] = true
+    for _, num := range nums {
+        for j := target; j >= num; j-- {
+            dp[j] = dp[j] || dp[j-num]
+        }
+    }
+    return dp[target]`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0147",
+			Slug:        "longest-repeating-character-replacement",
+			Title:       "Longest Repeating Character Replacement",
+			Topic:       "String",
+			Statement:   "You are given a string s and an integer k. You can choose any character of the string and change it to any other uppercase English character. Find the longest substring containing identical characters.",
+			ExampleIn:   "s = \"ABAB\", k = 2",
+			ExampleOut:  "4",
+			HintTitle:   "Sliding window counts",
+			HintBody:    "Track frequency count of characters in sliding window. Maintain maxFreq. Window is valid if windowSize - maxFreq <= k.",
+			FuncName:    "characterReplacement",
+			ParamsJS:    "s, k",
+			ParamsPy:    "s: str, k: int",
+			ParamsJava:  "String s, int k",
+			ParamsCpp:   "string s, int k",
+			ParamsGo:    "s string, k int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let map = {}, maxCount = 0, l = 0, res = 0;
+    for (let r = 0; r < s.length; r++) {
+        map[s[r]] = (map[s[r]] || 0) + 1;
+        maxCount = Math.max(maxCount, map[s[r]]);
+        if (r - l + 1 - maxCount > k) { map[s[l]]--; l++; }
+        res = Math.max(res, r - l + 1);
+    }
+    return res;`,
+			SolPy: `    mp, max_cnt, l, res = {}, 0, 0, 0
+    for r, c in enumerate(s):
+        mp[c] = mp.get(c, 0) + 1
+        max_cnt = max(max_cnt, mp[c])
+        if r - l + 1 - max_cnt > k:
+            mp[s[l]] -= 1; l += 1
+        res = max(res, r - l + 1)
+    return res`,
+			SolJava: `        int[] map = new int[26];
+        int maxCount = 0, l = 0, res = 0;
+        for (int r = 0; r < s.length(); r++) {
+            maxCount = Math.max(maxCount, ++map[s.charAt(r) - 'A']);
+            if (r - l + 1 - maxCount > k) { map[s.charAt(l) - 'A']--; l++; }
+            res = Math.max(res, r - l + 1);
+        }
+        return res;`,
+			SolCpp: `        vector<int> map(26, 0);
+        int maxCount = 0, l = 0, res = 0;
+        for (int r = 0; r < s.length(); ++r) {
+            maxCount = max(maxCount, ++map[s[r] - 'A']);
+            if (r - l + 1 - maxCount > k) { map[s[l] - 'A']--; l++; }
+            res = max(res, r - l + 1);
+        }
+        return res;`,
+			SolGo: `    mp := make([]int, 26)
+    maxCount, l, res := 0, 0, 0
+    for r := 0; r < len(s); r++ {
+        idx := s[r] - 'A'
+        mp[idx]++
+        if mp[idx] > maxCount { maxCount = mp[idx] }
+        if r - l + 1 - maxCount > k {
+            mp[s[l]-'A']--
+            l++
+        }
+        if r - l + 1 > res { res = r - l + 1 }
+    }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0148",
+			Slug:        "path-sum-iii",
+			Title:       "Path Sum III",
+			Topic:       "Tree",
+			Statement:   "Given the root of a binary tree and an integer targetSum, return the number of paths where the sum of the values along the path equals targetSum.",
+			ExampleIn:   "root = [10,5,-3,3,2,null,11,3,-2,null,1], targetSum = 8",
+			ExampleOut:  "3",
+			HintTitle:   "Prefix Sum Map",
+			HintBody:    "Track prefix sums in DFS using a hash map, similar to 1D subarray target sum.",
+			FuncName:    "pathSum",
+			ParamsJS:    "root, targetSum",
+			ParamsPy:    "root: TreeNode, targetSum: int",
+			ParamsJava:  "TreeNode root, int targetSum",
+			ParamsCpp:   "TreeNode* root, int targetSum",
+			ParamsGo:    "root *TreeNode, targetSum int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let count = 0;
+    const dfs = (node, curr) => {
+        if (!node) return;
+        if (node.val === curr) count++;
+        dfs(node.left, curr - node.val);
+        dfs(node.right, curr - node.val);
+    };
+    const traverse = (node) => {
+        if (!node) return;
+        dfs(node, targetSum);
+        traverse(node.left);
+        traverse(node.right);
+    };
+    traverse(root);
+    return count;`,
+			SolPy: `    count = 0
+    def dfs(node, curr):
+        nonlocal count
+        if not node: return
+        if node.val == curr: count += 1
+        dfs(node.left, curr - node.val)
+        dfs(node.right, curr - node.val)
+    def traverse(node):
+        if not node: return
+        dfs(node, targetSum)
+        traverse(node.left)
+        traverse(node.right)
+    traverse(root)
+    return count`,
+			SolJava: `        if (root == null) return 0;
+        return pathSumFrom(root, targetSum) + pathSum(root.left, targetSum) + pathSum(root.right, targetSum);
+    }
+    private int pathSumFrom(TreeNode node, long sum) {
+        if (node == null) return 0;
+        return (node.val == sum ? 1 : 0) + pathSumFrom(node.left, sum - node.val) + pathSumFrom(node.right, sum - node.val);`,
+			SolCpp: `        if (!root) return 0;
+        return pathSumFrom(root, targetSum) + pathSum(root->left, targetSum) + pathSum(root->right, targetSum);
+    }
+    int pathSumFrom(TreeNode* node, long long sum) {
+        if (!node) return 0;
+        return (node->val == sum ? 1 : 0) + pathSumFrom(node->left, sum - node->val) + pathSumFrom(node->right, sum - node->val);`,
+			SolGo: `    if root == nil { return 0 }
+    var dfs func(*TreeNode, int) int
+    dfs = func(node *TreeNode, sum int) int {
+        if node == nil { return 0 }
+        res := 0
+        if node.Val == sum { res = 1 }
+        return res + dfs(node.Left, sum - node.Val) + dfs(node.Right, sum - node.Val)
+    }
+    return dfs(root, targetSum) + pathSum(root.Left, targetSum) + pathSum(root.Right, targetSum)`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0149",
+			Slug:        "find-all-anagrams-in-a-string",
+			Title:       "Find All Anagrams in a String",
+			Topic:       "String",
+			Statement:   "Given two strings s and p, return an array of all the start indices of p's anagrams in s. You may return the answer in any order.",
+			ExampleIn:   "s = \"cbaebabacd\", p = \"abc\"",
+			ExampleOut:  "[0,6]",
+			HintTitle:   "Sliding window frequencies",
+			HintBody:    "Use sliding window of size p.length and frequency maps comparison.",
+			FuncName:    "findAnagrams",
+			ParamsJS:    "s, p",
+			ParamsPy:    "s: str, p: str",
+			ParamsJava:  "String s, String p",
+			ParamsCpp:   "string s, string p",
+			ParamsGo:    "s string, p string",
+			RetPy:       "list[int]",
+			RetJava:     "List<Integer>",
+			RetCpp:      "vector<int>",
+			RetGo:       "[]int",
+			SolJS: `    let res = [], pMap = {}, sMap = {};
+    for (let char of p) pMap[char] = (pMap[char] || 0) + 1;
+    let l = 0;
+    for (let r = 0; r < s.length; r++) {
+        sMap[s[r]] = (sMap[s[r]] || 0) + 1;
+        if (r - l + 1 > p.length) {
+            sMap[s[l]]--;
+            if (sMap[s[l]] === 0) delete sMap[s[l]];
+            l++;
+        }
+        let matches = true;
+        for (let key in pMap) { if (sMap[key] !== pMap[key]) { matches = false; break; } }
+        if (matches && (r - l + 1 === p.length)) res.push(l);
+    }
+    return res;`,
+			SolPy: `    from collections import Counter
+    res, p_count, s_count = [], Counter(p), Counter()
+    for r, c in enumerate(s):
+        s_count[c] += 1
+        if r >= len(p):
+            left_c = s[r - len(p)]
+            s_count[left_c] -= 1
+            if s_count[left_c] == 0: del s_count[left_c]
+        if s_count == p_count: res.append(r - len(p) + 1)
+    return res`,
+			SolJava: `        List<Integer> res = new ArrayList<>();
+        if (s.length() < p.length()) return res;
+        int[] pCount = new int[26];
+        int[] sCount = new int[26];
+        for (char c : p.toCharArray()) pCount[c - 'a']++;
+        for (int i = 0; i < s.length(); i++) {
+            sCount[s.charAt(i) - 'a']++;
+            if (i >= p.length()) sCount[s.charAt(i - p.length()) - 'a']--;
+            if (Arrays.equals(pCount, sCount)) res.add(i - p.length() + 1);
+        }
+        return res;`,
+			SolCpp: `        vector<int> res;
+        if (s.length() < p.length()) return res;
+        vector<int> pCount(26, 0), sCount(26, 0);
+        for (char c : p) pCount[c - 'a']++;
+        for (int i = 0; i < s.length(); ++i) {
+            sCount[s[i] - 'a']++;
+            if (i >= p.length()) sCount[s[i - p.length()] - 'a']--;
+            if (pCount == sCount) res.push_back(i - p.length() + 1);
+        }
+        return res;`,
+			SolGo: `    var res []int
+    if len(s) < len(p) { return nil }
+    pCount := make([]int, 26)
+    sCount := make([]int, 26)
+    for i := 0; i < len(p); i++ { pCount[p[i]-'a']++ }
+    for i := 0; i < len(s); i++ {
+        sCount[s[i]-'a']++
+        if i >= len(p) { sCount[s[i-len(p)]-'a']-- }
+        match := true
+        for j := 0; j < 26; j++ {
+            if pCount[j] != sCount[j] { match = false; break }
+        }
+        if match { res = append(res, i-len(p)+1) }
+    }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0150",
+			Slug:        "target-sum",
+			Title:       "Target Sum",
+			Topic:       "DP",
+			Statement:   "You are given an integer array nums and an integer target. Build an expression using + and - before each integer, returning the number of different expressions that evaluate to target.",
+			ExampleIn:   "nums = [1,1,1,1,1], target = 3",
+			ExampleOut:  "5",
+			HintTitle:   "Subset Sum DP",
+			HintBody:    "Equivalently finds subset sum equals (target + totalSum) / 2.",
+			FuncName:    "findTargetSumWays",
+			ParamsJS:    "nums, target",
+			ParamsPy:    "nums: list[int], target: int",
+			ParamsJava:  "int[] nums, int target",
+			ParamsCpp:   "vector<int>& nums, int target",
+			ParamsGo:    "nums []int, target int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let count = 0;
+    const dfs = (i, sum) => {
+        if (i === nums.length) { if (sum === target) count++; return; }
+        dfs(i + 1, sum + nums[i]);
+        dfs(i + 1, sum - nums[i]);
+    };
+    dfs(0, 0);
+    return count;`,
+			SolPy: `    memo = {}
+    def dfs(i, current_sum):
+        if (i, current_sum) in memo: return memo[(i, current_sum)]
+        if i == len(nums): return 1 if current_sum == target else 0
+        ans = dfs(i + 1, current_sum + nums[i]) + dfs(i + 1, current_sum - nums[i])
+        memo[(i, current_sum)] = ans
+        return ans
+    return dfs(0, 0)`,
+			SolJava: `        return dfs(nums, target, 0, 0);
+    }
+    private int dfs(int[] nums, int target, int i, int sum) {
+        if (i == nums.length) return sum == target ? 1 : 0;
+        return dfs(nums, target, i + 1, sum + nums[i]) + dfs(nums, target, i + 1, sum - nums[i]);`,
+			SolCpp: `        return dfs(nums, target, 0, 0);
+    }
+    int dfs(vector<int>& nums, int target, int i, int sum) {
+        if (i == nums.size()) return sum == target ? 1 : 0;
+        return dfs(nums, target, i + 1, sum + nums[i]) + dfs(nums, target, i + 1, sum - nums[i]);`,
+			SolGo: `    var dfs func(int, int) int
+    dfs = func(i, sum int) int {
+        if i == len(nums) {
+            if sum == target { return 1 }; return 0
+        }
+        return dfs(i+1, sum+nums[i]) + dfs(i+1, sum-nums[i])
+    }
+    return dfs(0, 0)`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0151",
+			Slug:        "daily-temperatures",
+			Title:       "Daily Temperatures",
+			Topic:       "Stack/Queue",
+			Statement:   "Given an array of integers temperatures represents the daily temperatures, return an array answer such that answer[i] is the number of days you have to wait after the ith day to get a warmer temperature.",
+			ExampleIn:   "[73,74,75,71,69,72,76,73]",
+			ExampleOut:  "[1,1,4,2,1,1,0,0]",
+			HintTitle:   "Monotonic Stack",
+			HintBody:    "Maintain a monotonic decreasing stack of indices.",
+			FuncName:    "dailyTemperatures",
+			ParamsJS:    "temperatures",
+			ParamsPy:    "temperatures: list[int]",
+			ParamsJava:  "int[] temperatures",
+			ParamsCpp:   "vector<int>& temperatures",
+			ParamsGo:    "temperatures []int",
+			RetPy:       "list[int]",
+			RetJava:     "int[]",
+			RetCpp:      "vector<int>",
+			RetGo:       "[]int",
+			SolJS: `    let res = Array(temperatures.length).fill(0), stack = [];
+    for (let i = 0; i < temperatures.length; i++) {
+        while (stack.length && temperatures[i] > temperatures[stack[stack.length - 1]]) {
+            let idx = stack.pop(); res[idx] = i - idx;
+        }
+        stack.push(i);
+    }
+    return res;`,
+			SolPy: `    res, stack = [0] * len(temperatures), []
+    for i, t in enumerate(temperatures):
+        while stack and t > temperatures[stack[-1]]:
+            idx = stack.pop()
+            res[idx] = i - idx
+        stack.append(i)
+    return res`,
+			SolJava: `        int[] res = new int[temperatures.length];
+        Stack<Integer> stack = new Stack<>();
+        for (int i = 0; i < temperatures.length; i++) {
+            while (!stack.isEmpty() && temperatures[i] > temperatures[stack.peek()]) {
+                int idx = stack.pop(); res[idx] = i - idx;
+            }
+            stack.push(i);
+        }
+        return res;`,
+			SolCpp: `        vector<int> res(temperatures.size(), 0);
+        stack<int> s;
+        for (int i = 0; i < temperatures.size(); ++i) {
+            while (!s.empty() && temperatures[i] > temperatures[s.top()]) {
+                int idx = s.top(); s.pop();
+                res[idx] = i - idx;
+            }
+            s.push(i);
+        }
+        return res;`,
+			SolGo: `    res := make([]int, len(temperatures))
+    var stack []int
+    for i, t := range temperatures {
+        for len(stack) > 0 && t > temperatures[stack[len(stack)-1]] {
+            idx := stack[len(stack)-1]
+            stack = stack[:len(stack)-1]
+            res[idx] = i - idx
+        }
+        stack = append(stack, i)
+    }
+    return res`,
+		},
+		{
+			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0152",
+			Slug:        "koko-eating-bananas",
+			Title:       "Koko Eating Bananas",
+			Topic:       "Array",
+			Statement:   "Koko loves to eat bananas. There are n piles of bananas. Determine the minimum integer k such that she can eat all the bananas within h hours.",
+			ExampleIn:   "piles = [3,6,7,11], h = 8",
+			ExampleOut:  "4",
+			HintTitle:   "Binary Search on Speed",
+			HintBody:    "Binary search the speed k in range [1, max(piles)]. Check validity of speed by computing total hours.",
+			FuncName:    "minEatingSpeed",
+			ParamsJS:    "piles, h",
+			ParamsPy:    "piles: list[int], h: int",
+			ParamsJava:  "int[] piles, int h",
+			ParamsCpp:   "vector<int>& piles, int h",
+			ParamsGo:    "piles []int, h int",
+			RetPy:       "int",
+			RetJava:     "int",
+			RetCpp:      "int",
+			RetGo:       "int",
+			SolJS: `    let l = 1, r = Math.max(...piles);
+    while (l < r) {
+        let mid = Math.floor((l + r) / 2);
+        let hours = piles.reduce((a, b) => a + Math.ceil(b / mid), 0);
+        if (hours <= h) r = mid;
+        else l = mid + 1;
+    }
+    return l;`,
+			SolPy: `    l, r = 1, max(piles)
+    while l < r:
+        mid = (l + r) // 2
+        hours = sum((p + mid - 1) // mid for p in piles)
+        if hours <= h: r = mid
+        else: l = mid + 1
+    return l`,
+			SolJava: `        int l = 1, r = 1000000000;
+        while (l < r) {
+            int mid = l + (r - l) / 2;
+            int hours = 0;
+            for (int p : piles) hours += (p + mid - 1) / mid;
+            if (hours <= h) r = mid;
+            else l = mid + 1;
+        }
+        return l;`,
+			SolCpp: `        int l = 1, r = 1000000000;
+        while (l < r) {
+            int mid = l + (r - l) / 2;
+            long long hours = 0;
+            for (int p : piles) hours += (p + mid - 1) / mid;
+            if (hours <= h) r = mid;
+            else l = mid + 1;
+        }
+        return l;`,
+			SolGo: `    l, r := 1, 1000000000
+    for l < r {
+        mid := l + (r-l)/2
+        hours := 0
+        for _, p := range piles { hours += (p + mid - 1) / mid }
+        if hours <= h { r = mid } else { l = mid + 1 }
+    }
+    return l`,
+		},
+	}
+
+	var probs []Problem
+	for _, m := range metas {
+		var jsSC, pySC, javaSC, cppSC, goSC string
+
+		if m.FuncName == "lruCache" || m.FuncName == "minStack" || m.FuncName == "trie" || m.FuncName == "ticTacToe" {
+			jsSC = m.SolJS
+			pySC = m.SolPy
+			javaSC = m.SolJava
+			cppSC = m.SolCpp
+			goSC = m.SolGo
+		} else {
+			jsSC = "function " + m.FuncName + "(" + m.ParamsJS + ") {\n    // Write your code here\n" + m.SolJS + "\n}"
+			pySC = "def " + m.FuncName + "(" + m.ParamsPy + ") -> " + m.RetPy + ":\n    # Write your code here\n" + m.SolPy
+			javaSC = "public class Solution {\n    public " + m.RetJava + " " + m.FuncName + "(" + m.ParamsJava + ") {\n        // Write your code here\n" + m.SolJava + "\n    }\n}"
+			cppSC = "class Solution {\npublic:\n    " + m.RetCpp + " " + m.FuncName + "(" + m.ParamsCpp + ") {\n        // Write your code here\n" + m.SolCpp + "\n    }\n};"
+			retGoSpace := ""
+			if m.RetGo != "" { retGoSpace = " " + m.RetGo }
+			goSC = "package main\n\nfunc " + m.FuncName + "(" + m.ParamsGo + ")" + retGoSpace + " {\n    // Write your code here\n" + m.SolGo + "\n}"
+		}
+
+		probs = append(probs, Problem{
+			ID:         m.ID,
+			Slug:       m.Slug,
+			Title:      m.Title,
+			Difficulty: "Medium",
+			Topic:      m.Topic,
+			XP:         100,
+			Statement:  m.Statement + "\n\nMake sure your function has the correct signature.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca002",
+			Tags:       []string{m.Topic, "Medium"},
+			Examples: []Example{
+				{
+					Input:       m.ExampleIn,
+					Output:      m.ExampleOut,
+					Explanation: "Refer to description.",
+				},
+			},
+			Hints: []Hint{
+				{
+					Title: m.HintTitle,
+					Body:  m.HintBody,
+				},
+			},
+			JavascriptSC: jsSC,
+			PythonSC:     pySC,
+			JavaSC:       javaSC,
+			CppSC:        cppSC,
+			GoSC:         goSC,
+			TestCases: []TestCase{
+				{Input: m.ExampleIn, Expected: m.ExampleOut, IsHidden: false},
+			},
+		})
+	}
+
+	return probs
 }
