@@ -47,18 +47,35 @@ The PostgreSQL database runs inside the Docker container (`dashbord_backend-post
 
 ---
 
-## 4. Database Verification
+## 4. Database Verification & Commands
 
-To check if the database exists and view all registered users:
+To check if the database exists, view tables, and query data, use the following commands.
 
-### View Users (without password)
+### Enter Interactive DB Shell
+To open the interactive `psql` shell where you can type SQL commands:
+```bash
+docker exec -it dashbord_backend-postgres-1 psql -U skillofide -d skillofide
+```
+
+Inside the shell, you can run:
+- `\dt` to list all tables.
+- `\d table_name` to view the schema of a specific table.
+
+### View All Users
 ```bash
 docker exec -it dashbord_backend-postgres-1 psql -U skillofide -d skillofide -c "SELECT id, email, name, role FROM users;"
 ```
 
-### View Users (with password)
+### View User Course Assignments
+To check which user has access to which courses/programs:
 ```bash
-docker exec -it dashbord_backend-postgres-1 psql -U skillofide -d skillofide -c "SELECT id, email, name, password, role FROM users;"
+docker exec -it dashbord_backend-postgres-1 psql -U skillofide -d skillofide -c "SELECT * FROM user_courses;"
+```
+
+### View User Profiles
+To check the profile data (the data for the Profile page) for users:
+```bash
+docker exec -it dashbord_backend-postgres-1 psql -U skillofide -d skillofide -c "SELECT * FROM user_profiles;"
 ```
 
 ---

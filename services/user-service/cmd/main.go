@@ -49,7 +49,12 @@ func main() {
 
 	// Ensure user_profiles table
 	if err := repo.EnsureProfileTable(ctx); err != nil {
-		log.Fatal("ensure user_profiles table failed", zap.Error(err))
+		log.Fatal("failed to ensure user_profiles table", zap.Error(err))
+	}
+
+	// Ensure user_courses table
+	if err := repo.EnsureUserCoursesTable(ctx); err != nil {
+		log.Fatal("failed to ensure user_courses table", zap.Error(err))
 	}
 	log.Info("user_profiles table verified successfully")
 

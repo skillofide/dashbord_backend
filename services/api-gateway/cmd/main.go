@@ -74,6 +74,7 @@ func main() {
 	clients := &generated.Clients{
 		Problems: &resolvers.ProblemClients{
 			ProblemSvc: problemv1.NewProblemServiceClient(probConn),
+			UserSvc:    userSvcClient,
 			Log:        log,
 		},
 		Submissions: &resolvers.SubmissionClients{

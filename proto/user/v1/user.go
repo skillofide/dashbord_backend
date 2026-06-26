@@ -34,6 +34,15 @@ type CreateOrUpdateUserResponse struct {
 	Message string `json:"message"`
 }
 
+type CheckUserCourseAccessRequest struct {
+	UserID   string `json:"user_id"`
+	CourseID string `json:"course_id"`
+}
+
+type CheckUserCourseAccessResponse struct {
+	HasAccess bool `json:"has_access"`
+}
+
 // ─── Profile Message Types ────────────────────────────────────────────────────
 
 // UserProfile holds all profile fields mirroring the frontend ProfilePage.
@@ -106,6 +115,7 @@ type UserServiceServer interface {
 	CreateOrUpdateUser(context.Context, *CreateOrUpdateUserRequest) (*CreateOrUpdateUserResponse, error)
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error)
 	UpsertProfile(context.Context, *UpsertProfileRequest) (*UpsertProfileResponse, error)
+	CheckUserCourseAccess(context.Context, *CheckUserCourseAccessRequest) (*CheckUserCourseAccessResponse, error)
 }
 
 type UnimplementedUserServiceServer struct{}
@@ -126,6 +136,10 @@ func (UnimplementedUserServiceServer) UpsertProfile(context.Context, *UpsertProf
 	return nil, status.Errorf(codes.Unimplemented, "method UpsertProfile not implemented")
 }
 
+func (UnimplementedUserServiceServer) CheckUserCourseAccess(context.Context, *CheckUserCourseAccessRequest) (*CheckUserCourseAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckUserCourseAccess not implemented")
+}
+
 // ─── Client Interface & Implementation ───────────────────────────────────────
 
 type UserServiceClient interface {
@@ -133,6 +147,7 @@ type UserServiceClient interface {
 	CreateOrUpdateUser(ctx context.Context, in *CreateOrUpdateUserRequest, opts ...grpc.CallOption) (*CreateOrUpdateUserResponse, error)
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error)
 	UpsertProfile(ctx context.Context, in *UpsertProfileRequest, opts ...grpc.CallOption) (*UpsertProfileResponse, error)
+	CheckUserCourseAccess(ctx context.Context, in *CheckUserCourseAccessRequest, opts ...grpc.CallOption) (*CheckUserCourseAccessResponse, error)
 }
 
 type userServiceClient struct{ cc grpc.ClientConnInterface }
@@ -173,6 +188,14 @@ func (c *userServiceClient) UpsertProfile(ctx context.Context, in *UpsertProfile
 	return out, nil
 }
 
+func (c *userServiceClient) CheckUserCourseAccess(ctx context.Context, in *CheckUserCourseAccessRequest, opts ...grpc.CallOption) (*CheckUserCourseAccessResponse, error) {
+	out := new(CheckUserCourseAccessResponse)
+	if err := c.cc.Invoke(ctx, "/user.v1.UserService/CheckUserCourseAccess", in, out, opts...); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ─── Service Registration & Descriptor ───────────────────────────────────────
 
 func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
@@ -187,6 +210,7 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{MethodName: "CreateOrUpdateUser", Handler: _UserService_CreateOrUpdateUser_Handler},
 		{MethodName: "GetProfile", Handler: _UserService_GetProfile_Handler},
 		{MethodName: "UpsertProfile", Handler: _UserService_UpsertProfile_Handler},
+		{MethodName: "CheckUserCourseAccess", Handler: _UserService_CheckUserCourseAccess_Handler},
 	},
 	Streams: []grpc.StreamDesc{},
 }
@@ -247,3 +271,16 @@ func _UserService_UpsertProfile_Handler(srv interface{}, ctx context.Context, de
 		})
 }
 
+func _UserService_CheckUserCourseAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckUserCourseAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckUserCourseAccess(ctx, in)
+	}
+	return interceptor(ctx, in, &grpc.UnaryServerInfo{Server: srv, FullMethod: "/user.v1.UserService/CheckUserCourseAccess"},
+		func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.(UserServiceServer).CheckUserCourseAccess(ctx, req.(*CheckUserCourseAccessRequest))
+		})
+}

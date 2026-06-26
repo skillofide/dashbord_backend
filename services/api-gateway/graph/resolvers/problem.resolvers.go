@@ -11,11 +11,13 @@ import (
 
 	"github.com/skillofide/api-gateway/middleware"
 	problemv1 "github.com/skillofide/proto/problem/v1"
+	userv1 "github.com/skillofide/proto/user/v1"
 )
 
 // ProblemClients holds all gRPC clients needed for problem resolvers.
 type ProblemClients struct {
 	ProblemSvc problemv1.ProblemServiceClient
+	UserSvc    userv1.UserServiceClient
 	Log        *zap.Logger
 }
 
@@ -77,6 +79,19 @@ func (c *ProblemClients) GetProblem(p graphql.ResolveParams) (interface{}, error
 // ListPracticeSetsResolver handles the listPracticeSets GraphQL query.
 func (c *ProblemClients) ListPracticeSets(p graphql.ResolveParams) (interface{}, error) {
 	userID := middleware.UserIDFromContext(p.Context)
+	if userID == "" {
+		return []interface{}{}, nil
+	}
+
+	// Check if the user is enrolled in Course ID 1 (Fullstack)
+	hasAccessResp, err := c.UserSvc.CheckUserCourseAccess(p.Context, &userv1.CheckUserCourseAccessRequest{
+		UserID:   userID,
+		CourseID: "1",
+	})
+	if err != nil || !hasAccessResp.HasAccess {
+		// If they don't have access to Course 1, return an empty list of practice sets
+		return []interface{}{}, nil
+	}
 
 	resp, err := c.ProblemSvc.ListPracticeSets(p.Context, &problemv1.ListPracticeSetsRequest{
 		UserId: userID,

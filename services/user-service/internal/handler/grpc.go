@@ -99,3 +99,19 @@ func (h *UserHandler) UpsertProfile(ctx context.Context, req *userv1.UpsertProfi
 	}, nil
 }
 
+// CheckUserCourseAccess checks if a user has access to a given course.
+func (h *UserHandler) CheckUserCourseAccess(ctx context.Context, req *userv1.CheckUserCourseAccessRequest) (*userv1.CheckUserCourseAccessResponse, error) {
+	if req.UserID == "" || req.CourseID == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id and course_id are required")
+	}
+
+	hasAccess, err := h.repo.CheckUserCourseAccess(ctx, req.UserID, req.CourseID)
+	if err != nil {
+		h.logger.Error("check user course access failed", zap.String("user_id", req.UserID), zap.String("course_id", req.CourseID), zap.Error(err))
+		return nil, status.Errorf(codes.Internal, "check user course access failed: %v", err)
+	}
+
+	return &userv1.CheckUserCourseAccessResponse{
+		HasAccess: hasAccess,
+	}, nil
+}

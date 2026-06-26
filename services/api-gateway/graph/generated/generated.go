@@ -59,6 +59,18 @@ var problemType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var courseType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "Course",
+	Fields: graphql.Fields{
+		"id":        &graphql.Field{Type: graphql.ID},
+		"title":     &graphql.Field{Type: graphql.String},
+		"mentor":    &graphql.Field{Type: graphql.String},
+		"initial":   &graphql.Field{Type: graphql.String},
+		"color":     &graphql.Field{Type: graphql.String},
+		"classTime": &graphql.Field{Type: graphql.String},
+	},
+})
+
 var practiceSetType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "PracticeSet",
 	Fields: graphql.Fields{
@@ -305,6 +317,10 @@ func BuildSchema(clients *Clients) (graphql.Schema, error) {
 			"getProfile": {
 				Type:    userProfileType,
 				Resolve: clients.User.GetProfile,
+			},
+			"getMyCourses": {
+				Type:    graphql.NewList(courseType),
+				Resolve: clients.User.GetMyCourses,
 			},
 		},
 	})

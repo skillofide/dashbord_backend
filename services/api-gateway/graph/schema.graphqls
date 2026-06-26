@@ -195,6 +195,15 @@ type UpsertProfileResult {
 
 # ─── Queries ──────────────────────────────────────────────────────────────────
 
+type Course {
+  id: ID!
+  title: String!
+  mentor: String!
+  initial: String!
+  color: String!
+  classTime: String!
+}
+
 type Query {
   listProblems(setId: String, topic: String, difficulty: String, page: Int, pageSize: Int): ListProblemsResult!
   getProblem(id: String!): Problem
@@ -203,6 +212,7 @@ type Query {
   listSubmissions(problemId: String, page: Int, pageSize: Int): ListSubmissionsResult!
   getUserProgress: UserProgress!
   getProfile: UserProfile
+  getMyCourses: [Course!]!
 }
 
 # ─── Mutations ────────────────────────────────────────────────────────────────

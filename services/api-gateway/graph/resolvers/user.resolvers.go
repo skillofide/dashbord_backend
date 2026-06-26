@@ -183,3 +183,76 @@ func (c *UserClients) UpsertProfile(p graphql.ResolveParams) (interface{}, error
 		"message": resp.Message,
 	}, nil
 }
+
+var programModules = map[string][]map[string]interface{}{
+	"1": { // Fullstack
+		{
+			"id":        "mod-java",
+			"title":     "Java",
+			"mentor":    "Deeptanshu Kumar",
+			"initial":   "J",
+			"color":     "#6c5ce7",
+			"classTime": "09:00 – 11:30 AM",
+		},
+		{
+			"id":        "mod-fe",
+			"title":     "Front-End Technologies",
+			"mentor":    "Priya M. Khaisate",
+			"initial":   "F",
+			"color":     "#e05a36",
+			"classTime": "11:15 – 01:15 PM",
+		},
+		{
+			"id":        "mod-sql",
+			"title":     "Mastering SQL",
+			"mentor":    "Ayush B",
+			"initial":   "M",
+			"color":     "#10ac84",
+			"classTime": "11:30 – 12:45 PM",
+		},
+	},
+	"2": { // Digital Marketing
+		{
+			"id":        "mod-seo",
+			"title":     "SEO Fundamentals",
+			"mentor":    "Marketing Team",
+			"initial":   "S",
+			"color":     "#f39c12",
+			"classTime": "10:00 – 11:00 AM",
+		},
+		{
+			"id":        "mod-dm",
+			"title":     "Digital Marketing Strategy",
+			"mentor":    "Marketing Team",
+			"initial":   "D",
+			"color":     "#d35400",
+			"classTime": "01:00 – 02:30 PM",
+		},
+	},
+}
+
+// GetMyCourses handles the getMyCourses GraphQL query.
+func (c *UserClients) GetMyCourses(p graphql.ResolveParams) (interface{}, error) {
+	userID := middleware.UserIDFromContext(p.Context)
+	if userID == "" {
+		return nil, fmt.Errorf("authentication required")
+	}
+
+	var myCourses []map[string]interface{}
+
+	for programID, modules := range programModules {
+		resp, err := c.UserSvc.CheckUserCourseAccess(p.Context, &userv1.CheckUserCourseAccessRequest{
+			UserID:   userID,
+			CourseID: programID, // "1" for Fullstack, "2" for Digital Marketing
+		})
+		if err != nil {
+			c.Log.Error("check course access failed", zap.Error(err), zap.String("programId", programID))
+			continue
+		}
+		if resp.HasAccess {
+			myCourses = append(myCourses, modules...)
+		}
+	}
+
+	return myCourses, nil
+}

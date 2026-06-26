@@ -147,6 +147,23 @@ func (r *UserRepository) EnsureProfileTable(ctx context.Context) error {
 	return nil
 }
 
+// EnsureUserCoursesTable creates the user_courses table if missing.
+func (r *UserRepository) EnsureUserCoursesTable(ctx context.Context) error {
+	_, err := r.pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS user_courses (
+			id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			course_id  TEXT NOT NULL,
+			granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+			UNIQUE (user_id, course_id)
+		);
+	`)
+	if err != nil {
+		return fmt.Errorf("create user_courses table: %w", err)
+	}
+	return nil
+}
+
 // GetProfile retrieves the profile for the given user ID.
 // Returns nil, nil when no profile row exists yet.
 func (r *UserRepository) GetProfile(ctx context.Context, userID string) (*userv1.UserProfile, error) {
@@ -262,5 +279,20 @@ func (r *UserRepository) UpsertProfile(ctx context.Context, p *userv1.UserProfil
 		return fmt.Errorf("upsert profile: %w", err)
 	}
 	return nil
+}
+
+// CheckUserCourseAccess verifies if a user has access to a specific course.
+func (r *UserRepository) CheckUserCourseAccess(ctx context.Context, userID, courseID string) (bool, error) {
+	var exists bool
+	err := r.pool.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1 FROM user_courses
+			WHERE user_id = $1 AND course_id = $2
+		)
+	`, userID, courseID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("check course access: %w", err)
+	}
+	return exists, nil
 }
 

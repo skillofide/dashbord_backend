@@ -9,6 +9,16 @@ service UserService {
   rpc CreateOrUpdateUser(CreateOrUpdateUserRequest) returns (CreateOrUpdateUserResponse);
   rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
   rpc UpsertProfile(UpsertProfileRequest) returns (UpsertProfileResponse);
+  rpc CheckUserCourseAccess(CheckUserCourseAccessRequest) returns (CheckUserCourseAccessResponse);
+}
+
+message CheckUserCourseAccessRequest {
+  string user_id = 1;
+  string course_id = 2;
+}
+
+message CheckUserCourseAccessResponse {
+  bool has_access = 1;
 }
 
 message VerifyUserRequest {
