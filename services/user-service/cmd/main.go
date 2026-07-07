@@ -58,6 +58,12 @@ func main() {
 	}
 	log.Info("user_profiles table verified successfully")
 
+	// Ensure quiz tables and seed keys
+	if err := repo.EnsureQuizTables(ctx); err != nil {
+		log.Fatal("failed to ensure quiz tables", zap.Error(err))
+	}
+	log.Info("quiz tables verified and seeded successfully")
+
 
 	h := handler.New(repo, log)
 

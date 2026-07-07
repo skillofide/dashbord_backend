@@ -256,3 +256,87 @@ func (c *UserClients) GetMyCourses(p graphql.ResolveParams) (interface{}, error)
 
 	return myCourses, nil
 }
+
+// SubmitQuiz handles the submitQuiz GraphQL mutation.
+func (c *UserClients) SubmitQuiz(p graphql.ResolveParams) (interface{}, error) {
+	userID := middleware.UserIDFromContext(p.Context)
+	if userID == "" {
+		return nil, fmt.Errorf("authentication required")
+	}
+
+	moduleID, _ := p.Args["moduleId"].(string)
+	answersInput, ok := p.Args["answers"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid answers input")
+	}
+
+	answers := make([]*userv1.QuizAnswer, 0, len(answersInput))
+	for _, item := range answersInput {
+		mapping, ok := item.(map[string]interface{})
+		if !ok {
+			c.Log.Warn("SubmitQuiz: invalid answers mapping", zap.Any("item", item))
+			continue
+		}
+		
+		var qID int
+		switch v := mapping["questionId"].(type) {
+		case int:
+			qID = v
+		case float64:
+			qID = int(v)
+		default:
+			c.Log.Warn("SubmitQuiz: questionId invalid type", zap.Any("type", fmt.Sprintf("%T", mapping["questionId"])))
+		}
+		
+		ans, _ := mapping["answer"].(string)
+		answers = append(answers, &userv1.QuizAnswer{
+			QuestionID: qID,
+			Answer:     ans,
+		})
+	}
+	c.Log.Info("SubmitQuiz parsed answers", zap.Int("count", len(answers)), zap.Any("answers", answers))
+
+	resp, err := c.UserSvc.SubmitQuiz(p.Context, &userv1.SubmitQuizRequest{
+		UserID:   userID,
+		ModuleID: moduleID,
+		Answers:  answers,
+	})
+	if err != nil {
+		c.Log.Error("submit quiz resolver failed", zap.Error(err))
+		return nil, fmt.Errorf("failed to submit quiz: %v", err)
+	}
+
+	return map[string]interface{}{
+		"success":        resp.Success,
+		"score":          int(resp.Score),
+		"totalQuestions": int(resp.TotalQuestions),
+	}, nil
+}
+
+// GetQuizAttempts handles the getQuizAttempts GraphQL query.
+func (c *UserClients) GetQuizAttempts(p graphql.ResolveParams) (interface{}, error) {
+	userID := middleware.UserIDFromContext(p.Context)
+	if userID == "" {
+		return nil, fmt.Errorf("authentication required")
+	}
+
+	resp, err := c.UserSvc.GetQuizAttempts(p.Context, &userv1.GetQuizAttemptsRequest{
+		UserID: userID,
+	})
+	if err != nil {
+		c.Log.Error("get quiz attempts resolver failed", zap.Error(err))
+		return nil, fmt.Errorf("failed to get quiz attempts: %v", err)
+	}
+
+	attempts := make([]map[string]interface{}, 0, len(resp.Attempts))
+	for _, att := range resp.Attempts {
+		attempts = append(attempts, map[string]interface{}{
+			"moduleId":       att.ModuleID,
+			"score":          int(att.Score),
+			"totalQuestions": int(att.TotalQuestions),
+			"completedAt":    att.CompletedAt,
+		})
+	}
+
+	return attempts, nil
+}

@@ -257,6 +257,33 @@ var upsertProfileResultType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var quizAnswerInputType = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "QuizAnswerInput",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"questionId": &graphql.InputObjectFieldConfig{Type: graphql.NewNonNull(graphql.Int)},
+		"answer":     &graphql.InputObjectFieldConfig{Type: graphql.NewNonNull(graphql.String)},
+	},
+})
+
+var submitQuizResultType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "SubmitQuizResult",
+	Fields: graphql.Fields{
+		"success":        &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
+		"score":          &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"totalQuestions": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+	},
+})
+
+var quizAttemptType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "QuizAttempt",
+	Fields: graphql.Fields{
+		"moduleId":       &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"score":          &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"totalQuestions": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"completedAt":    &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+	},
+})
+
 // ─── Schema Builder ───────────────────────────────────────────────────────────
 
 // Clients bundles all service clients needed by the schema.
@@ -322,6 +349,10 @@ func BuildSchema(clients *Clients) (graphql.Schema, error) {
 				Type:    graphql.NewList(courseType),
 				Resolve: clients.User.GetMyCourses,
 			},
+			"getQuizAttempts": {
+				Type:    graphql.NewList(quizAttemptType),
+				Resolve: clients.User.GetQuizAttempts,
+			},
 		},
 	})
 
@@ -352,6 +383,14 @@ func BuildSchema(clients *Clients) (graphql.Schema, error) {
 					"profile": {Type: graphql.NewNonNull(userProfileInputType)},
 				},
 				Resolve: clients.User.UpsertProfile,
+			},
+			"submitQuiz": {
+				Type: submitQuizResultType,
+				Args: graphql.FieldConfigArgument{
+					"moduleId": {Type: graphql.NewNonNull(graphql.String)},
+					"answers":  {Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(quizAnswerInputType)))},
+				},
+				Resolve: clients.User.SubmitQuiz,
 			},
 		},
 	})

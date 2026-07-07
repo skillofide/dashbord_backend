@@ -10,6 +10,8 @@ service UserService {
   rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
   rpc UpsertProfile(UpsertProfileRequest) returns (UpsertProfileResponse);
   rpc CheckUserCourseAccess(CheckUserCourseAccessRequest) returns (CheckUserCourseAccessResponse);
+  rpc SubmitQuiz(SubmitQuizRequest) returns (SubmitQuizResponse);
+  rpc GetQuizAttempts(GetQuizAttemptsRequest) returns (GetQuizAttemptsResponse);
 }
 
 message CheckUserCourseAccessRequest {
@@ -107,4 +109,36 @@ message UserProfile {
 
   // PG Detail
   bool pg_has_certificate = 30;
+}
+
+message QuizAnswer {
+  int32 question_id = 1;
+  string answer = 2;
+}
+
+message SubmitQuizRequest {
+  string user_id = 1;
+  string module_id = 2;
+  repeated QuizAnswer answers = 3;
+}
+
+message SubmitQuizResponse {
+  bool success = 1;
+  int32 score = 2;
+  int32 total_questions = 3;
+}
+
+message GetQuizAttemptsRequest {
+  string user_id = 1;
+}
+
+message QuizAttempt {
+  string module_id = 1;
+  int32 score = 2;
+  int32 total_questions = 3;
+  string completed_at = 4;
+}
+
+message GetQuizAttemptsResponse {
+  repeated QuizAttempt attempts = 1;
 }

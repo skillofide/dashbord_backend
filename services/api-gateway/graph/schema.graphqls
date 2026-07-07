@@ -213,6 +213,25 @@ type Query {
   getUserProgress: UserProgress!
   getProfile: UserProfile
   getMyCourses: [Course!]!
+  getQuizAttempts: [QuizAttempt!]!
+}
+
+input QuizAnswerInput {
+  questionId: Int!
+  answer: String!
+}
+
+type SubmitQuizResult {
+  success: Boolean!
+  score: Int!
+  totalQuestions: Int!
+}
+
+type QuizAttempt {
+  moduleId: String!
+  score: Int!
+  totalQuestions: Int!
+  completedAt: String!
 }
 
 # ─── Mutations ────────────────────────────────────────────────────────────────
@@ -221,4 +240,5 @@ type Mutation {
   submitCode(problemId: String!, language: String!, code: String!): SubmitResult!
   runCode(problemId: String!, language: String!, code: String!): RunCodeResult!
   upsertProfile(profile: UserProfileInput!): UpsertProfileResult!
+  submitQuiz(moduleId: String!, answers: [QuizAnswerInput!]!): SubmitQuizResult!
 }

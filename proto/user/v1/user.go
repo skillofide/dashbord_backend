@@ -43,6 +43,38 @@ type CheckUserCourseAccessResponse struct {
 	HasAccess bool `json:"has_access"`
 }
 
+type QuizAnswer struct {
+	QuestionID int    `json:"question_id"`
+	Answer     string `json:"answer"`
+}
+
+type SubmitQuizRequest struct {
+	UserID   string        `json:"user_id"`
+	ModuleID string        `json:"module_id"`
+	Answers  []*QuizAnswer `json:"answers"`
+}
+
+type SubmitQuizResponse struct {
+	Success        bool `json:"success"`
+	Score          int  `json:"score"`
+	TotalQuestions int  `json:"total_questions"`
+}
+
+type GetQuizAttemptsRequest struct {
+	UserID string `json:"user_id"`
+}
+
+type QuizAttempt struct {
+	ModuleID       string `json:"module_id"`
+	Score          int    `json:"score"`
+	TotalQuestions int    `json:"total_questions"`
+	CompletedAt    string `json:"completed_at"`
+}
+
+type GetQuizAttemptsResponse struct {
+	Attempts []*QuizAttempt `json:"attempts"`
+}
+
 // ─── Profile Message Types ────────────────────────────────────────────────────
 
 // UserProfile holds all profile fields mirroring the frontend ProfilePage.
@@ -116,6 +148,8 @@ type UserServiceServer interface {
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error)
 	UpsertProfile(context.Context, *UpsertProfileRequest) (*UpsertProfileResponse, error)
 	CheckUserCourseAccess(context.Context, *CheckUserCourseAccessRequest) (*CheckUserCourseAccessResponse, error)
+	SubmitQuiz(context.Context, *SubmitQuizRequest) (*SubmitQuizResponse, error)
+	GetQuizAttempts(context.Context, *GetQuizAttemptsRequest) (*GetQuizAttemptsResponse, error)
 }
 
 type UnimplementedUserServiceServer struct{}
@@ -140,6 +174,14 @@ func (UnimplementedUserServiceServer) CheckUserCourseAccess(context.Context, *Ch
 	return nil, status.Errorf(codes.Unimplemented, "method CheckUserCourseAccess not implemented")
 }
 
+func (UnimplementedUserServiceServer) SubmitQuiz(context.Context, *SubmitQuizRequest) (*SubmitQuizResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitQuiz not implemented")
+}
+
+func (UnimplementedUserServiceServer) GetQuizAttempts(context.Context, *GetQuizAttemptsRequest) (*GetQuizAttemptsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetQuizAttempts not implemented")
+}
+
 // ─── Client Interface & Implementation ───────────────────────────────────────
 
 type UserServiceClient interface {
@@ -148,6 +190,8 @@ type UserServiceClient interface {
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error)
 	UpsertProfile(ctx context.Context, in *UpsertProfileRequest, opts ...grpc.CallOption) (*UpsertProfileResponse, error)
 	CheckUserCourseAccess(ctx context.Context, in *CheckUserCourseAccessRequest, opts ...grpc.CallOption) (*CheckUserCourseAccessResponse, error)
+	SubmitQuiz(ctx context.Context, in *SubmitQuizRequest, opts ...grpc.CallOption) (*SubmitQuizResponse, error)
+	GetQuizAttempts(ctx context.Context, in *GetQuizAttemptsRequest, opts ...grpc.CallOption) (*GetQuizAttemptsResponse, error)
 }
 
 type userServiceClient struct{ cc grpc.ClientConnInterface }
@@ -196,6 +240,22 @@ func (c *userServiceClient) CheckUserCourseAccess(ctx context.Context, in *Check
 	return out, nil
 }
 
+func (c *userServiceClient) SubmitQuiz(ctx context.Context, in *SubmitQuizRequest, opts ...grpc.CallOption) (*SubmitQuizResponse, error) {
+	out := new(SubmitQuizResponse)
+	if err := c.cc.Invoke(ctx, "/user.v1.UserService/SubmitQuiz", in, out, opts...); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetQuizAttempts(ctx context.Context, in *GetQuizAttemptsRequest, opts ...grpc.CallOption) (*GetQuizAttemptsResponse, error) {
+	out := new(GetQuizAttemptsResponse)
+	if err := c.cc.Invoke(ctx, "/user.v1.UserService/GetQuizAttempts", in, out, opts...); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ─── Service Registration & Descriptor ───────────────────────────────────────
 
 func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
@@ -211,6 +271,8 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{MethodName: "GetProfile", Handler: _UserService_GetProfile_Handler},
 		{MethodName: "UpsertProfile", Handler: _UserService_UpsertProfile_Handler},
 		{MethodName: "CheckUserCourseAccess", Handler: _UserService_CheckUserCourseAccess_Handler},
+		{MethodName: "SubmitQuiz", Handler: _UserService_SubmitQuiz_Handler},
+		{MethodName: "GetQuizAttempts", Handler: _UserService_GetQuizAttempts_Handler},
 	},
 	Streams: []grpc.StreamDesc{},
 }
@@ -282,5 +344,33 @@ func _UserService_CheckUserCourseAccess_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, &grpc.UnaryServerInfo{Server: srv, FullMethod: "/user.v1.UserService/CheckUserCourseAccess"},
 		func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.(UserServiceServer).CheckUserCourseAccess(ctx, req.(*CheckUserCourseAccessRequest))
+		})
+}
+
+func _UserService_SubmitQuiz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitQuizRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).SubmitQuiz(ctx, in)
+	}
+	return interceptor(ctx, in, &grpc.UnaryServerInfo{Server: srv, FullMethod: "/user.v1.UserService/SubmitQuiz"},
+		func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.(UserServiceServer).SubmitQuiz(ctx, req.(*SubmitQuizRequest))
+		})
+}
+
+func _UserService_GetQuizAttempts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetQuizAttemptsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetQuizAttempts(ctx, in)
+	}
+	return interceptor(ctx, in, &grpc.UnaryServerInfo{Server: srv, FullMethod: "/user.v1.UserService/GetQuizAttempts"},
+		func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.(UserServiceServer).GetQuizAttempts(ctx, req.(*GetQuizAttemptsRequest))
 		})
 }
