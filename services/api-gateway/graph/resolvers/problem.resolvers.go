@@ -83,13 +83,18 @@ func (c *ProblemClients) ListPracticeSets(p graphql.ResolveParams) (interface{},
 		return []interface{}{}, nil
 	}
 
-	// Check if the user is enrolled in Course ID 1 (Fullstack)
-	hasAccessResp, err := c.UserSvc.CheckUserCourseAccess(p.Context, &userv1.CheckUserCourseAccessRequest{
+	// Check if the user is enrolled in Course ID 1 (Fullstack) or 2 (SQL)
+	hasAccess1, _ := c.UserSvc.CheckUserCourseAccess(p.Context, &userv1.CheckUserCourseAccessRequest{
 		UserID:   userID,
 		CourseID: "1",
 	})
-	if err != nil || !hasAccessResp.HasAccess {
-		// If they don't have access to Course 1, return an empty list of practice sets
+	hasAccess2, _ := c.UserSvc.CheckUserCourseAccess(p.Context, &userv1.CheckUserCourseAccessRequest{
+		UserID:   userID,
+		CourseID: "2",
+	})
+	
+	if (hasAccess1 == nil || !hasAccess1.HasAccess) && (hasAccess2 == nil || !hasAccess2.HasAccess) {
+		// If they don't have access to either, return empty list
 		return []interface{}{}, nil
 	}
 
@@ -125,6 +130,8 @@ func mapSimpleIDToUUID(id string) string {
 		return "54574a34-9a68-4e65-ab9a-af05db4ca002" // Path to Proficiency (Intermediate)
 	case "3":
 		return "54574a34-9a68-4e65-ab9a-af05db4ca001" // Foundational Basics (Beginner)
+	case "4":
+		return "54574a34-9a68-4e65-ab9a-af05db4ca004" // SQL Mastery Challenge
 	default:
 		return id
 	}
@@ -138,6 +145,8 @@ func mapUUIDToSimpleID(uuid string) string {
 		return "2"
 	case "54574a34-9a68-4e65-ab9a-af05db4ca001":
 		return "3"
+	case "54574a34-9a68-4e65-ab9a-af05db4ca004":
+		return "4"
 	default:
 		return uuid
 	}
