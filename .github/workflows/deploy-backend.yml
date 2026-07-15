@@ -114,16 +114,15 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Package and Copy files to EC2
         run: |
           tar -czf migrations.tar.gz services/problem-service/migrations services/submission-service/migrations services/progress-service/migrations
-          scp docker-compose.yml docker-compose.prod.yml migrations.tar.gz ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app/
+          scp -o StrictHostKeyChecking=no docker-compose.yml docker-compose.prod.yml migrations.tar.gz ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app/
 
       - name: SSH and Deploy
         run: |
-          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "
             # Login to ECR on the EC2 host
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
             
