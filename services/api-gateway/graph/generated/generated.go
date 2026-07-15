@@ -284,6 +284,29 @@ var quizAttemptType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var jobType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "Job",
+	Fields: graphql.Fields{
+		"url":         &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"title":       &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"company":     &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"locations":   &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"description": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"salary":      &graphql.Field{Type: graphql.String},
+		"date":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"site":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+	},
+})
+
+var jobSearchResultType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "JobSearchResult",
+	Fields: graphql.Fields{
+		"jobs":  &graphql.Field{Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(jobType)))},
+		"total": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"pages": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+	},
+})
+
 // ─── Schema Builder ───────────────────────────────────────────────────────────
 
 // Clients bundles all service clients needed by the schema.
@@ -292,6 +315,7 @@ type Clients struct {
 	Submissions *resolvers.SubmissionClients
 	Progress    *resolvers.ProgressClients
 	User        *resolvers.UserClients
+	Jobs        *resolvers.JobClients
 }
 
 // BuildSchema constructs the full GraphQL schema wiring resolvers to types.
@@ -352,6 +376,15 @@ func BuildSchema(clients *Clients) (graphql.Schema, error) {
 			"getQuizAttempts": {
 				Type:    graphql.NewList(quizAttemptType),
 				Resolve: clients.User.GetQuizAttempts,
+			},
+			"searchJobs": {
+				Type: graphql.NewNonNull(jobSearchResultType),
+				Args: graphql.FieldConfigArgument{
+					"keywords": {Type: graphql.String},
+					"location": {Type: graphql.String},
+					"page":     {Type: graphql.Int},
+				},
+				Resolve: clients.Jobs.SearchJobs,
 			},
 		},
 	})
