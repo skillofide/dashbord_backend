@@ -1,13 +1,13 @@
 go 1.22
 
 use (
-	./proto
 	./pkg
+	./proto
 	./services/api-gateway
-	./services/problem-service
 	./services/execution-service
+	./services/notification-service
+	./services/problem-service
 	./services/progress-service
 	./services/submission-service
-	./services/notification-service
 	./services/user-service
 )

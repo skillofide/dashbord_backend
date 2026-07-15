@@ -12,6 +12,7 @@ import (
 	"time"
 
 	gqlhandler "github.com/graphql-go/handler"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -37,6 +38,19 @@ func main() {
 	cfg := loadConfig()
 	log := pkglog.New(cfg.logLevel)
 	defer log.Sync() //nolint:errcheck
+
+	// ── Admin DB Pool (shared DATABASE_URL with user-service) ─────────────────
+	var adminPool *pgxpool.Pool
+	if cfg.databaseURL != "" {
+		pool, err := pgxpool.New(context.Background(), cfg.databaseURL)
+		if err != nil {
+			log.Warn("admin pool init failed — admin endpoints disabled", zap.Error(err))
+		} else {
+			adminPool = pool
+			defer adminPool.Close()
+			log.Info("admin DB pool connected")
+		}
+	}
 
 	// ── User Service gRPC Connection ──────────────────────────────────────────
 	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
@@ -90,6 +104,7 @@ func main() {
 			UserSvc: userSvcClient,
 			Log:     log,
 		},
+		Jobs: resolvers.NewJobClients(),
 	}
 
 	schema, err := generated.BuildSchema(clients)
@@ -115,6 +130,13 @@ func main() {
 
 	// REST Profile endpoints
 	mux.HandleFunc("/api/profile", handleProfile(userSvcClient, log))
+
+	// Admin panel endpoints — require role=admin in JWT
+	if adminPool != nil {
+		adminHandler := &resolvers.AdminHandler{Pool: adminPool, Log: log}
+		mux.Handle("/api/admin/", adminHandler)
+		log.Info("admin REST endpoints registered at /api/admin/")
+	}
 
 	// WebSocket proxy to notification-service
 	if cfg.notificationServiceURL != "" {
@@ -190,6 +212,7 @@ type config struct {
 	jwtSecret              string
 	jwtPublicKey           string
 	allowedOrigins         string
+	databaseURL            string // for admin panel direct DB access
 	devMode                bool
 	logLevel               string
 }
@@ -206,6 +229,7 @@ func loadConfig() config {
 		jwtSecret:              env("JWT_SECRET", "dev-secret-change-in-production"),
 		jwtPublicKey:           env("JWT_PUBLIC_KEY", ""),
 		allowedOrigins:         env("ALLOWED_ORIGINS", "*"),
+		databaseURL:            env("DATABASE_URL", ""), // shared with user-service
 		devMode:                env("DEV_MODE", "true") == "true",
 		logLevel:               env("LOG_LEVEL", "info"),
 	}

@@ -204,6 +204,23 @@ type Course {
   classTime: String!
 }
 
+type Job {
+  url: String!
+  title: String!
+  company: String!
+  locations: String!
+  description: String!
+  salary: String
+  date: String!
+  site: String!
+}
+
+type JobSearchResult {
+  jobs: [Job!]!
+  total: Int!
+  pages: Int!
+}
+
 type Query {
   listProblems(setId: String, topic: String, difficulty: String, page: Int, pageSize: Int): ListProblemsResult!
   getProblem(id: String!): Problem
@@ -214,6 +231,7 @@ type Query {
   getProfile: UserProfile
   getMyCourses: [Course!]!
   getQuizAttempts: [QuizAttempt!]!
+  searchJobs(keywords: String, location: String, page: Int): JobSearchResult!
 }
 
 input QuizAnswerInput {

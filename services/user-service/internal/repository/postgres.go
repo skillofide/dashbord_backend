@@ -562,3 +562,180 @@ func (r *UserRepository) GetQuizAttempts(ctx context.Context, userID string) ([]
 	return attempts, nil
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin repository methods
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ImportUserRow holds a single row from the admin Excel import.
+type ImportUserRow struct {
+	Name      string
+	Email     string
+	Password  string
+	Role      string
+	CourseIDs []string
+}
+
+// ImportRowResult is the per-row outcome of a bulk import.
+type ImportRowResult struct {
+	Email   string
+	Success bool
+	Message string
+}
+
+// AdminUserRow is a user record returned to the admin panel.
+type AdminUserRow struct {
+	ID        string
+	Email     string
+	Name      string
+	Role      string
+	CourseIDs []string
+	CreatedAt string
+}
+
+// BulkUpsertUsers inserts or updates multiple users and grants their course access.
+func (r *UserRepository) BulkUpsertUsers(ctx context.Context, rows []ImportUserRow) []ImportRowResult {
+	results := make([]ImportRowResult, 0, len(rows))
+	for _, row := range rows {
+		if row.Email == "" || row.Name == "" || row.Password == "" {
+			results = append(results, ImportRowResult{
+				Email:   row.Email,
+				Success: false,
+				Message: "email, name and password are required",
+			})
+			continue
+		}
+		role := row.Role
+		if role == "" {
+			role = "student"
+		}
+
+		// Upsert user and return its UUID
+		var userID string
+		err := r.pool.QueryRow(ctx, `
+			INSERT INTO users (email, name, password, role)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (email)
+			DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password, role = EXCLUDED.role, updated_at = now()
+			RETURNING id::text
+		`, row.Email, row.Name, row.Password, role).Scan(&userID)
+		if err != nil {
+			results = append(results, ImportRowResult{
+				Email:   row.Email,
+				Success: false,
+				Message: fmt.Sprintf("upsert user: %v", err),
+			})
+			continue
+		}
+
+		// Grant course access for each listed course
+		for _, courseID := range row.CourseIDs {
+			if courseID == "" {
+				continue
+			}
+			_, _ = r.pool.Exec(ctx, `
+				INSERT INTO user_courses (user_id, course_id)
+				VALUES ($1::uuid, $2)
+				ON CONFLICT (user_id, course_id) DO NOTHING
+			`, userID, courseID)
+		}
+
+		results = append(results, ImportRowResult{
+			Email:   row.Email,
+			Success: true,
+			Message: "imported successfully",
+		})
+	}
+	return results
+}
+
+// ListAdminUsers returns a paginated list of all users with their assigned course IDs.
+func (r *UserRepository) ListAdminUsers(ctx context.Context, page, pageSize int) ([]AdminUserRow, int, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 200 {
+		pageSize = 50
+	}
+	offset := (page - 1) * pageSize
+
+	var total int
+	if err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count users: %w", err)
+	}
+
+	rows, err := r.pool.Query(ctx, `
+		SELECT u.id::text, u.email, u.name, u.role, u.created_at,
+		       COALESCE(array_agg(uc.course_id) FILTER (WHERE uc.course_id IS NOT NULL), '{}') AS course_ids
+		FROM users u
+		LEFT JOIN user_courses uc ON uc.user_id = u.id
+		GROUP BY u.id, u.email, u.name, u.role, u.created_at
+		ORDER BY u.created_at DESC
+		LIMIT $1 OFFSET $2
+	`, pageSize, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []AdminUserRow
+	for rows.Next() {
+		var u AdminUserRow
+		var createdAt time.Time
+		if err := rows.Scan(&u.ID, &u.Email, &u.Name, &u.Role, &createdAt, &u.CourseIDs); err != nil {
+			return nil, 0, fmt.Errorf("scan user row: %w", err)
+		}
+		u.CreatedAt = createdAt.Format(time.RFC3339)
+		users = append(users, u)
+	}
+	return users, total, nil
+}
+
+// UpdateUserRole changes the role of an existing user.
+func (r *UserRepository) UpdateUserRole(ctx context.Context, userID, role string) error {
+	tag, err := r.pool.Exec(ctx, `
+		UPDATE users SET role = $2, updated_at = now() WHERE id = $1::uuid
+	`, userID, role)
+	if err != nil {
+		return fmt.Errorf("update role: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("user not found")
+	}
+	return nil
+}
+
+// AdminGrantCourseAccess grants a user access to a course.
+func (r *UserRepository) AdminGrantCourseAccess(ctx context.Context, userID, courseID string) error {
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO user_courses (user_id, course_id)
+		VALUES ($1::uuid, $2)
+		ON CONFLICT (user_id, course_id) DO NOTHING
+	`, userID, courseID)
+	if err != nil {
+		return fmt.Errorf("grant course access: %w", err)
+	}
+	return nil
+}
+
+// AdminRevokeCourseAccess revokes a user's access to a course.
+func (r *UserRepository) AdminRevokeCourseAccess(ctx context.Context, userID, courseID string) error {
+	_, err := r.pool.Exec(ctx, `
+		DELETE FROM user_courses WHERE user_id = $1::uuid AND course_id = $2
+	`, userID, courseID)
+	if err != nil {
+		return fmt.Errorf("revoke course access: %w", err)
+	}
+	return nil
+}
+
+// DeleteUser permanently removes a user (cascades to user_courses, user_profiles, etc.).
+func (r *UserRepository) DeleteUser(ctx context.Context, userID string) error {
+	tag, err := r.pool.Exec(ctx, `DELETE FROM users WHERE id = $1::uuid`, userID)
+	if err != nil {
+		return fmt.Errorf("delete user: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("user not found")
+	}
+	return nil
+}

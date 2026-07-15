@@ -92,6 +92,13 @@ func main() {
 			LevelColor: "#9b5cf6",
 			BgColor:    "#1e1b4b",
 		},
+		{
+			ID:         "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Title:      "SQL Mastery Challenge",
+			Level:      "Intermediate",
+			LevelColor: "#f59e0b",
+			BgColor:    "#1e1b4b",
+		},
 	}
 
 	for _, s := range sets {
@@ -114,6 +121,39 @@ func main() {
 
 	// 2. Define problems
 	problems := []Problem{
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000001",
+			Slug:       "duplicate-emails",
+			Title:      "Duplicate Emails",
+			Difficulty: "Easy",
+			Topic:      "Databases",
+			XP:         20,
+			Statement:  "Write an SQL query to report all the duplicate emails. Return the result table in any order.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"Database", "SQL"},
+			Examples: []Example{
+				{
+					Input:       "Person table:\n+----+---------+\n| id | email   |\n+----+---------+\n| 1  | a@b.com |\n| 2  | c@d.com |\n| 3  | a@b.com |\n+----+---------+",
+					Output:      "+---------+\n| Email   |\n+---------+\n| a@b.com |\n+---------+",
+					Explanation: "a@b.com is repeated two times.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "Use GROUP BY and HAVING count > 1."},
+			},
+			JavascriptSC: "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
+			PythonSC:     "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
+			JavaSC:       "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
+			CppSC:        "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
+			GoSC:         "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"table\":\"Person\",\"rows\":[{\"id\":1,\"email\":\"a@b.com\"},{\"id\":2,\"email\":\"c@d.com\"},{\"id\":3,\"email\":\"a@b.com\"}]}",
+					Expected: "{\"rows\":[{\"Email\":\"a@b.com\"}]}",
+					IsHidden: false,
+				},
+			},
+		},
 		{
 			ID:         "54574a34-9a68-4e65-ab9a-af05db4c0001",
 			Slug:       "op1",

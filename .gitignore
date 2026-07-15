@@ -1,0 +1,4 @@
+.env
+# Ignore built binaries
+bin/
+seed-problems-bin
