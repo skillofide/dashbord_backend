@@ -294,7 +294,11 @@ func (c *UserClients) SubmitQuiz(p graphql.ResolveParams) (interface{}, error) {
 			Answer:     ans,
 		})
 	}
-	c.Log.Info("SubmitQuiz parsed answers", zap.Int("count", len(answers)), zap.Any("answers", answers))
+	// Answers are learner submissions, not secrets, but there is no reason to
+	// dump the full payload into logs on every request.
+	c.Log.Info("SubmitQuiz parsed answers",
+		zap.String("module_id", moduleID),
+		zap.Int("count", len(answers)))
 
 	resp, err := c.UserSvc.SubmitQuiz(p.Context, &userv1.SubmitQuizRequest{
 		UserID:   userID,
@@ -306,10 +310,20 @@ func (c *UserClients) SubmitQuiz(p graphql.ResolveParams) (interface{}, error) {
 		return nil, fmt.Errorf("failed to submit quiz: %v", err)
 	}
 
+	results := make([]map[string]interface{}, 0, len(resp.Results))
+	for _, r := range resp.Results {
+		results = append(results, map[string]interface{}{
+			"questionId":    r.QuestionID,
+			"correct":       r.Correct,
+			"correctAnswer": r.CorrectAnswer,
+		})
+	}
+
 	return map[string]interface{}{
 		"success":        resp.Success,
 		"score":          int(resp.Score),
 		"totalQuestions": int(resp.TotalQuestions),
+		"results":        results,
 	}, nil
 }
 

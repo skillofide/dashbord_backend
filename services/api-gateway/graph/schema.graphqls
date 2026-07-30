@@ -239,10 +239,17 @@ input QuizAnswerInput {
   answer: String!
 }
 
+type QuizQuestionResult {
+  questionId: Int!
+  correct: Boolean!
+  correctAnswer: String!
+}
+
 type SubmitQuizResult {
   success: Boolean!
   score: Int!
   totalQuestions: Int!
+  results: [QuizQuestionResult!]!
 }
 
 type QuizAttempt {

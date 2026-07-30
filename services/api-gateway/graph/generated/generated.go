@@ -265,12 +265,22 @@ var quizAnswerInputType = graphql.NewInputObject(graphql.InputObjectConfig{
 	},
 })
 
+var quizQuestionResultType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "QuizQuestionResult",
+	Fields: graphql.Fields{
+		"questionId":    &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"correct":       &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
+		"correctAnswer": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+	},
+})
+
 var submitQuizResultType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "SubmitQuizResult",
 	Fields: graphql.Fields{
 		"success":        &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
 		"score":          &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
 		"totalQuestions": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"results":        &graphql.Field{Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(quizQuestionResultType)))},
 	},
 })
 
