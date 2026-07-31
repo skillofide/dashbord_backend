@@ -115,6 +115,14 @@ type SubmitResult {
   submissionId: String!
 }
 
+type ScratchpadResult {
+  stdout: String!
+  stderr: String!
+  exitCode: Int!
+  executionMs: Int!
+  timedOut: Boolean!
+}
+
 type RunCodeResult {
   jobId: String!
   overallStatus: String!
@@ -212,7 +220,13 @@ type Job {
   description: String!
   salary: String
   date: String!
+  """Board the posting came from (LinkedIn, Indeed, ...)"""
   site: String!
+  """Employer logo URL, when the provider has one"""
+  employerLogo: String
+  """Full-time, Part-time, Contract, Internship"""
+  employmentType: String
+  isRemote: Boolean!
 }
 
 type JobSearchResult {
@@ -264,6 +278,7 @@ type QuizAttempt {
 type Mutation {
   submitCode(problemId: String!, language: String!, code: String!): SubmitResult!
   runCode(problemId: String!, language: String!, code: String!): RunCodeResult!
+  runScratchpad(language: String!, code: String!, stdin: String): ScratchpadResult!
   upsertProfile(profile: UserProfileInput!): UpsertProfileResult!
   submitQuiz(moduleId: String!, answers: [QuizAnswerInput!]!): SubmitQuizResult!
 }

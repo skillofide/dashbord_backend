@@ -34,6 +34,10 @@ type RunRequest struct {
 	Input         string
 	TimeLimitMs   int32
 	MemoryLimitMb int32
+	// Raw runs the submitted code verbatim, skipping the driver that is
+	// normally generated around a solution function. Scratchpad code is a
+	// complete program with its own entry point, so wrapping it would break it.
+	Raw bool
 }
 
 // RunResult is the output from executing one test case in the sandbox.
@@ -91,8 +95,12 @@ func (s *DockerSandbox) Run(ctx context.Context, req *RunRequest) (*RunResult, e
 		memLimitMb = 256
 	}
 
-	// Wrap user code with driver code to read input and print output
-	wrappedCode := wrapUserCode(req.ProblemId, req.Language, req.Code)
+	// Wrap user code with driver code to read input and print output.
+	// Raw requests are complete programs and must not be wrapped.
+	wrappedCode := req.Code
+	if !req.Raw {
+		wrappedCode = wrapUserCode(req.ProblemId, req.Language, req.Code)
+	}
 
 	// Build environment variables to pass code + input into the container
 	envVars := []string{

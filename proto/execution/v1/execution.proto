@@ -69,3 +69,20 @@ message JobStatusResponse {
   ExecutionStatus status = 2;
   ExecuteResponse result = 3; // populated when COMPLETED
 }
+
+// Executes code verbatim against supplied stdin, with no test cases and no
+// grading. Backs the in-lesson code editor used by module assignments.
+message RunScratchpadRequest {
+  string language = 1;
+  string code = 2;
+  string stdin = 3;
+  string user_id = 4;
+}
+
+message RunScratchpadResponse {
+  string stdout = 1;
+  string stderr = 2;
+  int64 exit_code = 3;
+  int64 execution_ms = 4;
+  bool timed_out = 5;
+}

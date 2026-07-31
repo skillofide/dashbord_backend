@@ -160,6 +160,17 @@ var userProgressType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var scratchpadResultType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "ScratchpadResult",
+	Fields: graphql.Fields{
+		"stdout":      &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"stderr":      &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"exitCode":    &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"executionMs": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"timedOut":    &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
+	},
+})
+
 var runCodeResultType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RunCodeResult",
 	Fields: graphql.Fields{
@@ -305,6 +316,10 @@ var jobType = graphql.NewObject(graphql.ObjectConfig{
 		"salary":      &graphql.Field{Type: graphql.String},
 		"date":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 		"site":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		// Extras JSearch provides that Careerjet did not.
+		"employerLogo":   &graphql.Field{Type: graphql.String},
+		"employmentType": &graphql.Field{Type: graphql.String},
+		"isRemote":       &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
 	},
 })
 
@@ -410,6 +425,15 @@ func BuildSchema(clients *Clients) (graphql.Schema, error) {
 					"code":      {Type: graphql.NewNonNull(graphql.String)},
 				},
 				Resolve: clients.Submissions.SubmitCode,
+			},
+			"runScratchpad": {
+				Type: scratchpadResultType,
+				Args: graphql.FieldConfigArgument{
+					"language": {Type: graphql.NewNonNull(graphql.String)},
+					"code":     {Type: graphql.NewNonNull(graphql.String)},
+					"stdin":    {Type: graphql.String},
+				},
+				Resolve: clients.Submissions.RunScratchpad,
 			},
 			"runCode": {
 				Type: runCodeResultType,

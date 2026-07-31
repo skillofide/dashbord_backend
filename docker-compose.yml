@@ -191,6 +191,8 @@ services:
       DATABASE_URL: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
       DEV_MODE: "true"
       LOG_LEVEL: info
+      # RapidAPI key for JSearch, backing the Placement job board.
+      JSEARCH_API_KEY: ${JSEARCH_API_KEY}
     ports:
       - "8080:8080"
     depends_on:
