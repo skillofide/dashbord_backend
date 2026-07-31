@@ -115,6 +115,30 @@ for (const file of fs.readdirSync(feDir)) {
   keys[`frontend-m${m[1]}`] = questions.map((q) => ({ id: q.id, correctAnswer: q.correctAnswer }));
 }
 
+// ---------- Marketing courses (SEO, Digital Marketing) ----------
+// These export a single content object holding lessons, quizzes and assignments.
+const MARKETING = [
+  ['seo', 'modules/MarketingCourses/SeoCourseData.ts', 'seoContent'],
+  ['dm', 'modules/MarketingCourses/DigitalMarketingCourseData.ts', 'digitalMarketingContent'],
+];
+
+for (const [, file, exportName] of MARKETING) {
+  const mod = loadModule(path.join(COURSES, file));
+  const content = mod[exportName];
+  if (!content) {
+    console.error(`  ! ${exportName} not found in ${file}`);
+    process.exitCode = 1;
+    continue;
+  }
+  for (const [quizId, questions] of Object.entries(content.quizzes)) {
+    if (!questions?.length) continue;
+    // Quiz ids already carry the course prefix ("seo-m1-quiz"), and the
+    // renderer submits the syllabus module id directly, so no extra prefix.
+    const moduleId = quizId.replace(/-quiz$/, '');
+    keys[moduleId] = questions.map((q) => ({ id: q.id, correctAnswer: q.correctAnswer }));
+  }
+}
+
 // The frontend final assessment is graded the same way, under its own id.
 const assessmentLiteral = extractArrayLiteral(
   fs.readFileSync(path.join(feDir, 'FinalAssessment.tsx'), 'utf8'),

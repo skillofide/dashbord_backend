@@ -19,8 +19,43 @@ type quizKey struct {
 	correctAns string
 }
 
-// quizAnswerKeys holds 553 answer keys across 54 modules.
+// quizAnswerKeys holds 603 answer keys across 64 modules.
 var quizAnswerKeys = []quizKey{
+	// dm-m1 (5 questions)
+	{"dm-m1", 1, "It is a conversion problem, so more traffic will not help"},
+	{"dm-m1", 2, "Customer interviews, support tickets and reviews"},
+	{"dm-m1", 3, "Whether the split changes what you would actually do"},
+	{"dm-m1", 4, "Search captures existing demand; social creates it"},
+	{"dm-m1", 5, "Rented reach can be withdrawn by a platform without notice"},
+
+	// dm-m2 (5 questions)
+	{"dm-m2", 1, "Inconsistency rather than content quality"},
+	{"dm-m2", 2, "The blank-page problem — you never decide what to post from nothing"},
+	{"dm-m2", 3, "Keeping people on the platform"},
+	{"dm-m2", 4, "It is demoted by platforms and erodes audience trust"},
+	{"dm-m2", 5, "It escalates — the deletion becomes the story"},
+
+	// dm-m3 (5 questions)
+	{"dm-m3", 1, "So the ad copy and landing page can closely match the query"},
+	{"dm-m3", 2, "In queries that should have been excluded by negative keywords"},
+	{"dm-m3", 3, "The creative"},
+	{"dm-m3", 4, "Gross margin"},
+	{"dm-m3", 5, "Automated strategies need conversion volume to learn from"},
+
+	// dm-m4 (5 questions)
+	{"dm-m4", 1, "No algorithm decides whether your message is delivered to your list"},
+	{"dm-m4", 2, "Solving one specific problem with immediate value"},
+	{"dm-m4", 3, "Spam complaints that degrade deliverability for your genuine subscribers too"},
+	{"dm-m4", 4, "Abandoned cart"},
+	{"dm-m4", 5, "It teaches customers to abandon carts deliberately to get one"},
+
+	// dm-m5 (5 questions)
+	{"dm-m5", 1, "Wrong traffic — a targeting or message-match problem"},
+	{"dm-m5", 2, "Stopping the test as soon as it looks significant"},
+	{"dm-m5", 3, "Use qualitative evidence and judge changes on trend"},
+	{"dm-m5", 4, "An unresponsive or broken element"},
+	{"dm-m5", 5, "Mask sensitive inputs and disclose it — the recordings are personal data"},
+
 	// frontend-m1 (4 questions)
 	{"frontend-m1", 1, "B. HyperText Markup Language"},
 	{"frontend-m1", 2, "B. CSS"},
@@ -562,6 +597,41 @@ var quizAnswerKeys = []quizKey{
 	{"java-m19", 18, "B. A compromise would inherit full privileges"},
 	{"java-m19", 19, "B. They are permanently visible in the image history"},
 	{"java-m19", 20, "B. By the service name, e.g. jdbc:postgresql://db:5432/..."},
+
+	// seo-m1 (5 questions)
+	{"seo-m1", 1, "Crawling, indexing, serving"},
+	{"seo-m1", 2, "Whether the page is indexed at all"},
+	{"seo-m1", 3, "Crawling, not indexing"},
+	{"seo-m1", 4, "Google cannot read the noindex tag on a page it is forbidden to crawl"},
+	{"seo-m1", 5, "Large sites with tens of thousands of URLs"},
+
+	// seo-m2 (5 questions)
+	{"seo-m2", 1, "Look at what currently ranks on page one"},
+	{"seo-m2", 2, "Commercial"},
+	{"seo-m2", 3, "Lower competition and more specific intent make them realistically rankable"},
+	{"seo-m2", 4, "Multiple pages targeting the same intent and competing with each other"},
+	{"seo-m2", 5, "Business value"},
+
+	// seo-m3 (5 questions)
+	{"seo-m3", 1, "No, but it affects click-through rate"},
+	{"seo-m3", 2, "Exactly one"},
+	{"seo-m3", 3, "Google judged your title unhelpful, stuffed or mismatched"},
+	{"seo-m3", 4, "Accessibility for screen reader users"},
+	{"seo-m3", 5, "It distributes authority and aids discovery, entirely under your control"},
+
+	// seo-m4 (5 questions)
+	{"seo-m4", 1, "CLS — Cumulative Layout Shift"},
+	{"seo-m4", 2, "Field data from real users"},
+	{"seo-m4", 3, "No, but it can qualify a page for rich results"},
+	{"seo-m4", 4, "When a page has permanently moved and the old URL should no longer be used"},
+	{"seo-m4", 5, "Leaving a site-wide noindex tag in place at launch"},
+
+	// seo-m5 (5 questions)
+	{"seo-m5", 1, "A third-party vendor estimate that Google does not use"},
+	{"seo-m5", 2, "Topical relevance and editorial placement"},
+	{"seo-m5", 3, "Not to pass ranking signal through the link"},
+	{"seo-m5", 4, "Whether you would still publish the piece if the link were nofollow"},
+	{"seo-m5", 5, "Only for a manual action or documented negative SEO — most sites never need it"},
 
 	// sql-m1 (5 questions)
 	{"sql-m1", 1, "Relational Database Management System"},
