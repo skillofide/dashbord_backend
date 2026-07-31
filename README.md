@@ -29,7 +29,12 @@ docker build -t skillofide/runner-python:latest services/execution-service/runne
 docker build -t skillofide/runner-javascript:latest services/execution-service/runners/javascript
 docker build -t skillofide/runner-java:latest services/execution-service/runners/java
 docker build -t skillofide/runner-cpp:latest services/execution-service/runners/cpp
+docker build -t skillofide/runner-sql:latest services/execution-service/runners/sql
 ```
+
+The SQL runner boots a throwaway PostgreSQL cluster per test case. The cluster is
+initialised at image build time, so that build takes longer than the others but
+keeps per-submission startup to about a second.
 
 ### Port Conflict Troubleshooting (e.g. Metro Bundler)
 The React Native Metro Bundler (used for mobile development) runs on port **`8081`** by default. 

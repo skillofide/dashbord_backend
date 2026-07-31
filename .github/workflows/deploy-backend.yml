@@ -74,6 +74,7 @@ jobs:
           - javascript
           - java
           - cpp
+          - sql
 
     steps:
       - uses: actions/checkout@v4
@@ -148,6 +149,8 @@ jobs:
             docker tag ${{ env.ECR_REGISTRY }}/skillofide-runner-java:latest skillofide/runner-java:latest
             docker pull ${{ env.ECR_REGISTRY }}/skillofide-runner-cpp:latest
             docker tag ${{ env.ECR_REGISTRY }}/skillofide-runner-cpp:latest skillofide/runner-cpp:latest
+            docker pull ${{ env.ECR_REGISTRY }}/skillofide-runner-sql:latest
+            docker tag ${{ env.ECR_REGISTRY }}/skillofide-runner-sql:latest skillofide/runner-sql:latest
           "
 
 

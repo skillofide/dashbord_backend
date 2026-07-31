@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -51,6 +52,72 @@ type Problem struct {
 	CppSC        string
 	GoSC         string
 	TestCases    []TestCase
+}
+
+// javaStubReturn, cppStubReturn and goStubReturn produce a placeholder return
+// statement for a scaffold. Compiled languages reject a non-void method with no
+// return, and a build failure would show the learner a compile error rather
+// than a wrong answer.
+
+func javaStubReturn(ret string) string {
+	switch ret {
+	case "", "void":
+		return ""
+	case "int", "long", "short", "byte":
+		return "        return 0;"
+	case "double", "float":
+		return "        return 0.0;"
+	case "boolean":
+		return "        return false;"
+	case "char":
+		return "        return ' ';"
+	case "String":
+		return "        return \"\";"
+	}
+	if strings.HasSuffix(ret, "[]") {
+		return "        return new " + strings.TrimSuffix(ret, "[]") + "[0];"
+	}
+	if strings.HasPrefix(ret, "List<") || strings.HasPrefix(ret, "ArrayList<") {
+		return "        return new ArrayList<>();"
+	}
+	return "        return null;"
+}
+
+func cppStubReturn(ret string) string {
+	switch ret {
+	case "", "void":
+		return ""
+	case "int", "long", "long long", "size_t":
+		return "        return 0;"
+	case "double", "float":
+		return "        return 0.0;"
+	case "bool":
+		return "        return false;"
+	case "char":
+		return "        return ' ';"
+	case "string":
+		return "        return \"\";"
+	}
+	if strings.HasSuffix(ret, "*") {
+		return "        return nullptr;"
+	}
+	return "        return {};"
+}
+
+func goStubReturn(ret string) string {
+	switch ret {
+	case "":
+		return ""
+	case "int", "int64", "int32", "byte", "rune":
+		return "    return 0"
+	case "float64", "float32":
+		return "    return 0"
+	case "bool":
+		return "    return false"
+	case "string":
+		return "    return \"\""
+	}
+	return "    return nil"
 }
 
 func main() {
@@ -126,7 +193,7 @@ func main() {
 			Slug:       "duplicate-emails",
 			Title:      "Duplicate Emails",
 			Difficulty: "Easy",
-			Topic:      "Databases",
+			Topic:      "Aggregation",
 			XP:         20,
 			Statement:  "Write an SQL query to report all the duplicate emails. Return the result table in any order.",
 			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
@@ -141,15 +208,568 @@ func main() {
 			Hints: []Hint{
 				{Title: "Hint 1", Body: "Use GROUP BY and HAVING count > 1."},
 			},
-			JavascriptSC: "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
-			PythonSC:     "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
-			JavaSC:       "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
-			CppSC:        "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
-			GoSC:         "SELECT email FROM Person GROUP BY email HAVING COUNT(email) > 1;",
+			JavascriptSC: "-- Table: Person(id, email)\n-- Report every email that appears more than once,\n-- in a column called Email.\n\nSELECT\nFROM Person\n;",
+			PythonSC:     "-- Table: Person(id, email)\n-- Report every email that appears more than once,\n-- in a column called Email.\n\nSELECT\nFROM Person\n;",
+			JavaSC:       "-- Table: Person(id, email)\n-- Report every email that appears more than once,\n-- in a column called Email.\n\nSELECT\nFROM Person\n;",
+			CppSC:        "-- Table: Person(id, email)\n-- Report every email that appears more than once,\n-- in a column called Email.\n\nSELECT\nFROM Person\n;",
+			GoSC:         "-- Table: Person(id, email)\n-- Report every email that appears more than once,\n-- in a column called Email.\n\nSELECT\nFROM Person\n;",
 			TestCases: []TestCase{
 				{
-					Input:    "{\"table\":\"Person\",\"rows\":[{\"id\":1,\"email\":\"a@b.com\"},{\"id\":2,\"email\":\"c@d.com\"},{\"id\":3,\"email\":\"a@b.com\"}]}",
+					Input:    "{\"tables\":{\"Person\":[{\"id\":1,\"email\":\"a@b.com\"},{\"id\":2,\"email\":\"c@d.com\"},{\"id\":3,\"email\":\"a@b.com\"}]}}",
 					Expected: "{\"rows\":[{\"Email\":\"a@b.com\"}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000002",
+			Slug:       "combine-two-tables",
+			Title:      "Combine Two Tables",
+			Difficulty: "Easy",
+			Topic:      "Joins",
+			XP:         20,
+			Statement:  "Table `Person` holds personal details and table `Address` holds addresses.\n\nWrite a solution to report the first name, last name, city, and state of each person.\n\nIf the address of a `personId` is not present in the `Address` table, report `null` for `city` and `state` instead.\n\nReturn the result table in **any order**.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Joins"},
+			Examples: []Example{
+				{
+					Input:       "Person:\n+----------+----------+-----------+\n| personId | lastName | firstName |\n+----------+----------+-----------+\n| 1        | Wang     | Allen     |\n| 2        | Alice    | Bob       |\n+----------+----------+-----------+\n\nAddress:\n+-----------+----------+---------------+------------+\n| addressId | personId | city          | state      |\n+-----------+----------+---------------+------------+\n| 1         | 2        | New York City | New York   |\n+-----------+----------+---------------+------------+",
+					Output:      "+-----------+----------+---------------+----------+\n| firstName | lastName | city          | state    |\n+-----------+----------+---------------+----------+\n| Allen     | Wang     | null          | null     |\n| Bob       | Alice    | New York City | New York |\n+-----------+----------+---------------+----------+",
+					Explanation: "Allen Wang has no address, so city and state are null. A LEFT JOIN is required to keep that row.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "An INNER JOIN would drop people who have no address. You need every person in the result."},
+				{Title: "Hint 2", Body: "LEFT JOIN keeps all rows from the left table and fills NULL where the right table has no match."},
+			},
+			JavascriptSC: "-- Tables:\n--   Person(personId, lastName, firstName)\n--   Address(addressId, personId, city, state)\n-- Report firstName, lastName, city, state for EVERY person.\n\nSELECT\nFROM Person p\n;",
+			PythonSC:     "-- Tables:\n--   Person(personId, lastName, firstName)\n--   Address(addressId, personId, city, state)\n-- Report firstName, lastName, city, state for EVERY person.\n\nSELECT\nFROM Person p\n;",
+			JavaSC:       "-- Tables:\n--   Person(personId, lastName, firstName)\n--   Address(addressId, personId, city, state)\n-- Report firstName, lastName, city, state for EVERY person.\n\nSELECT\nFROM Person p\n;",
+			CppSC:        "-- Tables:\n--   Person(personId, lastName, firstName)\n--   Address(addressId, personId, city, state)\n-- Report firstName, lastName, city, state for EVERY person.\n\nSELECT\nFROM Person p\n;",
+			GoSC:         "-- Tables:\n--   Person(personId, lastName, firstName)\n--   Address(addressId, personId, city, state)\n-- Report firstName, lastName, city, state for EVERY person.\n\nSELECT\nFROM Person p\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Person\":[{\"personId\":1,\"lastName\":\"Wang\",\"firstName\":\"Allen\"},{\"personId\":2,\"lastName\":\"Alice\",\"firstName\":\"Bob\"}],\"Address\":[{\"addressId\":1,\"personId\":2,\"city\":\"New York City\",\"state\":\"New York\"}]}}",
+					Expected: "{\"rows\":[{\"firstName\":\"Allen\",\"lastName\":\"Wang\",\"city\":null,\"state\":null},{\"firstName\":\"Bob\",\"lastName\":\"Alice\",\"city\":\"New York City\",\"state\":\"New York\"}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000003",
+			Slug:       "second-highest-salary",
+			Title:      "Second Highest Salary",
+			Difficulty: "Medium",
+			Topic:      "Subqueries",
+			XP:         40,
+			Statement:  "Table `Employee` records the salary of each employee.\n\nWrite a solution to find the **second highest distinct salary**. If there is no second highest salary, return `null`.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Subqueries"},
+			Examples: []Example{
+				{
+					Input:       "Employee:\n+----+--------+\n| id | salary |\n+----+--------+\n| 1  | 100    |\n| 2  | 200    |\n| 3  | 300    |\n+----+--------+",
+					Output:      "+---------------------+\n| SecondHighestSalary |\n+---------------------+\n| 200                 |\n+---------------------+",
+					Explanation: "300 is the highest, so 200 is the second highest distinct salary.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "Find the maximum salary that is strictly less than the overall maximum."},
+				{Title: "Hint 2", Body: "MAX() over an empty set returns NULL, which handles the \"no second salary\" case for free."},
+			},
+			JavascriptSC: "-- Table: Employee(id, salary)\n-- Return the second highest DISTINCT salary as SecondHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			PythonSC:     "-- Table: Employee(id, salary)\n-- Return the second highest DISTINCT salary as SecondHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			JavaSC:       "-- Table: Employee(id, salary)\n-- Return the second highest DISTINCT salary as SecondHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			CppSC:        "-- Table: Employee(id, salary)\n-- Return the second highest DISTINCT salary as SecondHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			GoSC:         "-- Table: Employee(id, salary)\n-- Return the second highest DISTINCT salary as SecondHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Employee\":[{\"id\":1,\"salary\":100},{\"id\":2,\"salary\":200},{\"id\":3,\"salary\":300}]}}",
+					Expected: "{\"rows\":[{\"SecondHighestSalary\":200}]}",
+					IsHidden: false,
+				},
+				{
+					Input:    "{\"tables\":{\"Employee\":[{\"id\":1,\"salary\":100}]}}",
+					Expected: "{\"rows\":[{\"SecondHighestSalary\":null}]}",
+					IsHidden: true,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000004",
+			Slug:       "employees-earning-more-than-managers",
+			Title:      "Employees Earning More Than Their Managers",
+			Difficulty: "Easy",
+			Topic:      "Joins",
+			XP:         25,
+			Statement:  "Table `Employee` holds the id, name, salary, and `managerId` of every employee.\n\nWrite a solution to find the employees who earn **more than their managers**.\n\nReturn the result table in **any order**.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Joins", "Self Join"},
+			Examples: []Example{
+				{
+					Input:       "Employee:\n+----+-------+--------+-----------+\n| id | name  | salary | managerId |\n+----+-------+--------+-----------+\n| 1  | Joe   | 70000  | 3         |\n| 2  | Henry | 80000  | 4         |\n| 3  | Sam   | 60000  | null      |\n| 4  | Max   | 90000  | null      |\n+----+-------+--------+-----------+",
+					Output:      "+----------+\n| Employee |\n+----------+\n| Joe      |\n+----------+",
+					Explanation: "Joe earns 70000 and his manager Sam earns 60000, so Joe qualifies. Henry earns less than Max.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "The manager is another row in the same table. Join the table to itself."},
+				{Title: "Hint 2", Body: "Use two aliases, e.g. e for the employee and m for the manager, and join on e.managerId = m.id."},
+			},
+			JavascriptSC: "-- Table: Employee(id, name, salary, managerId)\n-- Report the name of each employee who earns more than their manager,\n-- in a column called Employee.\n\nSELECT\nFROM Employee e\n;",
+			PythonSC:     "-- Table: Employee(id, name, salary, managerId)\n-- Report the name of each employee who earns more than their manager,\n-- in a column called Employee.\n\nSELECT\nFROM Employee e\n;",
+			JavaSC:       "-- Table: Employee(id, name, salary, managerId)\n-- Report the name of each employee who earns more than their manager,\n-- in a column called Employee.\n\nSELECT\nFROM Employee e\n;",
+			CppSC:        "-- Table: Employee(id, name, salary, managerId)\n-- Report the name of each employee who earns more than their manager,\n-- in a column called Employee.\n\nSELECT\nFROM Employee e\n;",
+			GoSC:         "-- Table: Employee(id, name, salary, managerId)\n-- Report the name of each employee who earns more than their manager,\n-- in a column called Employee.\n\nSELECT\nFROM Employee e\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Employee\":[{\"id\":1,\"name\":\"Joe\",\"salary\":70000,\"managerId\":3},{\"id\":2,\"name\":\"Henry\",\"salary\":80000,\"managerId\":4},{\"id\":3,\"name\":\"Sam\",\"salary\":60000,\"managerId\":null},{\"id\":4,\"name\":\"Max\",\"salary\":90000,\"managerId\":null}]}}",
+					Expected: "{\"rows\":[{\"Employee\":\"Joe\"}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000005",
+			Slug:       "customers-who-never-order",
+			Title:      "Customers Who Never Order",
+			Difficulty: "Easy",
+			Topic:      "Joins",
+			XP:         20,
+			Statement:  "Table `Customers` holds customer records and table `Orders` holds orders, each referencing a `customerId`.\n\nWrite a solution to find all customers who **never placed an order**.\n\nReturn the result table in **any order**.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Joins", "Anti Join"},
+			Examples: []Example{
+				{
+					Input:       "Customers:\n+----+-------+\n| id | name  |\n+----+-------+\n| 1  | Joe   |\n| 2  | Henry |\n| 3  | Sam   |\n| 4  | Max   |\n+----+-------+\n\nOrders:\n+----+------------+\n| id | customerId |\n+----+------------+\n| 1  | 3          |\n| 2  | 1          |\n+----+------------+",
+					Output:      "+-----------+\n| Customers |\n+-----------+\n| Henry     |\n| Max       |\n+-----------+",
+					Explanation: "Only customers 1 and 3 appear in Orders, so Henry and Max never ordered.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "This is an anti-join: rows in one table with no match in another."},
+				{Title: "Hint 2", Body: "LEFT JOIN then filter WHERE the joined key IS NULL. NOT EXISTS works too."},
+			},
+			JavascriptSC: "-- Tables:\n--   Customers(id, name)\n--   Orders(id, customerId)\n-- Report the name of every customer with no order, in a column called Customers.\n\nSELECT\nFROM Customers c\n;",
+			PythonSC:     "-- Tables:\n--   Customers(id, name)\n--   Orders(id, customerId)\n-- Report the name of every customer with no order, in a column called Customers.\n\nSELECT\nFROM Customers c\n;",
+			JavaSC:       "-- Tables:\n--   Customers(id, name)\n--   Orders(id, customerId)\n-- Report the name of every customer with no order, in a column called Customers.\n\nSELECT\nFROM Customers c\n;",
+			CppSC:        "-- Tables:\n--   Customers(id, name)\n--   Orders(id, customerId)\n-- Report the name of every customer with no order, in a column called Customers.\n\nSELECT\nFROM Customers c\n;",
+			GoSC:         "-- Tables:\n--   Customers(id, name)\n--   Orders(id, customerId)\n-- Report the name of every customer with no order, in a column called Customers.\n\nSELECT\nFROM Customers c\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Customers\":[{\"id\":1,\"name\":\"Joe\"},{\"id\":2,\"name\":\"Henry\"},{\"id\":3,\"name\":\"Sam\"},{\"id\":4,\"name\":\"Max\"}],\"Orders\":[{\"id\":1,\"customerId\":3},{\"id\":2,\"customerId\":1}]}}",
+					Expected: "{\"rows\":[{\"Customers\":\"Henry\"},{\"Customers\":\"Max\"}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000006",
+			Slug:       "big-countries",
+			Title:      "Big Countries",
+			Difficulty: "Easy",
+			Topic:      "Filtering",
+			XP:         15,
+			Statement:  "A country is **big** if it has an area of at least 3,000,000 km², **or** a population of at least 25,000,000.\n\nWrite a solution to report the name, population, and area of the big countries.\n\nReturn the result table in **any order**.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Filtering"},
+			Examples: []Example{
+				{
+					Input:       "World:\n+-------------+-----------+---------+\n| name        | area      | population |\n+-------------+-----------+---------+\n| Afghanistan | 652230    | 25500100 |\n| Albania     | 28748     | 2831741  |\n| Algeria     | 2381741   | 37100000 |\n| Andorra     | 468       | 78115    |\n+-------------+-----------+---------+",
+					Output:      "+-------------+------------+---------+\n| name        | population | area    |\n+-------------+------------+---------+\n| Afghanistan | 25500100   | 652230  |\n| Algeria     | 37100000   | 2381741 |\n+-------------+------------+---------+",
+					Explanation: "Both qualify on population. Albania and Andorra meet neither threshold.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "The two conditions are alternatives, not requirements. Use OR, not AND."},
+			},
+			JavascriptSC: "-- Table: World(name, area, population)\n-- Report name, population, area for countries with\n-- area >= 3000000 OR population >= 25000000.\n\nSELECT\nFROM World\n;",
+			PythonSC:     "-- Table: World(name, area, population)\n-- Report name, population, area for countries with\n-- area >= 3000000 OR population >= 25000000.\n\nSELECT\nFROM World\n;",
+			JavaSC:       "-- Table: World(name, area, population)\n-- Report name, population, area for countries with\n-- area >= 3000000 OR population >= 25000000.\n\nSELECT\nFROM World\n;",
+			CppSC:        "-- Table: World(name, area, population)\n-- Report name, population, area for countries with\n-- area >= 3000000 OR population >= 25000000.\n\nSELECT\nFROM World\n;",
+			GoSC:         "-- Table: World(name, area, population)\n-- Report name, population, area for countries with\n-- area >= 3000000 OR population >= 25000000.\n\nSELECT\nFROM World\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"World\":[{\"name\":\"Afghanistan\",\"area\":652230,\"population\":25500100},{\"name\":\"Albania\",\"area\":28748,\"population\":2831741},{\"name\":\"Algeria\",\"area\":2381741,\"population\":37100000},{\"name\":\"Andorra\",\"area\":468,\"population\":78115}]}}",
+					Expected: "{\"rows\":[{\"name\":\"Afghanistan\",\"population\":25500100,\"area\":652230},{\"name\":\"Algeria\",\"population\":37100000,\"area\":2381741}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000007",
+			Slug:       "classes-with-five-students",
+			Title:      "Classes With At Least 5 Students",
+			Difficulty: "Easy",
+			Topic:      "Aggregation",
+			XP:         25,
+			Statement:  "Table `Courses` records which student is enrolled in which class.\n\nWrite a solution to find all classes that have **at least five students**.\n\nReturn the result table in **any order**.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Aggregation", "GROUP BY"},
+			Examples: []Example{
+				{
+					Input:       "Courses:\n+---------+----------+\n| student | class    |\n+---------+----------+\n| A       | Math     |\n| B       | English  |\n| C       | Math     |\n| D       | Biology  |\n| E       | Math     |\n| F       | Computer |\n| G       | Math     |\n| H       | Math     |\n| I       | Math     |\n+---------+----------+",
+					Output:      "+---------+\n| class   |\n+---------+\n| Math    |\n+---------+",
+					Explanation: "Math has 6 students; every other class has fewer than 5.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "Group the rows by class, then filter the groups."},
+				{Title: "Hint 2", Body: "A condition on an aggregate belongs in HAVING, not WHERE — the groups do not exist yet when WHERE runs."},
+			},
+			JavascriptSC: "-- Table: Courses(student, class)\n-- Report each class that has at least five students.\n\nSELECT\nFROM Courses\n;",
+			PythonSC:     "-- Table: Courses(student, class)\n-- Report each class that has at least five students.\n\nSELECT\nFROM Courses\n;",
+			JavaSC:       "-- Table: Courses(student, class)\n-- Report each class that has at least five students.\n\nSELECT\nFROM Courses\n;",
+			CppSC:        "-- Table: Courses(student, class)\n-- Report each class that has at least five students.\n\nSELECT\nFROM Courses\n;",
+			GoSC:         "-- Table: Courses(student, class)\n-- Report each class that has at least five students.\n\nSELECT\nFROM Courses\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Courses\":[{\"student\":\"A\",\"class\":\"Math\"},{\"student\":\"B\",\"class\":\"English\"},{\"student\":\"C\",\"class\":\"Math\"},{\"student\":\"D\",\"class\":\"Biology\"},{\"student\":\"E\",\"class\":\"Math\"},{\"student\":\"F\",\"class\":\"Computer\"},{\"student\":\"G\",\"class\":\"Math\"},{\"student\":\"H\",\"class\":\"Math\"},{\"student\":\"I\",\"class\":\"Math\"}]}}",
+					Expected: "{\"rows\":[{\"class\":\"Math\"}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000008",
+			Slug:       "rising-temperature",
+			Title:      "Rising Temperature",
+			Difficulty: "Easy",
+			Topic:      "Date Functions",
+			XP:         30,
+			Statement:  "Table `Weather` records the temperature on each date.\n\nWrite a solution to find all dates whose temperature was **higher than the previous day**.\n\nReturn the result table in **any order**.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Self Join", "Dates"},
+			Examples: []Example{
+				{
+					Input:       "Weather:\n+----+------------+-------------+\n| id | recordDate | temperature |\n+----+------------+-------------+\n| 1  | 2015-01-01 | 10          |\n| 2  | 2015-01-02 | 25          |\n| 3  | 2015-01-03 | 20          |\n| 4  | 2015-01-04 | 30          |\n+----+------------+-------------+",
+					Output:      "+----+\n| id |\n+----+\n| 2  |\n| 4  |\n+----+",
+					Explanation: "On 01-02 the temperature rose from 10 to 25, and on 01-04 from 20 to 30.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "Compare each row to the row for the previous day. A self join on the date works."},
+				{Title: "Hint 2", Body: "Do not join on id — ids may have gaps. Join on the date being exactly one day earlier."},
+			},
+			JavascriptSC: "-- Table: Weather(id, recordDate, temperature)\n-- Report the id of every day that was warmer than the day before it.\n-- Note: ids may have gaps, so compare dates rather than ids.\n\nSELECT\nFROM Weather w\n;",
+			PythonSC:     "-- Table: Weather(id, recordDate, temperature)\n-- Report the id of every day that was warmer than the day before it.\n-- Note: ids may have gaps, so compare dates rather than ids.\n\nSELECT\nFROM Weather w\n;",
+			JavaSC:       "-- Table: Weather(id, recordDate, temperature)\n-- Report the id of every day that was warmer than the day before it.\n-- Note: ids may have gaps, so compare dates rather than ids.\n\nSELECT\nFROM Weather w\n;",
+			CppSC:        "-- Table: Weather(id, recordDate, temperature)\n-- Report the id of every day that was warmer than the day before it.\n-- Note: ids may have gaps, so compare dates rather than ids.\n\nSELECT\nFROM Weather w\n;",
+			GoSC:         "-- Table: Weather(id, recordDate, temperature)\n-- Report the id of every day that was warmer than the day before it.\n-- Note: ids may have gaps, so compare dates rather than ids.\n\nSELECT\nFROM Weather w\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Weather\":[{\"id\":1,\"recordDate\":\"2015-01-01\",\"temperature\":10},{\"id\":2,\"recordDate\":\"2015-01-02\",\"temperature\":25},{\"id\":3,\"recordDate\":\"2015-01-03\",\"temperature\":20},{\"id\":4,\"recordDate\":\"2015-01-04\",\"temperature\":30}]}}",
+					Expected: "{\"rows\":[{\"id\":2},{\"id\":4}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000009",
+			Slug:       "department-highest-salary",
+			Title:      "Department Highest Salary",
+			Difficulty: "Medium",
+			Topic:      "Window Functions",
+			XP:         50,
+			Statement:  "Table `Employee` holds employees with a `departmentId`, and table `Department` holds department names.\n\nWrite a solution to find, for **each department**, the employees who have the **highest salary** in that department.\n\nIf several employees tie for the highest salary, report all of them.\n\nReturn the result table in **any order**.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Window Functions", "Joins"},
+			Examples: []Example{
+				{
+					Input:       "Employee:\n+----+-------+--------+--------------+\n| id | name  | salary | departmentId |\n+----+-------+--------+--------------+\n| 1  | Joe   | 70000  | 1            |\n| 2  | Jim   | 90000  | 1            |\n| 3  | Henry | 80000  | 2            |\n| 4  | Sam   | 60000  | 2            |\n| 5  | Max   | 90000  | 1            |\n+----+-------+--------+--------------+\n\nDepartment:\n+----+-------+\n| id | name  |\n+----+-------+\n| 1  | IT    |\n| 2  | Sales |\n+----+-------+",
+					Output:      "+------------+----------+--------+\n| Department | Employee | Salary |\n+------------+----------+--------+\n| IT         | Jim      | 90000  |\n| IT         | Max      | 90000  |\n| Sales      | Henry    | 80000  |\n+------------+----------+--------+",
+					Explanation: "Jim and Max tie for the top IT salary, so both are reported.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "RANK() OVER (PARTITION BY departmentId ORDER BY salary DESC) numbers rows within each department."},
+				{Title: "Hint 2", Body: "Use RANK, not ROW_NUMBER — ROW_NUMBER would arbitrarily drop one of the tied top earners."},
+			},
+			JavascriptSC: "-- Tables:\n--   Employee(id, name, salary, departmentId)\n--   Department(id, name)\n-- Report Department, Employee, Salary for the top earner(s) in each department.\n-- Ties must all be reported.\n\nSELECT\nFROM Employee e\n;",
+			PythonSC:     "-- Tables:\n--   Employee(id, name, salary, departmentId)\n--   Department(id, name)\n-- Report Department, Employee, Salary for the top earner(s) in each department.\n-- Ties must all be reported.\n\nSELECT\nFROM Employee e\n;",
+			JavaSC:       "-- Tables:\n--   Employee(id, name, salary, departmentId)\n--   Department(id, name)\n-- Report Department, Employee, Salary for the top earner(s) in each department.\n-- Ties must all be reported.\n\nSELECT\nFROM Employee e\n;",
+			CppSC:        "-- Tables:\n--   Employee(id, name, salary, departmentId)\n--   Department(id, name)\n-- Report Department, Employee, Salary for the top earner(s) in each department.\n-- Ties must all be reported.\n\nSELECT\nFROM Employee e\n;",
+			GoSC:         "-- Tables:\n--   Employee(id, name, salary, departmentId)\n--   Department(id, name)\n-- Report Department, Employee, Salary for the top earner(s) in each department.\n-- Ties must all be reported.\n\nSELECT\nFROM Employee e\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Employee\":[{\"id\":1,\"name\":\"Joe\",\"salary\":70000,\"departmentId\":1},{\"id\":2,\"name\":\"Jim\",\"salary\":90000,\"departmentId\":1},{\"id\":3,\"name\":\"Henry\",\"salary\":80000,\"departmentId\":2},{\"id\":4,\"name\":\"Sam\",\"salary\":60000,\"departmentId\":2},{\"id\":5,\"name\":\"Max\",\"salary\":90000,\"departmentId\":1}],\"Department\":[{\"id\":1,\"name\":\"IT\"},{\"id\":2,\"name\":\"Sales\"}]}}",
+					Expected: "{\"rows\":[{\"Department\":\"IT\",\"Employee\":\"Jim\",\"Salary\":90000},{\"Department\":\"IT\",\"Employee\":\"Max\",\"Salary\":90000},{\"Department\":\"Sales\",\"Employee\":\"Henry\",\"Salary\":80000}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000010",
+			Slug:       "rank-scores",
+			Title:      "Rank Scores",
+			Difficulty: "Medium",
+			Topic:      "Window Functions",
+			XP:         40,
+			Statement:  "Table `Scores` holds a list of scores.\n\nWrite a solution to rank the scores from highest to lowest. Ties receive the **same rank**, and the next rank must be the **next consecutive integer** — no gaps.\n\nReturn the result ordered by score in descending order.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Window Functions"},
+			Examples: []Example{
+				{
+					Input:       "Scores:\n+----+-------+\n| id | score |\n+----+-------+\n| 1  | 3.50  |\n| 2  | 3.65  |\n| 3  | 4.00  |\n| 4  | 3.85  |\n| 5  | 4.00  |\n| 6  | 3.65  |\n+----+-------+",
+					Output:      "+-------+------+\n| score | rank |\n+-------+------+\n| 4.00  | 1    |\n| 4.00  | 1    |\n| 3.85  | 2    |\n| 3.65  | 3    |\n| 3.65  | 3    |\n| 3.50  | 4    |\n+-------+------+",
+					Explanation: "Two scores of 4.00 share rank 1, and the next distinct score is rank 2 rather than 3.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "RANK() leaves gaps after a tie (1, 1, 3). DENSE_RANK() does not (1, 1, 2)."},
+				{Title: "Hint 2", Body: "The requirement of no gaps points directly at DENSE_RANK()."},
+			},
+			JavascriptSC: "-- Table: Scores(id, score)\n-- Report score and rank, highest first. Ties share a rank and the next\n-- rank must not skip a number.\n\nSELECT\nFROM Scores\nORDER BY score DESC;",
+			PythonSC:     "-- Table: Scores(id, score)\n-- Report score and rank, highest first. Ties share a rank and the next\n-- rank must not skip a number.\n\nSELECT\nFROM Scores\nORDER BY score DESC;",
+			JavaSC:       "-- Table: Scores(id, score)\n-- Report score and rank, highest first. Ties share a rank and the next\n-- rank must not skip a number.\n\nSELECT\nFROM Scores\nORDER BY score DESC;",
+			CppSC:        "-- Table: Scores(id, score)\n-- Report score and rank, highest first. Ties share a rank and the next\n-- rank must not skip a number.\n\nSELECT\nFROM Scores\nORDER BY score DESC;",
+			GoSC:         "-- Table: Scores(id, score)\n-- Report score and rank, highest first. Ties share a rank and the next\n-- rank must not skip a number.\n\nSELECT\nFROM Scores\nORDER BY score DESC;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Scores\":[{\"id\":1,\"score\":3.50},{\"id\":2,\"score\":3.65},{\"id\":3,\"score\":4.00},{\"id\":4,\"score\":3.85},{\"id\":5,\"score\":4.00},{\"id\":6,\"score\":3.65}]}}",
+					Expected: "{\"rows\":[{\"score\":4.00,\"rank\":1},{\"score\":4.00,\"rank\":1},{\"score\":3.85,\"rank\":2},{\"score\":3.65,\"rank\":3},{\"score\":3.65,\"rank\":3},{\"score\":3.50,\"rank\":4}],\"ordered\":true}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000011",
+			Slug:       "consecutive-numbers",
+			Title:      "Consecutive Numbers",
+			Difficulty: "Medium",
+			Topic:      "Window Functions",
+			XP:         45,
+			Statement:  "Table `Logs` holds an auto-incrementing `id` and a `num`.\n\nWrite a solution to find all numbers that appear **at least three times consecutively**.\n\nReturn the result table in **any order**.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Window Functions"},
+			Examples: []Example{
+				{
+					Input:       "Logs:\n+----+-----+\n| id | num |\n+----+-----+\n| 1  | 1   |\n| 2  | 1   |\n| 3  | 1   |\n| 4  | 2   |\n| 5  | 1   |\n| 6  | 2   |\n| 7  | 2   |\n+----+-----+",
+					Output:      "+-----------------+\n| ConsecutiveNums |\n+-----------------+\n| 1               |\n+-----------------+",
+					Explanation: "1 appears three times in a row at ids 1, 2 and 3. 2 never appears three times consecutively.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "LAG() and LEAD() let a row see its neighbours without a self join."},
+				{Title: "Hint 2", Body: "Compare each row to the previous and the next; if all three match, you have a run of three."},
+			},
+			JavascriptSC: "-- Table: Logs(id, num)\n-- Report any number that appears at least three times in a row,\n-- in a column called ConsecutiveNums.\n\nSELECT\nFROM Logs\n;",
+			PythonSC:     "-- Table: Logs(id, num)\n-- Report any number that appears at least three times in a row,\n-- in a column called ConsecutiveNums.\n\nSELECT\nFROM Logs\n;",
+			JavaSC:       "-- Table: Logs(id, num)\n-- Report any number that appears at least three times in a row,\n-- in a column called ConsecutiveNums.\n\nSELECT\nFROM Logs\n;",
+			CppSC:        "-- Table: Logs(id, num)\n-- Report any number that appears at least three times in a row,\n-- in a column called ConsecutiveNums.\n\nSELECT\nFROM Logs\n;",
+			GoSC:         "-- Table: Logs(id, num)\n-- Report any number that appears at least three times in a row,\n-- in a column called ConsecutiveNums.\n\nSELECT\nFROM Logs\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Logs\":[{\"id\":1,\"num\":1},{\"id\":2,\"num\":1},{\"id\":3,\"num\":1},{\"id\":4,\"num\":2},{\"id\":5,\"num\":1},{\"id\":6,\"num\":2},{\"id\":7,\"num\":2}]}}",
+					Expected: "{\"rows\":[{\"ConsecutiveNums\":1}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000012",
+			Slug:       "nth-highest-salary",
+			Title:      "Nth Highest Salary",
+			Difficulty: "Medium",
+			Topic:      "Subqueries",
+			XP:         45,
+			Statement:  "Table `Employee` records employee salaries.\n\nWrite a solution to find the **nth highest distinct salary**. If there are fewer than n distinct salaries, return `null`.\n\nFor this challenge, use `n = 2`.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Subqueries", "Window Functions"},
+			Examples: []Example{
+				{
+					Input:       "Employee:\n+----+--------+\n| id | salary |\n+----+--------+\n| 1  | 100    |\n| 2  | 200    |\n| 3  | 300    |\n+----+--------+\nn = 2",
+					Output:      "+------------------------+\n| getNthHighestSalary(2) |\n+------------------------+\n| 200                    |\n+------------------------+",
+					Explanation: "The distinct salaries descending are 300, 200, 100. The second is 200.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "DENSE_RANK() over the distinct salaries lets you pick the nth directly."},
+				{Title: "Hint 2", Body: "OFFSET with LIMIT also works, but remember to apply DISTINCT first or ties will skew the offset."},
+			},
+			JavascriptSC: "-- Table: Employee(id, salary)\n-- Return the 2nd highest DISTINCT salary as getNthHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			PythonSC:     "-- Table: Employee(id, salary)\n-- Return the 2nd highest DISTINCT salary as getNthHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			JavaSC:       "-- Table: Employee(id, salary)\n-- Return the 2nd highest DISTINCT salary as getNthHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			CppSC:        "-- Table: Employee(id, salary)\n-- Return the 2nd highest DISTINCT salary as getNthHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			GoSC:         "-- Table: Employee(id, salary)\n-- Return the 2nd highest DISTINCT salary as getNthHighestSalary,\n-- or null when there isn't one.\n\nSELECT\nFROM Employee\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Employee\":[{\"id\":1,\"salary\":100},{\"id\":2,\"salary\":200},{\"id\":3,\"salary\":300}]},\"n\":2}",
+					Expected: "{\"rows\":[{\"getNthHighestSalary\":200}]}",
+					IsHidden: false,
+				},
+				{
+					Input:    "{\"tables\":{\"Employee\":[{\"id\":1,\"salary\":100}]},\"n\":2}",
+					Expected: "{\"rows\":[{\"getNthHighestSalary\":null}]}",
+					IsHidden: true,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000013",
+			Slug:       "delete-duplicate-emails",
+			Title:      "Delete Duplicate Emails",
+			Difficulty: "Medium",
+			Topic:      "Data Modification",
+			XP:         35,
+			Statement:  "Table `Person` contains duplicate email addresses.\n\nWrite a solution to **delete** all duplicate emails, keeping only the row with the **smallest id** for each email.\n\nThis is a modification task: the final state of the `Person` table is what is checked.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "DELETE"},
+			Examples: []Example{
+				{
+					Input:       "Person:\n+----+------------------+\n| id | email            |\n+----+------------------+\n| 1  | john@example.com |\n| 2  | bob@example.com  |\n| 3  | john@example.com |\n+----+------------------+",
+					Output:      "+----+------------------+\n| id | email            |\n+----+------------------+\n| 1  | john@example.com |\n| 2  | bob@example.com  |\n+----+------------------+",
+					Explanation: "Row 3 duplicates john@example.com and has the larger id, so it is deleted.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "Join the table to itself on matching email and compare ids."},
+				{Title: "Hint 2", Body: "Delete the row whose id is greater than another row with the same email."},
+			},
+			JavascriptSC: "-- Table: Person(id, email)\n-- DELETE the duplicate emails, keeping only the row with the smallest id\n-- for each address. Your statement modifies the table; the final state is graded.\n\nDELETE FROM Person\n;",
+			PythonSC:     "-- Table: Person(id, email)\n-- DELETE the duplicate emails, keeping only the row with the smallest id\n-- for each address. Your statement modifies the table; the final state is graded.\n\nDELETE FROM Person\n;",
+			JavaSC:       "-- Table: Person(id, email)\n-- DELETE the duplicate emails, keeping only the row with the smallest id\n-- for each address. Your statement modifies the table; the final state is graded.\n\nDELETE FROM Person\n;",
+			CppSC:        "-- Table: Person(id, email)\n-- DELETE the duplicate emails, keeping only the row with the smallest id\n-- for each address. Your statement modifies the table; the final state is graded.\n\nDELETE FROM Person\n;",
+			GoSC:         "-- Table: Person(id, email)\n-- DELETE the duplicate emails, keeping only the row with the smallest id\n-- for each address. Your statement modifies the table; the final state is graded.\n\nDELETE FROM Person\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Person\":[{\"id\":1,\"email\":\"john@example.com\"},{\"id\":2,\"email\":\"bob@example.com\"},{\"id\":3,\"email\":\"john@example.com\"}]},\"verify\":\"SELECT id, email FROM Person ORDER BY id\"}",
+					Expected: "{\"rows\":[{\"id\":1,\"email\":\"john@example.com\"},{\"id\":2,\"email\":\"bob@example.com\"}],\"ordered\":true}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000014",
+			Slug:       "swap-salary",
+			Title:      "Swap Salary",
+			Difficulty: "Easy",
+			Topic:      "Data Modification",
+			XP:         25,
+			Statement:  "Table `Salary` has a `sex` column containing only `'m'` or `'f'`.\n\nWrite a **single UPDATE statement**, with no intermediate temporary table, that swaps every `'m'` to `'f'` and every `'f'` to `'m'`.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "UPDATE", "CASE"},
+			Examples: []Example{
+				{
+					Input:       "Salary:\n+----+------+-----+--------+\n| id | name | sex | salary |\n+----+------+-----+--------+\n| 1  | A    | m   | 2500   |\n| 2  | B    | f   | 1500   |\n| 3  | C    | m   | 5500   |\n| 4  | D    | f   | 500    |\n+----+------+-----+--------+",
+					Output:      "+----+------+-----+--------+\n| id | name | sex | salary |\n+----+------+-----+--------+\n| 1  | A    | f   | 2500   |\n| 2  | B    | m   | 1500   |\n| 3  | C    | f   | 5500   |\n| 4  | D    | m   | 500    |\n+----+------+-----+--------+",
+					Explanation: "Every value is flipped in one pass.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "Two sequential UPDATEs will not work: the first turns all m into f, then the second turns them all back."},
+				{Title: "Hint 2", Body: "A CASE expression evaluates against the original row value, so it flips both directions at once."},
+			},
+			JavascriptSC: "-- Table: Salary(id, name, sex, salary)\n-- Swap every 'm' to 'f' and every 'f' to 'm' in a SINGLE UPDATE statement,\n-- with no temporary table.\n\nUPDATE Salary\nSET sex =\n;",
+			PythonSC:     "-- Table: Salary(id, name, sex, salary)\n-- Swap every 'm' to 'f' and every 'f' to 'm' in a SINGLE UPDATE statement,\n-- with no temporary table.\n\nUPDATE Salary\nSET sex =\n;",
+			JavaSC:       "-- Table: Salary(id, name, sex, salary)\n-- Swap every 'm' to 'f' and every 'f' to 'm' in a SINGLE UPDATE statement,\n-- with no temporary table.\n\nUPDATE Salary\nSET sex =\n;",
+			CppSC:        "-- Table: Salary(id, name, sex, salary)\n-- Swap every 'm' to 'f' and every 'f' to 'm' in a SINGLE UPDATE statement,\n-- with no temporary table.\n\nUPDATE Salary\nSET sex =\n;",
+			GoSC:         "-- Table: Salary(id, name, sex, salary)\n-- Swap every 'm' to 'f' and every 'f' to 'm' in a SINGLE UPDATE statement,\n-- with no temporary table.\n\nUPDATE Salary\nSET sex =\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Salary\":[{\"id\":1,\"name\":\"A\",\"sex\":\"m\",\"salary\":2500},{\"id\":2,\"name\":\"B\",\"sex\":\"f\",\"salary\":1500},{\"id\":3,\"name\":\"C\",\"sex\":\"m\",\"salary\":5500},{\"id\":4,\"name\":\"D\",\"sex\":\"f\",\"salary\":500}]},\"verify\":\"SELECT id, name, sex, salary FROM Salary ORDER BY id\"}",
+					Expected: "{\"rows\":[{\"id\":1,\"name\":\"A\",\"sex\":\"f\",\"salary\":2500},{\"id\":2,\"name\":\"B\",\"sex\":\"m\",\"salary\":1500},{\"id\":3,\"name\":\"C\",\"sex\":\"f\",\"salary\":5500},{\"id\":4,\"name\":\"D\",\"sex\":\"m\",\"salary\":500}],\"ordered\":true}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000015",
+			Slug:       "fix-names-in-table",
+			Title:      "Fix Names in a Table",
+			Difficulty: "Easy",
+			Topic:      "String Functions",
+			XP:         25,
+			Statement:  "Table `Users` holds names with inconsistent capitalisation.\n\nWrite a solution to fix the names so that only the **first character is uppercase** and the rest are lowercase.\n\nReturn the result ordered by `user_id`.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "String Functions"},
+			Examples: []Example{
+				{
+					Input:       "Users:\n+---------+-------+\n| user_id | name  |\n+---------+-------+\n| 1       | aLice |\n| 2       | bOB   |\n+---------+-------+",
+					Output:      "+---------+-------+\n| user_id | name  |\n+---------+-------+\n| 1       | Alice |\n| 2       | Bob   |\n+---------+-------+",
+					Explanation: "Each name is normalised to title case.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "Split the name into its first character and the remainder."},
+				{Title: "Hint 2", Body: "UPPER(LEFT(name,1)) combined with LOWER(SUBSTRING(name,2)) does it. CONCAT joins them."},
+			},
+			JavascriptSC: "-- Table: Users(user_id, name)\n-- Report user_id and name with only the first letter capitalised,\n-- ordered by user_id.\n\nSELECT\nFROM Users\nORDER BY user_id;",
+			PythonSC:     "-- Table: Users(user_id, name)\n-- Report user_id and name with only the first letter capitalised,\n-- ordered by user_id.\n\nSELECT\nFROM Users\nORDER BY user_id;",
+			JavaSC:       "-- Table: Users(user_id, name)\n-- Report user_id and name with only the first letter capitalised,\n-- ordered by user_id.\n\nSELECT\nFROM Users\nORDER BY user_id;",
+			CppSC:        "-- Table: Users(user_id, name)\n-- Report user_id and name with only the first letter capitalised,\n-- ordered by user_id.\n\nSELECT\nFROM Users\nORDER BY user_id;",
+			GoSC:         "-- Table: Users(user_id, name)\n-- Report user_id and name with only the first letter capitalised,\n-- ordered by user_id.\n\nSELECT\nFROM Users\nORDER BY user_id;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Users\":[{\"user_id\":1,\"name\":\"aLice\"},{\"user_id\":2,\"name\":\"bOB\"}]}}",
+					Expected: "{\"rows\":[{\"user_id\":1,\"name\":\"Alice\"},{\"user_id\":2,\"name\":\"Bob\"}],\"ordered\":true}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000016",
+			Slug:       "average-selling-price",
+			Title:      "Average Selling Price",
+			Difficulty: "Medium",
+			Topic:      "Aggregation",
+			XP:         40,
+			Statement:  "Table `Prices` gives the price of each product over a date range. Table `UnitsSold` records units sold on a given date.\n\nWrite a solution to find the **average selling price** for each product, defined as total revenue divided by total units sold.\n\nRound the result to **2 decimal places**. A product with no units sold has an average price of `0`.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Aggregation", "Joins"},
+			Examples: []Example{
+				{
+					Input:       "Prices:\n+------------+------------+------------+--------+\n| product_id | start_date | end_date   | price  |\n+------------+------------+------------+--------+\n| 1          | 2019-02-17 | 2019-02-28 | 5      |\n| 1          | 2019-03-01 | 2019-03-22 | 20     |\n+------------+------------+------------+--------+\n\nUnitsSold:\n+------------+---------------+-------+\n| product_id | purchase_date | units |\n+------------+---------------+-------+\n| 1          | 2019-02-25    | 100   |\n| 1          | 2019-03-01    | 15    |\n+------------+---------------+-------+",
+					Output:      "+------------+---------------+\n| product_id | average_price |\n+------------+---------------+\n| 1          | 6.96          |\n+------------+---------------+",
+					Explanation: "(100 x 5 + 15 x 20) / 115 = 800 / 115 = 6.96.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "Join each sale to the price row whose date range contains the purchase date."},
+				{Title: "Hint 2", Body: "Guard the division: NULLIF(SUM(units), 0) avoids a divide-by-zero when nothing sold."},
+			},
+			JavascriptSC: "-- Tables:\n--   Prices(product_id, start_date, end_date, price)\n--   UnitsSold(product_id, purchase_date, units)\n-- Report product_id and average_price (revenue / units), rounded to 2 dp.\n-- A product with no sales has an average of 0.\n\nSELECT\nFROM Prices p\n;",
+			PythonSC:     "-- Tables:\n--   Prices(product_id, start_date, end_date, price)\n--   UnitsSold(product_id, purchase_date, units)\n-- Report product_id and average_price (revenue / units), rounded to 2 dp.\n-- A product with no sales has an average of 0.\n\nSELECT\nFROM Prices p\n;",
+			JavaSC:       "-- Tables:\n--   Prices(product_id, start_date, end_date, price)\n--   UnitsSold(product_id, purchase_date, units)\n-- Report product_id and average_price (revenue / units), rounded to 2 dp.\n-- A product with no sales has an average of 0.\n\nSELECT\nFROM Prices p\n;",
+			CppSC:        "-- Tables:\n--   Prices(product_id, start_date, end_date, price)\n--   UnitsSold(product_id, purchase_date, units)\n-- Report product_id and average_price (revenue / units), rounded to 2 dp.\n-- A product with no sales has an average of 0.\n\nSELECT\nFROM Prices p\n;",
+			GoSC:         "-- Tables:\n--   Prices(product_id, start_date, end_date, price)\n--   UnitsSold(product_id, purchase_date, units)\n-- Report product_id and average_price (revenue / units), rounded to 2 dp.\n-- A product with no sales has an average of 0.\n\nSELECT\nFROM Prices p\n;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Prices\":[{\"product_id\":1,\"start_date\":\"2019-02-17\",\"end_date\":\"2019-02-28\",\"price\":5},{\"product_id\":1,\"start_date\":\"2019-03-01\",\"end_date\":\"2019-03-22\",\"price\":20}],\"UnitsSold\":[{\"product_id\":1,\"purchase_date\":\"2019-02-25\",\"units\":100},{\"product_id\":1,\"purchase_date\":\"2019-03-01\",\"units\":15}]}}",
+					Expected: "{\"rows\":[{\"product_id\":1,\"average_price\":6.96}]}",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000017",
+			Slug:       "not-boring-movies",
+			Title:      "Not Boring Movies",
+			Difficulty: "Easy",
+			Topic:      "Filtering",
+			XP:         20,
+			Statement:  "Table `Cinema` lists movies with an `id`, `movie`, `description`, and `rating`.\n\nWrite a solution to report the movies with an **odd-numbered id** whose description is **not** `\"boring\"`.\n\nReturn the result ordered by rating in **descending** order.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca004",
+			Tags:       []string{"SQL", "Filtering", "ORDER BY"},
+			Examples: []Example{
+				{
+					Input:       "Cinema:\n+----+------------+-------------+--------+\n| id | movie      | description | rating |\n+----+------------+-------------+--------+\n| 1  | War        | great 3D    | 8.9    |\n| 2  | Science    | fiction     | 8.5    |\n| 3  | irish      | boring      | 6.2    |\n| 4  | Ice song   | Fantacy     | 8.6    |\n| 5  | House card | Interesting | 9.1    |\n+----+------------+-------------+--------+",
+					Output:      "+----+------------+-------------+--------+\n| id | movie      | description | rating |\n+----+------------+-------------+--------+\n| 5  | House card | Interesting | 9.1    |\n| 1  | War        | great 3D    | 8.9    |\n+----+------------+-------------+--------+",
+					Explanation: "Ids 1, 3 and 5 are odd; id 3 is boring and is excluded. The rest are sorted by rating descending.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Hint 1", Body: "The modulo operator tests for an odd id: id % 2 = 1."},
+				{Title: "Hint 2", Body: "Remember that a <> comparison also excludes NULL descriptions if any exist."},
+			},
+			JavascriptSC: "-- Table: Cinema(id, movie, description, rating)\n-- Report the odd-id movies whose description is not 'boring',\n-- ordered by rating descending.\n\nSELECT\nFROM Cinema\nORDER BY rating DESC;",
+			PythonSC:     "-- Table: Cinema(id, movie, description, rating)\n-- Report the odd-id movies whose description is not 'boring',\n-- ordered by rating descending.\n\nSELECT\nFROM Cinema\nORDER BY rating DESC;",
+			JavaSC:       "-- Table: Cinema(id, movie, description, rating)\n-- Report the odd-id movies whose description is not 'boring',\n-- ordered by rating descending.\n\nSELECT\nFROM Cinema\nORDER BY rating DESC;",
+			CppSC:        "-- Table: Cinema(id, movie, description, rating)\n-- Report the odd-id movies whose description is not 'boring',\n-- ordered by rating descending.\n\nSELECT\nFROM Cinema\nORDER BY rating DESC;",
+			GoSC:         "-- Table: Cinema(id, movie, description, rating)\n-- Report the odd-id movies whose description is not 'boring',\n-- ordered by rating descending.\n\nSELECT\nFROM Cinema\nORDER BY rating DESC;",
+			TestCases: []TestCase{
+				{
+					Input:    "{\"tables\":{\"Cinema\":[{\"id\":1,\"movie\":\"War\",\"description\":\"great 3D\",\"rating\":8.9},{\"id\":2,\"movie\":\"Science\",\"description\":\"fiction\",\"rating\":8.5},{\"id\":3,\"movie\":\"irish\",\"description\":\"boring\",\"rating\":6.2},{\"id\":4,\"movie\":\"Ice song\",\"description\":\"Fantacy\",\"rating\":8.6},{\"id\":5,\"movie\":\"House card\",\"description\":\"Interesting\",\"rating\":9.1}]}}",
+					Expected: "{\"rows\":[{\"id\":5,\"movie\":\"House card\",\"description\":\"Interesting\",\"rating\":9.1},{\"id\":1,\"movie\":\"War\",\"description\":\"great 3D\",\"rating\":8.9}],\"ordered\":true}",
 					IsHidden: false,
 				},
 			},
@@ -729,38 +1349,15 @@ func twoSum(nums []int, target int) []int {
  * @return {number}
  */
 function maxProfit(prices) {
-    let minPrice = Infinity;
-    let maxProfit = 0;
-    for (let i = 0; i < prices.length; i++) {
-        if (prices[i] < minPrice) {
-            minPrice = prices[i];
-        } else if (prices[i] - minPrice > maxProfit) {
-            maxProfit = prices[i] - minPrice;
-        }
-    }
-    return maxProfit;
+    // Write your code here
 }`,
 			PythonSC: `def maxProfit(prices: list[int]) -> int:
-    min_price = float('inf')
-    max_profit = 0
-    for price in prices:
-        if price < min_price:
-            min_price = price
-        elif price - min_price > max_profit:
-            max_profit = price - min_price
-    return max_profit`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int maxProfit(int[] prices) {
-        int minPrice = Integer.MAX_VALUE;
-        int maxProfit = 0;
-        for (int price : prices) {
-            if (price < minPrice) {
-                minPrice = price;
-            } else if (price - minPrice > maxProfit) {
-                maxProfit = price - minPrice;
-            }
-        }
-        return maxProfit;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -770,31 +1367,15 @@ using namespace std;
 class Solution {
 public:
     int maxProfit(vector<int>& prices) {
-        int minPrice = 1e9;
-        int maxProfit = 0;
-        for (int price : prices) {
-            if (price < minPrice) {
-                minPrice = price;
-            } else {
-                maxProfit = max(maxProfit, price - minPrice);
-            }
-        }
-        return maxProfit;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func maxProfit(prices []int) int {
-    minPrice := 1000000000
-    maxProfit := 0
-    for _, price := range prices {
-        if price < minPrice {
-            minPrice = price
-        } else if price - minPrice > maxProfit {
-            maxProfit = price - minPrice
-        }
-    }
-    return maxProfit
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[7,1,5,3,6,4]", Expected: "5", IsHidden: false},
@@ -830,19 +1411,16 @@ func maxProfit(prices []int) int {
  * @return {boolean}
  */
 function containsDuplicate(nums) {
-    const set = new Set(nums);
-    return set.size !== nums.length;
+    // Write your code here
 }`,
 			PythonSC: `def containsDuplicate(nums: list[int]) -> bool:
-    return len(set(nums)) != len(nums)`,
+    # Write your code here
+    pass`,
 			JavaSC: `import java.util.*;
 
 public class Solution {
     public boolean containsDuplicate(int[] nums) {
-        Set<Integer> set = new HashSet<>();
-        for (int num : nums) {
-            if (!set.add(num)) return true;
-        }
+        // Write your code here
         return false;
     }
 }`,
@@ -853,24 +1431,14 @@ using namespace std;
 class Solution {
 public:
     bool containsDuplicate(vector<int>& nums) {
-        unordered_set<int> set;
-        for (int num : nums) {
-            if (set.count(num)) return true;
-            set.insert(num);
-        }
+        // Write your code here
         return false;
     }
 };`,
 			GoSC: `package main
 
 func containsDuplicate(nums []int) bool {
-    seen := make(map[int]bool)
-    for _, num := range nums {
-        if seen[num] {
-            return true
-        }
-        seen[num] = true
-    }
+    // Write your code here
     return false
 }`,
 			TestCases: []TestCase{
@@ -1026,30 +1594,15 @@ func productExceptSelf(nums []int) []int {
  * @return {number}
  */
 function maxSubArray(nums) {
-    let maxSum = nums[0];
-    let currentSum = nums[0];
-    for (let i = 1; i < nums.length; i++) {
-        currentSum = Math.max(nums[i], currentSum + nums[i]);
-        maxSum = Math.max(maxSum, currentSum);
-    }
-    return maxSum;
+    // Write your code here
 }`,
 			PythonSC: `def maxSubArray(nums: list[int]) -> int:
-    max_sum = nums[0]
-    current_sum = nums[0]
-    for num in nums[1:]:
-        current_sum = max(num, current_sum + num)
-        max_sum = max(max_sum, current_sum)
-    return max_sum`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int maxSubArray(int[] nums) {
-        int maxSum = nums[0];
-        int currentSum = nums[0];
-        for (int i = 1; i < nums.length; i++) {
-            currentSum = Math.max(nums[i], currentSum + nums[i]);
-            maxSum = Math.max(maxSum, currentSum);
-        }
-        return maxSum;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -1059,31 +1612,15 @@ using namespace std;
 class Solution {
 public:
     int maxSubArray(vector<int>& nums) {
-        int maxSum = nums[0];
-        int currentSum = nums[0];
-        for (int i = 1; i < nums.size(); i++) {
-            currentSum = max(nums[i], currentSum + nums[i]);
-            maxSum = max(maxSum, currentSum);
-        }
-        return maxSum;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func maxSubArray(nums []int) int {
-    maxSum := nums[0]
-    currentSum := nums[0]
-    for i := 1; i < len(nums); i++ {
-        if nums[i] > currentSum + nums[i] {
-            currentSum = nums[i]
-        } else {
-            currentSum = currentSum + nums[i]
-        }
-        if currentSum > maxSum {
-            maxSum = currentSum
-        }
-    }
-    return maxSum
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[-2,1,-3,4,-1,2,1,-5,4]", Expected: "6", IsHidden: false},
@@ -1119,39 +1656,15 @@ func maxSubArray(nums []int) int {
  * @return {number}
  */
 function maxProduct(nums) {
-    let maxProd = nums[0];
-    let minProd = nums[0];
-    let res = nums[0];
-    for (let i = 1; i < nums.length; i++) {
-        const temp = Math.max(nums[i], maxProd * nums[i], minProd * nums[i]);
-        minProd = Math.min(nums[i], maxProd * nums[i], minProd * nums[i]);
-        maxProd = temp;
-        res = Math.max(res, maxProd);
-    }
-    return res;
+    // Write your code here
 }`,
 			PythonSC: `def maxProduct(nums: list[int]) -> int:
-    max_prod = nums[0]
-    min_prod = nums[0]
-    res = nums[0]
-    for num in nums[1:]:
-        temp = max(num, max_prod * num, min_prod * num)
-        min_prod = min(num, max_prod * num, min_prod * num)
-        max_prod = temp
-        res = max(res, max_prod)
-    return res`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int maxProduct(int[] nums) {
-        int maxProd = nums[0];
-        int minProd = nums[0];
-        int res = nums[0];
-        for (int i = 1; i < nums.length; i++) {
-            int temp = Math.max(nums[i], Math.max(maxProd * nums[i], minProd * nums[i]));
-            minProd = Math.min(nums[i], Math.min(maxProd * nums[i], minProd * nums[i]));
-            maxProd = temp;
-            res = Math.max(res, maxProd);
-        }
-        return res;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -1161,43 +1674,15 @@ using namespace std;
 class Solution {
 public:
     int maxProduct(vector<int>& nums) {
-        int maxProd = nums[0];
-        int minProd = nums[0];
-        int res = nums[0];
-        for (int i = 1; i < nums.size(); i++) {
-            int temp = max({nums[i], maxProd * nums[i], minProd * nums[i]});
-            minProd = min({nums[i], maxProd * nums[i], minProd * nums[i]});
-            maxProd = temp;
-            res = max(res, maxProd);
-        }
-        return res;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func maxProduct(nums []int) int {
-    maxProd := nums[0]
-    minProd := nums[0]
-    res := nums[0]
-    for i := 1; i < len(nums); i++ {
-        num := nums[i]
-        t1 := maxProd * num
-        t2 := minProd * num
-        tempMax := num
-        if t1 > tempMax { tempMax = t1 }
-        if t2 > tempMax { tempMax = t2 }
-        
-        tempMin := num
-        if t1 < tempMin { tempMin = t1 }
-        if t2 < tempMin { tempMin = t2 }
-        
-        maxProd = tempMax
-        minProd = tempMin
-        if maxProd > res {
-            res = maxProd
-        }
-    }
-    return res
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[2,3,-2,4]", Expected: "6", IsHidden: false},
@@ -1233,41 +1718,15 @@ func maxProduct(nums []int) int {
  * @return {number}
  */
 function findMin(nums) {
-    let left = 0;
-    let right = nums.length - 1;
-    while (left < right) {
-        const mid = Math.floor((left + right) / 2);
-        if (nums[mid] > nums[right]) {
-            left = mid + 1;
-        } else {
-            right = mid;
-        }
-    }
-    return nums[left];
+    // Write your code here
 }`,
 			PythonSC: `def findMin(nums: list[int]) -> int:
-    left = 0
-    right = len(nums) - 1
-    while left < right:
-        mid = (left + right) // 2
-        if nums[mid] > nums[right]:
-            left = mid + 1
-        else:
-            right = mid
-    return nums[left]`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int findMin(int[] nums) {
-        int left = 0;
-        int right = nums.length - 1;
-        while (left < right) {
-            int mid = left + (right - left) / 2;
-            if (nums[mid] > nums[right]) {
-                left = mid + 1;
-            } else {
-                right = mid;
-            }
-        }
-        return nums[left];
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -1276,33 +1735,15 @@ using namespace std;
 class Solution {
 public:
     int findMin(vector<int>& nums) {
-        int left = 0;
-        int right = nums.size() - 1;
-        while (left < right) {
-            int mid = left + (right - left) / 2;
-            if (nums[mid] > nums[right]) {
-                left = mid + 1;
-            } else {
-                right = mid;
-            }
-        }
-        return nums[left];
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func findMin(nums []int) int {
-    left := 0
-    right := len(nums) - 1
-    for left < right {
-        mid := (left + right) / 2
-        if nums[mid] > nums[right] {
-            left = mid + 1
-        } else {
-            right = mid
-        }
-    }
-    return nums[left]
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[3,4,5,1,2]", Expected: "1", IsHidden: false},
@@ -1649,44 +2090,15 @@ func threeSum(nums []int) [][]int {
  * @return {number}
  */
 function maxArea(height) {
-    let maxA = 0;
-    let left = 0, right = height.length - 1;
-    while (left < right) {
-        const h = Math.min(height[left], height[right]);
-        maxA = Math.max(maxA, h * (right - left));
-        if (height[left] < height[right]) {
-            left++;
-        } else {
-            right--;
-        }
-    }
-    return maxA;
+    // Write your code here
 }`,
 			PythonSC: `def maxArea(height: list[int]) -> int:
-    max_a = 0
-    left, right = 0, len(height) - 1
-    while left < right:
-        h = min(height[left], height[right])
-        max_a = max(max_a, h * (right - left))
-        if height[left] < height[right]:
-            left += 1
-        else:
-            right -= 1
-    return max_a`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int maxArea(int[] height) {
-        int maxA = 0;
-        int left = 0, right = height.length - 1;
-        while (left < right) {
-            int h = Math.min(height[left], height[right]);
-            maxA = Math.max(maxA, h * (right - left));
-            if (height[left] < height[right]) {
-                left++;
-            } else {
-                right--;
-            }
-        }
-        return maxA;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -1696,41 +2108,15 @@ using namespace std;
 class Solution {
 public:
     int maxArea(vector<int>& height) {
-        int maxA = 0;
-        int left = 0, right = height.size() - 1;
-        while (left < right) {
-            int h = min(height[left], height[right]);
-            maxA = max(maxA, h * (right - left));
-            if (height[left] < height[right]) {
-                left++;
-            } else {
-                right--;
-            }
-        }
-        return maxA;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func maxArea(height []int) int {
-    maxA := 0
-    left, right := 0, len(height)-1
-    for left < right {
-        h := height[left]
-        if height[right] < h {
-            h = height[right]
-        }
-        area := h * (right - left)
-        if area > maxA {
-            maxA = area
-        }
-        if height[left] < height[right] {
-            left++
-        } else {
-            right--
-        }
-    }
-    return maxA
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[1,8,6,2,5,4,8,3,7]", Expected: "49", IsHidden: false},
@@ -1974,69 +2360,15 @@ func findMedianSortedArrays(nums1 []int, nums2 []int) float64 {
  * @return {number}
  */
 function trap(height) {
-    let left = 0, right = height.length - 1;
-    let leftMax = 0, rightMax = 0;
-    let water = 0;
-    while (left < right) {
-        if (height[left] < height[right]) {
-            if (height[left] >= leftMax) {
-                leftMax = height[left];
-            } else {
-                water += leftMax - height[left];
-            }
-            left++;
-        } else {
-            if (height[right] >= rightMax) {
-                rightMax = height[right];
-            } else {
-                water += rightMax - height[right];
-            }
-            right--;
-        }
-    }
-    return water;
+    // Write your code here
 }`,
 			PythonSC: `def trap(height: list[int]) -> int:
-    left, right = 0, len(height) - 1
-    left_max, right_max = 0, 0
-    water = 0
-    while left < right:
-        if height[left] < height[right]:
-            if height[left] >= left_max:
-                left_max = height[left]
-            else:
-                water += left_max - height[left]
-            left += 1
-        else:
-            if height[right] >= right_max:
-                right_max = height[right]
-            else:
-                water += right_max - height[right]
-            right -= 1
-    return water`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int trap(int[] height) {
-        int left = 0, right = height.length - 1;
-        int leftMax = 0, rightMax = 0;
-        int water = 0;
-        while (left < right) {
-            if (height[left] < height[right]) {
-                if (height[left] >= leftMax) {
-                    leftMax = height[left];
-                } else {
-                    water += leftMax - height[left];
-                }
-                left++;
-            } else {
-                if (height[right] >= rightMax) {
-                    rightMax = height[right];
-                } else {
-                    water += rightMax - height[right];
-                }
-                right--;
-            }
-        }
-        return water;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -2046,53 +2378,15 @@ using namespace std;
 class Solution {
 public:
     int trap(vector<int>& height) {
-        int left = 0, right = height.size() - 1;
-        int leftMax = 0, rightMax = 0;
-        int water = 0;
-        while (left < right) {
-            if (height[left] < height[right]) {
-                if (height[left] >= leftMax) {
-                    leftMax = height[left];
-                } else {
-                    water += leftMax - height[left];
-                }
-                left++;
-            } else {
-                if (height[right] >= rightMax) {
-                    rightMax = height[right];
-                } else {
-                    water += rightMax - height[right];
-                }
-                right--;
-            }
-        }
-        return water;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func trap(height []int) int {
-    left, right := 0, len(height)-1
-    leftMax, rightMax := 0, 0
-    water := 0
-    for left < right {
-        if height[left] < height[right] {
-            if height[left] >= leftMax {
-                leftMax = height[left]
-            } else {
-                water += leftMax - height[left]
-            }
-            left++
-        } else {
-            if height[right] >= rightMax {
-                rightMax = height[right]
-            } else {
-                water += rightMax - height[right]
-            }
-            right--
-        }
-    }
-    return water
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[0,1,0,2,1,0,1,3,2,1,2,1]", Expected: "6", IsHidden: false},
@@ -2133,43 +2427,15 @@ func trap(height []int) int {
  * @return {number}
  */
 function firstMissingPositive(nums) {
-    const n = nums.length;
-    for (let i = 0; i < n; i++) {
-        while (nums[i] > 0 && nums[i] <= n && nums[nums[i] - 1] !== nums[i]) {
-            const temp = nums[nums[i] - 1];
-            nums[nums[i] - 1] = nums[i];
-            nums[i] = temp;
-        }
-    }
-    for (let i = 0; i < n; i++) {
-        if (nums[i] !== i + 1) return i + 1;
-    }
-    return n + 1;
+    // Write your code here
 }`,
 			PythonSC: `def firstMissingPositive(nums: list[int]) -> int:
-    n = len(nums)
-    for i in range(n):
-        while 0 < nums[i] <= n and nums[nums[i] - 1] != nums[i]:
-            correct_idx = nums[i] - 1
-            nums[i], nums[correct_idx] = nums[correct_idx], nums[i]
-    for i in range(n):
-        if nums[i] != i + 1:
-            return i + 1
-    return n + 1`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int firstMissingPositive(int[] nums) {
-        int n = nums.length;
-        for (int i = 0; i < n; i++) {
-            while (nums[i] > 0 && nums[i] <= n && nums[nums[i] - 1] != nums[i]) {
-                int temp = nums[nums[i] - 1];
-                nums[nums[i] - 1] = nums[i];
-                nums[i] = temp;
-            }
-        }
-        for (int i = 0; i < n; i++) {
-            if (nums[i] != i + 1) return i + 1;
-        }
-        return n + 1;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -2179,34 +2445,15 @@ using namespace std;
 class Solution {
 public:
     int firstMissingPositive(vector<int>& nums) {
-        int n = nums.size();
-        for (int i = 0; i < n; i++) {
-            while (nums[i] > 0 && nums[i] <= n && nums[nums[i] - 1] != nums[i]) {
-                swap(nums[i], nums[nums[i] - 1]);
-            }
-        }
-        for (int i = 0; i < n; i++) {
-            if (nums[i] != i + 1) return i + 1;
-        }
-        return n + 1;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func firstMissingPositive(nums []int) int {
-    n := len(nums)
-    for i := 0; i < n; i++ {
-        for nums[i] > 0 && nums[i] <= n && nums[nums[i]-1] != nums[i] {
-            correctIdx := nums[i] - 1
-            nums[i], nums[correctIdx] = nums[correctIdx], nums[i]
-        }
-    }
-    for i := 0; i < n; i++ {
-        if nums[i] != i+1 {
-            return i + 1
-        }
-    }
-    return n + 1
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[1,2,0]", Expected: "3", IsHidden: false},
@@ -2247,49 +2494,17 @@ func firstMissingPositive(nums []int) int {
  * @return {number}
  */
 function largestRectangleArea(heights) {
-    const stack = [];
-    let maxArea = 0;
-    const n = heights.length;
-    for (let i = 0; i <= n; i++) {
-        const h = i === n ? 0 : heights[i];
-        while (stack.length > 0 && heights[stack[stack.length - 1]] > h) {
-            const height = heights[stack.pop()];
-            const width = stack.length === 0 ? i : i - stack[stack.length - 1] - 1;
-            maxArea = Math.max(maxArea, height * width);
-        }
-        stack.push(i);
-    }
-    return maxArea;
+    // Write your code here
 }`,
 			PythonSC: `def largestRectangleArea(heights: list[int]) -> int:
-    stack = []
-    max_area = 0
-    n = len(heights)
-    for i in range(n + 1):
-        h = heights[i] if i < n else 0
-        while stack and heights[stack[-1]] > h:
-            height = heights[stack.pop()]
-            width = i if not stack else i - stack[-1] - 1
-            max_area = max(max_area, height * width)
-        stack.append(i)
-    return max_area`,
+    # Write your code here
+    pass`,
 			JavaSC: `import java.util.*;
 
 public class Solution {
     public int largestRectangleArea(int[] heights) {
-        Stack<Integer> stack = new Stack<>();
-        int maxArea = 0;
-        int n = heights.length;
-        for (int i = 0; i <= n; i++) {
-            int h = (i == n) ? 0 : heights[i];
-            while (!stack.isEmpty() && heights[stack.peek()] > h) {
-                int height = heights[stack.pop()];
-                int width = stack.isEmpty() ? i : i - stack.peek() - 1;
-                maxArea = Math.max(maxArea, height * width);
-            }
-            stack.push(i);
-        }
-        return maxArea;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -2300,47 +2515,15 @@ using namespace std;
 class Solution {
 public:
     int largestRectangleArea(vector<int>& heights) {
-        stack<int> s;
-        int maxArea = 0;
-        int n = heights.size();
-        for (int i = 0; i <= n; i++) {
-            int h = (i == n) ? 0 : heights[i];
-            while (!s.empty() && heights[s.top()] > h) {
-                int height = heights[s.top()];
-                s.pop();
-                int width = s.empty() ? i : i - s.top() - 1;
-                maxArea = max(maxArea, height * width);
-            }
-            s.push(i);
-        }
-        return maxArea;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func largestRectangleArea(heights []int) int {
-    stack := []int{}
-    maxArea := 0
-    n := len(heights)
-    for i := 0; i <= n; i++ {
-        h := 0
-        if i < n {
-            h = heights[i]
-        }
-        for len(stack) > 0 && heights[stack[len(stack)-1]] > h {
-            height := heights[stack[len(stack)-1]]
-            stack = stack[:len(stack)-1]
-            width := i
-            if len(stack) > 0 {
-                width = i - stack[len(stack)-1] - 1
-            }
-            if area := height * width; area > maxArea {
-                maxArea = area
-            }
-        }
-        stack = append(stack, i)
-    }
-    return maxArea
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[2,1,5,6,2,3]", Expected: "10", IsHidden: false},
@@ -2510,36 +2693,15 @@ func maxSlidingWindow(nums []int, k int) []int {
  * @return {number}
  */
 function maxProfit(prices) {
-    let buy1 = -Infinity, sell1 = 0;
-    let buy2 = -Infinity, sell2 = 0;
-    for (let i = 0; i < prices.length; i++) {
-        buy1 = Math.max(buy1, -prices[i]);
-        sell1 = Math.max(sell1, buy1 + prices[i]);
-        buy2 = Math.max(buy2, sell1 - prices[i]);
-        sell2 = Math.max(sell2, buy2 + prices[i]);
-    }
-    return sell2;
+    // Write your code here
 }`,
 			PythonSC: `def maxProfit(prices: list[int]) -> int:
-    buy1, sell1 = float('-inf'), 0
-    buy2, sell2 = float('-inf'), 0
-    for price in prices:
-        buy1 = max(buy1, -price)
-        sell1 = max(sell1, buy1 + price)
-        buy2 = max(buy2, sell1 - price)
-        sell2 = max(sell2, buy2 + price)
-    return sell2`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int maxProfit(int[] prices) {
-        int buy1 = Integer.MIN_VALUE, sell1 = 0;
-        int buy2 = Integer.MIN_VALUE, sell2 = 0;
-        for (int price : prices) {
-            buy1 = Math.max(buy1, -price);
-            sell1 = Math.max(sell1, buy1 + price);
-            buy2 = Math.max(buy2, sell1 - price);
-            sell2 = Math.max(sell2, buy2 + price);
-        }
-        return sell2;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -2550,15 +2712,8 @@ using namespace std;
 class Solution {
 public:
     int maxProfit(vector<int>& prices) {
-        int buy1 = INT_MIN, sell1 = 0;
-        int buy2 = INT_MIN, sell2 = 0;
-        for (int price : prices) {
-            buy1 = max(buy1, -price);
-            sell1 = max(sell1, buy1 + price);
-            buy2 = max(buy2, sell1 - price);
-            sell2 = max(sell2, buy2 + price);
-        }
-        return sell2;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
@@ -2566,23 +2721,8 @@ public:
 import "math"
 
 func maxProfit(prices []int) int {
-    buy1, sell1 := math.MinInt32, 0
-    buy2, sell2 := math.MinInt32, 0
-    for _, price := range prices {
-        if -price > buy1 {
-            buy1 = -price
-        }
-        if buy1 + price > sell1 {
-            sell1 = buy1 + price
-        }
-        if sell1 - price > buy2 {
-            buy2 = sell1 - price
-        }
-        if buy2 + price > sell2 {
-            sell2 = buy2 + price
-        }
-    }
-    return sell2
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[3,3,5,0,0,3,1,4]", Expected: "6", IsHidden: false},
@@ -2744,84 +2884,19 @@ func maxProfit(k int, prices []int) int {
  * @return {number}
  */
 function maximumGap(nums) {
-    if (nums.length < 2) return 0;
-    const minVal = Math.min(...nums);
-    const maxVal = Math.max(...nums);
-    const n = nums.length;
-    const bucketSize = Math.max(1, Math.floor((maxVal - minVal) / (n - 1)));
-    const bucketCount = Math.floor((maxVal - minVal) / bucketSize) + 1;
-    const bucketsMin = new Array(bucketCount).fill(Infinity);
-    const bucketsMax = new Array(bucketCount).fill(-Infinity);
-    for (let x of nums) {
-        const idx = Math.floor((x - minVal) / bucketSize);
-        bucketsMin[idx] = Math.min(bucketsMin[idx], x);
-        bucketsMax[idx] = Math.max(bucketsMax[idx], x);
-    }
-    let maxGap = 0;
-    let prev = minVal;
-    for (let i = 0; i < bucketCount; i++) {
-        if (bucketsMin[i] === Infinity) continue;
-        maxGap = Math.max(maxGap, bucketsMin[i] - prev);
-        prev = bucketsMax[i];
-    }
-    return maxGap;
+    // Write your code here
 }`,
 			PythonSC: `import math
 
 def maximumGap(nums: list[int]) -> int:
-    if len(nums) < 2:
-        return 0
-    min_val, max_val = min(nums), max(nums)
-    if min_val == max_val:
-        return 0
-    n = len(nums)
-    bucket_size = max(1, (max_val - min_val) // (n - 1))
-    bucket_count = (max_val - min_val) // bucket_size + 1
-    buckets_min = [float('inf')] * bucket_count
-    buckets_max = [float('-inf')] * bucket_count
-    for x in nums:
-        idx = (x - min_val) // bucket_size
-        buckets_min[idx] = min(buckets_min[idx], x)
-        buckets_max[idx] = max(buckets_max[idx], x)
-    max_gap = 0
-    prev = min_val
-    for i in range(bucket_count):
-        if buckets_min[i] == float('inf'):
-            continue
-        max_gap = max(max_gap, buckets_min[i] - prev)
-        prev = buckets_max[i]
-    return max_gap`,
+    # Write your code here
+    pass`,
 			JavaSC: `import java.util.*;
 
 public class Solution {
     public int maximumGap(int[] nums) {
-        if (nums == null || nums.length < 2) return 0;
-        int min = nums[0], max = nums[0];
-        for (int x : nums) {
-            min = Math.min(min, x);
-            max = Math.max(max, x);
-        }
-        if (min == max) return 0;
-        int n = nums.length;
-        int bucketSize = Math.max(1, (max - min) / (n - 1));
-        int bucketCount = (max - min) / bucketSize + 1;
-        int[] bucketsMin = new int[bucketCount];
-        int[] bucketsMax = new int[bucketCount];
-        Arrays.fill(bucketsMin, Integer.MAX_VALUE);
-        Arrays.fill(bucketsMax, Integer.MIN_VALUE);
-        for (int x : nums) {
-            int idx = (x - min) / bucketSize;
-            bucketsMin[idx] = Math.min(bucketsMin[idx], x);
-            bucketsMax[idx] = Math.max(bucketsMax[idx], x);
-        }
-        int maxGap = 0;
-        int prev = min;
-        for (int i = 0; i < bucketCount; i++) {
-            if (bucketsMin[i] == Integer.MAX_VALUE) continue;
-            maxGap = Math.max(maxGap, bucketsMin[i] - prev);
-            prev = bucketsMax[i];
-        }
-        return maxGap;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -2832,31 +2907,8 @@ using namespace std;
 class Solution {
 public:
     int maximumGap(vector<int>& nums) {
-        if (nums.size() < 2) return 0;
-        int minVal = nums[0], maxVal = nums[0];
-        for (int x : nums) {
-            minVal = min(minVal, x);
-            maxVal = max(maxVal, x);
-        }
-        if (minVal == maxVal) return 0;
-        int n = nums.size();
-        int bucketSize = max(1, (maxVal - minVal) / (n - 1));
-        int bucketCount = (maxVal - minVal) / bucketSize + 1;
-        vector<int> bucketsMin(bucketCount, INT_MAX);
-        vector<int> bucketsMax(bucketCount, INT_MIN);
-        for (int x : nums) {
-            int idx = (x - minVal) / bucketSize;
-            bucketsMin[idx] = min(bucketsMin[idx], x);
-            bucketsMax[idx] = max(bucketsMax[idx], x);
-        }
-        int maxGap = 0;
-        int prev = minVal;
-        for (int i = 0; i < bucketCount; i++) {
-            if (bucketsMin[i] == INT_MAX) continue;
-            maxGap = max(maxGap, bucketsMin[i] - prev);
-            prev = bucketsMax[i];
-        }
-        return maxGap;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
@@ -2864,46 +2916,8 @@ public:
 import "math"
 
 func maximumGap(nums []int) int {
-    if len(nums) < 2 {
-        return 0
-    }
-    minVal, maxVal := nums[0], nums[0]
-    for _, x := range nums {
-        if x < minVal { minVal = x }
-        if x > maxVal { maxVal = x }
-    }
-    if minVal == maxVal {
-        return 0
-    }
-    n := len(nums)
-    bucketSize := (maxVal - minVal) / (n - 1)
-    if bucketSize < 1 {
-        bucketSize = 1
-    }
-    bucketCount := (maxVal - minVal) / bucketSize + 1
-    bucketsMin := make([]int, bucketCount)
-    bucketsMax := make([]int, bucketCount)
-    for i := range bucketsMin {
-        bucketsMin[i] = math.MaxInt32
-        bucketsMax[i] = math.MinInt32
-    }
-    for _, x := range nums {
-        idx := (x - minVal) / bucketSize
-        if x < bucketsMin[idx] { bucketsMin[idx] = x }
-        if x > bucketsMax[idx] { bucketsMax[idx] = x }
-    }
-    maxGap := 0
-    prev := minVal
-    for i := 0; i < bucketCount; i++ {
-        if bucketsMin[i] == math.MaxInt32 {
-            continue
-        }
-        if bucketsMin[i] - prev > maxGap {
-            maxGap = bucketsMin[i] - prev
-        }
-        prev = bucketsMax[i]
-    }
-    return maxGap
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[3,6,9,1]", Expected: "3", IsHidden: false},
@@ -2939,68 +2953,17 @@ func maximumGap(nums []int) int {
  * @return {number}
  */
 function reversePairs(nums) {
-    function mergeSort(l, r) {
-        if (l >= r) return 0;
-        const mid = Math.floor((l + r) / 2);
-        let count = mergeSort(l, mid) + mergeSort(mid + 1, r);
-        let j = mid + 1;
-        for (let i = l; i <= mid; i++) {
-            while (j <= r && nums[i] > 2 * nums[j]) {
-                j++;
-            }
-            count += (j - (mid + 1));
-        }
-        const temp = [];
-        let p1 = l, p2 = mid + 1;
-        while (p1 <= mid && p2 <= r) {
-            if (nums[p1] <= nums[p2]) {
-                temp.push(nums[p1++]);
-            } else {
-                temp.push(nums[p2++]);
-            }
-        }
-        while (p1 <= mid) temp.push(nums[p1++]);
-        while (p2 <= r) temp.push(nums[p2++]);
-        for (let i = 0; i < temp.length; i++) {
-            nums[l + i] = temp[i];
-        }
-        return count;
-    }
-    return mergeSort(0, nums.length - 1);
+    // Write your code here
 }`,
 			PythonSC: `def reversePairs(nums: list[int]) -> int:
-    def mergeSort(l: int, r: int) -> int:
-        if l >= r:
-            return 0
-        mid = (l + r) // 2
-        count = mergeSort(l, mid) + mergeSort(mid + 1, r)
-        j = mid + 1
-        for i in range(l, mid + 1):
-            while j <= r and nums[i] > 2 * nums[j]:
-                j += 1
-            count += j - (mid + 1)
-        nums[l:r+1] = sorted(nums[l:r+1])
-        return count
-    return mergeSort(0, len(nums) - 1)`,
+    # Write your code here
+    pass`,
 			JavaSC: `import java.util.*;
 
 public class Solution {
     public int reversePairs(int[] nums) {
-        return mergeSort(nums, 0, nums.length - 1);
-    }
-    private int mergeSort(int[] nums, int l, int r) {
-        if (l >= r) return 0;
-        int mid = l + (r - l) / 2;
-        int count = mergeSort(nums, l, mid) + mergeSort(nums, mid + 1, r);
-        int j = mid + 1;
-        for (int i = l; i <= mid; i++) {
-            while (j <= r && (long)nums[i] > 2 * (long)nums[j]) {
-                j++;
-            }
-            count += j - (mid + 1);
-        }
-        Arrays.sort(nums, l, r + 1);
-        return count;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -3010,47 +2973,18 @@ using namespace std;
 class Solution {
 public:
     int reversePairs(vector<int>& nums) {
-        return mergeSort(nums, 0, nums.size() - 1);
+        // Write your code here
+        return 0;
     }
 private:
-    int mergeSort(vector<int>& nums, int l, int r) {
-        if (l >= r) return 0;
-        int mid = l + (r - l) / 2;
-        int count = mergeSort(nums, l, mid) + mergeSort(nums, mid + 1, r);
-        int j = mid + 1;
-        for (int i = l; i <= mid; i++) {
-            while (j <= r && (long long)nums[i] > 2LL * nums[j]) {
-                j++;
-            }
-            count += j - (mid + 1);
-        }
-        sort(nums.begin() + l, nums.begin() + r + 1);
-        return count;
-    }
 };`,
 			GoSC: `package main
 
 import "sort"
 
 func reversePairs(nums []int) int {
-    var mergeSort func(l, r int) int
-    mergeSort = func(l, r int) int {
-        if l >= r {
-            return 0
-        }
-        mid := (l + r) / 2
-        count := mergeSort(l, mid) + mergeSort(mid + 1, r)
-        j := mid + 1
-        for i := l; i <= mid; i++ {
-            for j <= r && int64(nums[i]) > 2 * int64(nums[j]) {
-                j++
-            }
-            count += j - (mid + 1)
-        }
-        sort.Ints(nums[l : r+1])
-        return count
-    }
-    return mergeSort(0, len(nums)-1)
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[1,3,2,3,1]", Expected: "2", IsHidden: false},
@@ -3086,86 +3020,18 @@ func reversePairs(nums []int) int {
  * @return {number}
  */
 function maximalRectangle(matrix) {
-    if (matrix.length === 0) return 0;
-    const m = matrix.length;
-    const n = matrix[0].length;
-    const heights = new Array(n).fill(0);
-    let maxArea = 0;
-    for (let i = 0; i < m; i++) {
-        for (let j = 0; j < n; j++) {
-            heights[j] = matrix[i][j] === '1' ? heights[j] + 1 : 0;
-        }
-        maxArea = Math.max(maxArea, largestRectangleArea(heights));
-    }
-    return maxArea;
+    // Write your code here
 }
-function largestRectangleArea(heights) {
-    const stack = [];
-    let maxArea = 0;
-    const n = heights.length;
-    for (let i = 0; i <= n; i++) {
-        const h = i === n ? 0 : heights[i];
-        while (stack.length > 0 && heights[stack[stack.length - 1]] > h) {
-            const height = heights[stack.pop()];
-            const width = stack.length === 0 ? i : i - stack[stack.length - 1] - 1;
-            maxArea = Math.max(maxArea, height * width);
-        }
-        stack.push(i);
-    }
-    return maxArea;
-}`,
+`,
 			PythonSC: `def maximalRectangle(matrix: list[list[str]]) -> int:
-    if not matrix:
-        return 0
-    n = len(matrix[0])
-    heights = [0] * n
-    max_area = 0
-    def largestRectangleArea(heights):
-        stack = []
-        max_area = 0
-        for i in range(len(heights) + 1):
-            h = heights[i] if i < len(heights) else 0
-            while stack and heights[stack[-1]] > h:
-                height = heights[stack.pop()]
-                width = i if not stack else i - stack[-1] - 1
-                max_area = max(max_area, height * width)
-            stack.append(i)
-        return max_area
-    for row in matrix:
-        for j in range(n):
-            heights[j] = heights[j] + 1 if row[j] == '1' else 0
-        max_area = max(max_area, largestRectangleArea(heights))
-    return max_area`,
+    # Write your code here
+    pass`,
 			JavaSC: `import java.util.*;
 
 public class Solution {
     public int maximalRectangle(char[][] matrix) {
-        if (matrix == null || matrix.length == 0) return 0;
-        int n = matrix[0].length;
-        int[] heights = new int[n];
-        int maxArea = 0;
-        for (char[] row : matrix) {
-            for (int j = 0; j < n; j++) {
-                heights[j] = (row[j] == '1') ? heights[j] + 1 : 0;
-            }
-            maxArea = Math.max(maxArea, largestRectangleArea(heights));
-        }
-        return maxArea;
-    }
-    private int largestRectangleArea(int[] heights) {
-        Stack<Integer> stack = new Stack<>();
-        int maxArea = 0;
-        int n = heights.length;
-        for (int i = 0; i <= n; i++) {
-            int h = (i == n) ? 0 : heights[i];
-            while (!stack.isEmpty() && heights[stack.peek()] > h) {
-                int height = heights[stack.pop()];
-                int width = stack.isEmpty() ? i : i - stack.peek() - 1;
-                maxArea = Math.max(maxArea, height * width);
-            }
-            stack.push(i);
-        }
-        return maxArea;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -3176,83 +3042,18 @@ using namespace std;
 class Solution {
 public:
     int maximalRectangle(vector<vector<char>>& matrix) {
-        if (matrix.empty()) return 0;
-        int n = matrix[0].size();
-        vector<int> heights(n, 0);
-        int maxArea = 0;
-        for (auto& row : matrix) {
-            for (int j = 0; j < n; j++) {
-                heights[j] = (row[j] == '1') ? heights[j] + 1 : 0;
-            }
-            maxArea = max(maxArea, largestRectangleArea(heights));
-        }
-        return maxArea;
+        // Write your code here
+        return 0;
     }
 private:
-    int largestRectangleArea(vector<int>& heights) {
-        stack<int> s;
-        int maxArea = 0;
-        int n = heights.size();
-        for (int i = 0; i <= n; i++) {
-            int h = (i == n) ? 0 : heights[i];
-            while (!s.empty() && heights[s.top()] > h) {
-                int height = heights[s.top()];
-                s.pop();
-                int width = s.empty() ? i : i - s.top() - 1;
-                maxArea = max(maxArea, height * width);
-            }
-            s.push(i);
-        }
-        return s.push(i), maxArea;
-    }
 };`,
 			GoSC: `package main
 
 func maximalRectangle(matrix [][]byte) int {
-    if len(matrix) == 0 {
-        return 0
-    }
-    n := len(matrix[0])
-    heights := make([]int, n)
-    maxArea := 0
-    for _, row := range matrix {
-        for j := 0; j < n; j++ {
-            if row[j] == '1' {
-                heights[j]++
-            } else {
-                heights[j] = 0
-            }
-        }
-        if area := largestRectangleArea(heights); area > maxArea {
-            maxArea = area
-        }
-    }
-    return maxArea
+    // Write your code here
+    return 0
 }
-func largestRectangleArea(heights []int) int {
-    stack := []int{}
-    maxArea := 0
-    n := len(heights)
-    for i := 0; i <= n; i++ {
-        h := 0
-        if i < n {
-            h = heights[i]
-        }
-        for len(stack) > 0 && heights[stack[len(stack)-1]] > h {
-            height := heights[stack[len(stack)-1]]
-            stack = stack[:len(stack)-1]
-            width := i
-            if len(stack) > 0 {
-                width = i - stack[len(stack)-1] - 1
-            }
-            if area := height * width; area > maxArea {
-                maxArea = area
-            }
-        }
-        stack = append(stack, i)
-    }
-    return maxArea
-}`,
+`,
 			TestCases: []TestCase{
 				{Input: "[[\"1\",\"0\",\"1\",\"0\",\"0\"],[\"1\",\"0\",\"1\",\"1\",\"1\"],[\"1\",\"1\",\"1\",\"1\",\"1\"],[\"1\",\"0\",\"0\",\"1\",\"0\"]]", Expected: "6", IsHidden: false},
 				{Input: "[[\"0\"]]", Expected: "0", IsHidden: false},
@@ -3678,67 +3479,18 @@ func minWindow(s string, t string) string {
 				},
 			},
 			JavascriptSC: `function numberToWords(num) {
-    if (num === 0) return "Zero";
-    const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
-    const tens = ["", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-    const thousands = ["", "Thousand", "Million", "Billion"];
-    function helper(n) {
-        if (n === 0) return "";
-        if (n < 20) return ones[n] + " ";
-        if (n < 100) return tens[Math.floor(n / 10)] + " " + helper(n % 10);
-        return ones[Math.floor(n / 100)] + " Hundred " + helper(n % 100);
-    }
-    let res = "";
-    let i = 0;
-    while (num > 0) {
-        if (num % 1000 !== 0) {
-            res = helper(num % 1000) + thousands[i] + " " + res;
-        }
-        num = Math.floor(num / 1000);
-        i++;
-    }
-    return res.trim().replace(/\s+/g, ' ');
+    // Write your code here
 }`,
 			PythonSC: `def numberToWords(num: int) -> str:
-    if num == 0: return "Zero"
-    ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
-    tens = ["", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
-    thousands = ["", "Thousand", "Million", "Billion"]
-    def helper(n):
-        if n == 0: return ""
-        elif n < 20: return ones[n] + " "
-        elif n < 100: return tens[n // 10] + " " + helper(n % 10)
-        else: return ones[n // 100] + " Hundred " + helper(n % 100)
-    res = ""
-    i = 0
-    while num > 0:
-        if num % 1000 != 0:
-            res = helper(num % 1000) + thousands[i] + " " + res
-        num //= 1000
-        i += 1
-    return res.strip()`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     private final String[] ones = {"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"};
     private final String[] tens = {"", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"};
     private final String[] thousands = {"", "Thousand", "Million", "Billion"};
     public String numberToWords(int num) {
-        if (num == 0) return "Zero";
-        String res = "";
-        int i = 0;
-        while (num > 0) {
-            if (num % 1000 != 0) {
-                res = helper(num % 1000) + thousands[i] + " " + res;
-            }
-            num /= 1000;
-            i++;
-        }
-        return res.trim();
-    }
-    private String helper(int n) {
-        if (n == 0) return "";
-        else if (n < 20) return ones[n] + " ";
-        else if (n < 100) return tens[n / 10] + " " + helper(n % 10);
-        else return ones[n / 100] + " Hundred " + helper(n % 100);
+        // Write your code here
+        return "";
     }
 }`,
 			CppSC: `#include <string>
@@ -3751,24 +3503,8 @@ class Solution {
     vector<string> thousands = {"", "Thousand", "Million", "Billion"};
 public:
     string numberToWords(int num) {
-        if (num == 0) return "Zero";
-        string res = "";
-        int i = 0;
-        while (num > 0) {
-            if (num % 1000 != 0) {
-                res = helper(num % 1000) + thousands[i] + " " + res;
-            }
-            num /= 1000;
-            i++;
-        }
-        while(!res.empty() && res.back() == ' ') res.pop_back();
-        return res;
-    }
-    string helper(int n) {
-        if (n == 0) return "";
-        else if (n < 20) return ones[n] + " ";
-        else if (n < 100) return tens[n / 10] + " " + helper(n % 10);
-        else return ones[n / 100] + " Hundred " + helper(n % 100);
+        // Write your code here
+        return "";
     }
 };`,
 			GoSC: `package main
@@ -3778,27 +3514,8 @@ import (
 )
 
 func numberToWords(num int) string {
-	if num == 0 { return "Zero" }
-	ones := []string{"", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"}
-	tens := []string{"", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"}
-	thousands := []string{"", "Thousand", "Million", "Billion"}
-	var helper func(n int) string
-	helper = func(n int) string {
-		if n == 0 { return "" }
-		if n < 20 { return ones[n] + " " }
-		if n < 100 { return tens[n/10] + " " + helper(n%10) }
-		return ones[n/100] + " Hundred " + helper(n%100)
-	}
-	res := ""
-	i := 0
-	for num > 0 {
-		if num%1000 != 0 {
-			res = helper(num%1000) + thousands[i] + " " + res
-		}
-		num /= 1000
-		i++
-	}
-	return strings.TrimSpace(res)
+    // Write your code here
+    return ""
 }`,
 			TestCases: []TestCase{
 				{Input: "123", Expected: "\"One Hundred Twenty Three\"", IsHidden: false},
@@ -4372,41 +4089,16 @@ func reverseKGroup(head []int, k int) []int {
 				},
 			},
 			JavascriptSC: `function maxPathSum(root) {
-    let maxPath = -Infinity;
-    function dfs(index) {
-        if (index >= root.length || root[index] === -10000) return 0;
-        let left = Math.max(0, dfs(2 * index + 1));
-        let right = Math.max(0, dfs(2 * index + 2));
-        maxPath = Math.max(maxPath, root[index] + left + right);
-        return root[index] + Math.max(left, right);
-    }
-    dfs(0);
-    return maxPath;
+    // Write your code here
 }`,
 			PythonSC: `def maxPathSum(root: list[int]) -> int:
-    max_path = float('-inf')
-    def dfs(index):
-        nonlocal max_path
-        if index >= len(root) or root[index] == -10000:
-            return 0
-        left = max(0, dfs(2 * index + 1))
-        right = max(0, dfs(2 * index + 2))
-        max_path = max(max_path, root[index] + left + right)
-        return root[index] + max(left, right)
-    dfs(0)
-    return max_path`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     private int maxPath = Integer.MIN_VALUE;
     public int maxPathSum(int[] root) {
-        dfs(root, 0);
-        return maxPath;
-    }
-    private int dfs(int[] root, int index) {
-        if (index >= root.length || root[index] == -10000) return 0;
-        int left = Math.max(0, dfs(root, 2 * index + 1));
-        int right = Math.max(0, dfs(root, 2 * index + 2));
-        maxPath = Math.max(maxPath, root[index] + left + right);
-        return root[index] + Math.max(left, right);
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -4418,15 +4110,8 @@ class Solution {
     int maxPath = INT_MIN;
 public:
     int maxPathSum(vector<int>& root) {
-        dfs(root, 0);
-        return maxPath;
-    }
-    int dfs(const vector<int>& root, int index) {
-        if (index >= root.size() || root[index] == -10000) return 0;
-        int left = max(0, dfs(root, 2 * index + 1));
-        int right = max(0, dfs(root, 2 * index + 2));
-        maxPath = max(maxPath, root[index] + left + right);
-        return root[index] + max(left, right);
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
@@ -4434,29 +4119,8 @@ public:
 import "math"
 
 func maxPathSum(root []int) int {
-	maxPath := math.MinInt32
-	var dfs func(int) int
-	dfs = func(index int) int {
-		if index >= len(root) || root[index] == -10000 {
-			return 0
-		}
-		left := dfs(2*index + 1)
-		if left < 0 { left = 0 }
-		right := dfs(2*index + 2)
-		if right < 0 { right = 0 }
-		if val := root[index] + left + right; val > maxPath {
-			maxPath = val
-		}
-		maxGain := root[index]
-		if left > right {
-			maxGain += left
-		} else {
-			maxGain += right
-		}
-		return maxGain
-	}
-	dfs(0)
-	return maxPath
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[1,2,3]", Expected: "6", IsHidden: false},
@@ -4866,74 +4530,15 @@ func ladderLength(beginWord string, endWord string, wordList []string) int {
 				},
 			},
 			JavascriptSC: `function longestIncreasingPath(matrix) {
-    if (!matrix || matrix.length === 0) return 0;
-    let m = matrix.length, n = matrix[0].length;
-    let memo = Array.from({length: m}, () => new Array(n).fill(0));
-    let maxPath = 0;
-    function dfs(r, c) {
-        if (memo[r][c] !== 0) return memo[r][c];
-        let dirs = [[0,1], [0,-1], [1,0], [-1,0]];
-        let maxLen = 1;
-        for (let [dr, dc] of dirs) {
-            let nr = r + dr, nc = c + dc;
-            if (nr >= 0 && nr < m && nc >= 0 && nc < n && matrix[nr][nc] > matrix[r][c]) {
-                maxLen = Math.max(maxLen, 1 + dfs(nr, nc));
-            }
-        }
-        memo[r][c] = maxLen;
-        return maxLen;
-    }
-    for (let i = 0; i < m; i++) {
-        for (let j = 0; j < n; j++) {
-            maxPath = Math.max(maxPath, dfs(i, j));
-        }
-    }
-    return maxPath;
+    // Write your code here
 }`,
 			PythonSC: `def longestIncreasingPath(matrix: list[list[int]]) -> int:
-    if not matrix: return 0
-    m, n = len(matrix), len(matrix[0])
-    memo = [[0] * n for _ in range(m)]
-    def dfs(r, c):
-        if memo[r][c] != 0: return memo[r][c]
-        max_len = 1
-        for dr, dc in [(0,1), (0,-1), (1,0), (-1,0)]:
-            nr, nc = r + dr, c + dc
-            if 0 <= nr < m and 0 <= nc < n and matrix[nr][nc] > matrix[r][c]:
-                max_len = max(max_len, 1 + dfs(nr, nc))
-        memo[r][c] = max_len
-        return max_len
-    res = 0
-    for i in range(m):
-        for j in range(n):
-            res = max(res, dfs(i, j))
-    return res`,
+    # Write your code here
+    pass`,
 			JavaSC: `public class Solution {
     public int longestIncreasingPath(int[][] matrix) {
-        if (matrix == null || matrix.length == 0) return 0;
-        int m = matrix.length, n = matrix[0].length;
-        int[][] memo = new int[m][n];
-        int maxPath = 0;
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                maxPath = Math.max(maxPath, dfs(matrix, i, j, memo));
-            }
-        }
-        return maxPath;
-    }
-    private int dfs(int[][] matrix, int r, int c, int[][] memo) {
-        if (memo[r][c] != 0) return memo[r][c];
-        int m = matrix.length, n = matrix[0].length;
-        int[][] dirs = {{0,1}, {0,-1}, {1,0}, {-1,0}};
-        int maxLen = 1;
-        for (int[] d : dirs) {
-            int nr = r + d[0], nc = c + d[1];
-            if (nr >= 0 && nr < m && nc >= 0 && nc < n && matrix[nr][nc] > matrix[r][c]) {
-                maxLen = Math.max(maxLen, 1 + dfs(matrix, nr, nc, memo));
-            }
-        }
-        memo[r][c] = maxLen;
-        return maxLen;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -4943,65 +4548,15 @@ using namespace std;
 class Solution {
 public:
     int longestIncreasingPath(vector<vector<int>>& matrix) {
-        if (matrix.empty()) return 0;
-        int m = matrix.size(), n = matrix[0].size();
-        vector<vector<int>> memo(m, vector<int>(n, 0));
-        int maxPath = 0;
-        for (int i = 0; i < m; ++i) {
-            for (int j = 0; j < n; ++j) {
-                maxPath = max(maxPath, dfs(matrix, i, j, memo));
-            }
-        }
-        return maxPath;
-    }
-    int dfs(const vector<vector<int>>& matrix, int r, int c, vector<vector<int>>& memo) {
-        if (memo[r][c] != 0) return memo[r][c];
-        int m = matrix.size(), n = matrix[0].size();
-        int dirs[4][2] = {{0,1}, {0,-1}, {1,0}, {-1,0}};
-        int maxLen = 1;
-        for (auto& d : dirs) {
-            int nr = r + d[0], nc = c + d[1];
-            if (nr >= 0 && nr < m && nc >= 0 && nc < n && matrix[nr][nc] > matrix[r][c]) {
-                maxLen = max(maxLen, 1 + dfs(matrix, nr, nc, memo));
-            }
-        }
-        memo[r][c] = maxLen;
-        return maxLen;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func longestIncreasingPath(matrix [][]int) int {
-	if len(matrix) == 0 { return 0 }
-	m, n := len(matrix), len(matrix[0])
-	memo := make([][]int, m)
-	for i := range memo { memo[i] = make([]int, n) }
-	var dfs func(int, int) int
-	dfs = func(r, c int) int {
-		if memo[r][c] != 0 { return memo[r][c] }
-		dirs := [][]int{{0,1}, {0,-1}, {1,0}, {-1,0}}
-		maxLen := 1
-		for _, d := range dirs {
-			nr, nc := r + d[0], c + d[1]
-			if nr >= 0 && nr < m && nc >= 0 && nc < n && matrix[nr][nc] > matrix[r][c] {
-				lenVal := 1 + dfs(nr, nc)
-				if lenVal > maxLen {
-					maxLen = lenVal
-				}
-			}
-		}
-		memo[r][c] = maxLen
-		return maxLen
-	}
-	res := 0
-	for i := 0; i < m; i++ {
-		for j := 0; j < n; j++ {
-			if val := dfs(i, j); val > res {
-				res = val
-			}
-		}
-	}
-	return res
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "[[9,9,4],[6,6,8],[2,1,1]]", Expected: "4", IsHidden: false},
@@ -5307,91 +4862,17 @@ func isMatch(s string, p string) bool {
 				},
 			},
 			JavascriptSC: `function calculate(s) {
-    let stack = [];
-    let sum = 0;
-    let sign = 1;
-    for (let i = 0; i < s.length; i++) {
-        let c = s[i];
-        if (c >= '0' && c <= '9') {
-            let num = 0;
-            while (i < s.length && s[i] >= '0' && s[i] <= '9') {
-                num = num * 10 + (s[i].charCodeAt(0) - 48);
-                i++;
-            }
-            i--;
-            sum += sign * num;
-        } else if (c === '+') {
-            sign = 1;
-        } else if (c === '-') {
-            sign = -1;
-        } else if (c === '(') {
-            stack.push(sum);
-            stack.push(sign);
-            sum = 0;
-            sign = 1;
-        } else if (c === ')') {
-            sum = stack.pop() * sum + stack.pop();
-        }
-    }
-    return sum;
+    // Write your code here
 }`,
 			PythonSC: `def calculate(s: str) -> int:
-    stack = []
-    sum_val = 0
-    sign = 1
-    i = 0
-    while i < len(s):
-        c = s[i]
-        if c.isdigit():
-            num = 0
-            while i < len(s) and s[i].isdigit():
-                num = num * 10 + int(s[i])
-                i += 1
-            i -= 1
-            sum_val += sign * num
-        elif c == '+':
-            sign = 1
-        elif c == '-':
-            sign = -1
-        elif c == '(':
-            stack.append(sum_val)
-            stack.append(sign)
-            sum_val = 0
-            sign = 1
-        elif c == ')':
-            sum_val = stack.pop() * sum_val + stack.pop()
-        i += 1
-    return sum_val`,
+    # Write your code here
+    pass`,
 			JavaSC: `import java.util.*;
 
 public class Solution {
     public int calculate(String s) {
-        Stack<Integer> stack = new Stack<>();
-        int sum = 0, sign = 1;
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (Character.isDigit(c)) {
-                int num = 0;
-                while (i < s.length() && Character.isDigit(s.charAt(i))) {
-                    num = num * 10 + (s.charAt(i) - '0');
-                    i++;
-                }
-                i--;
-                sum += sign * num;
-            } else if (c == '+') {
-                sign = 1;
-            } else if (c == '-') {
-                sign = -1;
-            } else if (c == '(') {
-                stack.push(sum);
-                stack.push(sign);
-                sum = 0;
-                sign = 1;
-            } else if (c == ')') {
-                sum = stack.pop() * sum + stack.pop();
-            }
-        }
-        return sum;
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <string>
@@ -5401,69 +4882,15 @@ using namespace std;
 class Solution {
 public:
     int calculate(string s) {
-        stack<int> st;
-        int sum = 0, sign = 1;
-        for (int i = 0; i < s.length(); i++) {
-            char c = s[i];
-            if (c >= '0' && c <= '9') {
-                long long num = 0;
-                while (i < s.length() && s[i] >= '0' && s[i] <= '9') {
-                    num = num * 10 + (s[i] - '0');
-                    i++;
-                }
-                i--;
-                sum += sign * num;
-            } else if (c == '+') {
-                sign = 1;
-            } else if (c == '-') {
-                sign = -1;
-            } else if (c == '(') {
-                st.push(sum);
-                st.push(sign);
-                sum = 0;
-                sign = 1;
-            } else if (c == ')') {
-                sum = st.top() * sum;
-                st.pop();
-                sum += st.top();
-                st.pop();
-            }
-        }
-        return sum;
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func calculate(s string) int {
-	stack := []int{}
-	sum, sign := 0, 1
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c >= '0' && c <= '9' {
-			num := 0
-			for i < len(s) && s[i] >= '0' && s[i] <= '9' {
-				num = num*10 + int(s[i]-'0')
-				i++
-			}
-			i--
-			sum += sign * num
-		} else if c == '+' {
-			sign = 1
-		} else if c == '-' {
-			sign = -1
-		} else if c == '(' {
-			stack = append(stack, sum)
-			stack = append(stack, sign)
-			sum = 0
-			sign = 1
-		} else if c == ')' {
-			curSign := stack[len(stack)-1]
-			prevSum := stack[len(stack)-2]
-			stack = stack[:len(stack)-2]
-			sum = curSign * sum + prevSum
-		}
-	}
-	return sum
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "\"(1+(4+5+2)-3)+(6+8)\"", Expected: "23", IsHidden: false},
@@ -5990,51 +5417,11 @@ func smallestRange(nums [][]int) []int {
 				},
 			},
 			JavascriptSC: `function totalNQueens(n) {
-    let count = 0;
-    let cols = new Set();
-    let diag1 = new Set();
-    let diag2 = new Set();
-    function backtrack(row) {
-        if (row === n) {
-            count++;
-            return;
-        }
-        for (let col = 0; col < n; col++) {
-            if (cols.has(col) || diag1.has(row - col) || diag2.has(row + col)) continue;
-            cols.add(col);
-            diag1.add(row - col);
-            diag2.add(row + col);
-            backtrack(row + 1);
-            cols.delete(col);
-            diag1.delete(row - col);
-            diag2.delete(row + col);
-        }
-    }
-    backtrack(0);
-    return count;
+    // Write your code here
 }`,
 			PythonSC: `def totalNQueens(n: int) -> int:
-    cols = set()
-    diag1 = set()
-    diag2 = set()
-    count = 0
-    def backtrack(row):
-        nonlocal count
-        if row == n:
-            count += 1
-            return
-        for col in range(n):
-            if col in cols or (row - col) in diag1 or (row + col) in diag2:
-                continue
-            cols.add(col)
-            diag1.add(row - col)
-            diag2.add(row + col)
-            backtrack(row + 1)
-            cols.remove(col)
-            diag1.remove(row - col)
-            diag2.remove(row + col)
-    backtrack(0)
-    return count`,
+    # Write your code here
+    pass`,
 			JavaSC: `import java.util.*;
 
 public class Solution {
@@ -6043,24 +5430,8 @@ public class Solution {
     private final Set<Integer> diag1 = new HashSet<>();
     private final Set<Integer> diag2 = new HashSet<>();
     public int totalNQueens(int n) {
-        backtrack(0, n);
-        return count;
-    }
-    private void backtrack(int row, int n) {
-        if (row == n) {
-            count++;
-            return;
-        }
-        for (int col = 0; col < n; col++) {
-            if (cols.contains(col) || diag1.contains(row - col) || diag2.contains(row + col)) continue;
-            cols.add(col);
-            diag1.add(row - col);
-            diag2.add(row + col);
-            backtrack(row + 1, n);
-            cols.remove(col);
-            diag1.remove(row - col);
-            diag2.remove(row + col);
-        }
+        // Write your code here
+        return 0;
     }
 }`,
 			CppSC: `#include <vector>
@@ -6074,52 +5445,15 @@ class Solution {
     unordered_set<int> diag2;
 public:
     int totalNQueens(int n) {
-        backtrack(0, n);
-        return count;
-    }
-    void backtrack(int row, int n) {
-        if (row == n) {
-            count++;
-            return;
-        }
-        for (int col = 0; col < n; ++col) {
-            if (cols.count(col) || diag1.count(row - col) || diag2.count(row + col)) continue;
-            cols.insert(col);
-            diag1.insert(row - col);
-            diag2.insert(row + col);
-            backtrack(row + 1, n);
-            cols.erase(col);
-            diag1.erase(row - col);
-            diag2.erase(row + col);
-        }
+        // Write your code here
+        return 0;
     }
 };`,
 			GoSC: `package main
 
 func totalNQueens(n int) int {
-	cols := make(map[int]bool)
-	diag1 := make(map[int]bool)
-	diag2 := make(map[int]bool)
-	count := 0
-	var backtrack func(int)
-	backtrack = func(row int) {
-		if row == n {
-			count++
-			return
-		}
-		for col := 0; col < n; col++ {
-			if cols[col] || diag1[row-col] || diag2[row+col] { continue }
-			cols[col] = true
-			diag1[row-col] = true
-			diag2[row+col] = true
-			backtrack(row + 1)
-			delete(cols, col)
-			delete(diag1, row-col)
-			delete(diag2, row+col)
-		}
-	}
-	backtrack(0)
-	return count
+    // Write your code here
+    return 0
 }`,
 			TestCases: []TestCase{
 				{Input: "4", Expected: "2", IsHidden: false},
@@ -6358,6 +5692,13 @@ func getProficiencyProblems() []Problem {
 		SolJava     string
 		SolCpp      string
 		SolGo       string
+		// Class-design problems ship a hand-checked skeleton instead of a
+		// generated signature, because the whole class is the exercise.
+		SkelJS   string
+		SkelPy   string
+		SkelJava string
+		SkelCpp  string
+		SkelGo   string
 	}
 
 	metas := []problemMeta{
@@ -8710,6 +8051,83 @@ func (c *LRUCache) Put(key int, value int)  {
     }
     c.m[key] = c.l.PushFront(&entry{key, value})
 }`,
+			SkelJS: `class LRUCache {
+    constructor(capacity) {
+        // Write your code here
+    }
+    get(key) {
+        // Write your code here
+    }
+    put(key, value) {
+        // Write your code here
+    }
+}`,
+			SkelPy: `class LRUCache:
+    def __init__(self, capacity: int):
+        # Write your code here
+        pass
+    def get(self, key: int) -> int:
+        # Write your code here
+        pass
+    def put(self, key: int, value: int) -> None:
+        # Write your code here
+        pass`,
+			SkelJava: `import java.util.*;
+class LRUCache extends LinkedHashMap<Integer, Integer> {
+    private final int capacity;
+    public LRUCache(int capacity) {
+        // Write your code here
+    }
+    public int get(int key) {
+        // Write your code here
+        return 0;
+    }
+    public void put(int key, int value) {
+        // Write your code here
+    }
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<Integer, Integer> eldest) {
+        // Write your code here
+        return false;
+    }
+}`,
+			SkelCpp: `#include <unordered_map>
+#include <list>
+using namespace std;
+class LRUCache {
+    int cap;
+    list<pair<int, int>> l;
+    unordered_map<int, list<pair<int, int>>::iterator> m;
+public:
+    LRUCache(int capacity) : cap(capacity) {}
+    int get(int key) {
+        // Write your code here
+        return 0;
+    }
+    void put(int key, int value) {
+        // Write your code here
+    }
+};`,
+			SkelGo: `import "container/list"
+type LRUCache struct {
+    cap int
+    l *list.List
+    m map[int]*list.Element
+}
+type entry struct {
+    key, val int
+}
+func Constructor(capacity int) LRUCache {
+    // Write your code here
+    return nil
+}
+func (c *LRUCache) Get(key int) int {
+    // Write your code here
+    return 0
+}
+func (c *LRUCache) Put(key int, value int)  {
+    // Write your code here
+}`,
 		},
 		{
 			ID:          "54574a34-9a68-4e65-ab9a-af05db4d0132",
@@ -8834,6 +8252,108 @@ func (m *MinStack) Top() int {
 }
 func (m *MinStack) GetMin() int {
     return m.min[len(m.min)-1]
+}`,
+			SkelJS: `class MinStack {
+    constructor() {
+        // Write your code here
+    }
+    push(val) {
+        // Write your code here
+    }
+    pop() {
+        // Write your code here
+    }
+    top() {
+        // Write your code here
+    }
+    getMin() {
+        // Write your code here
+    }
+}`,
+			SkelPy: `class MinStack:
+    def __init__(self):
+        # Write your code here
+        pass
+    def push(self, val: int) -> None:
+        # Write your code here
+        pass
+    def pop(self) -> None:
+        # Write your code here
+        pass
+    def top(self) -> int:
+        # Write your code here
+        pass
+    def getMin(self) -> int:
+        # Write your code here
+        pass`,
+			SkelJava: `import java.util.*;
+class MinStack {
+    private final Stack<Integer> stack = new Stack<>();
+    private final Stack<Integer> minStack = new Stack<>();
+    public MinStack() {
+        // Write your code here
+    }
+    public void push(int val) {
+        // Write your code here
+    }
+    public void pop() {
+        // Write your code here
+    }
+    public int top() {
+        // Write your code here
+        return 0;
+    }
+    public int getMin() {
+        // Write your code here
+        return 0;
+    }
+}`,
+			SkelCpp: `#include <stack>
+using namespace std;
+class MinStack {
+    stack<int> s;
+    stack<int> min_s;
+public:
+    MinStack() {
+        // Write your code here
+        return {};
+    }
+    void push(int val) {
+        // Write your code here
+    }
+    void pop() {
+        // Write your code here
+    }
+    int top() {
+        // Write your code here
+        return 0;
+    }
+    int getMin() {
+        // Write your code here
+        return 0;
+    }
+};`,
+			SkelGo: `type MinStack struct {
+    s []int
+    min []int
+}
+func Constructor() MinStack {
+    // Write your code here
+    return nil
+}
+func (m *MinStack) Push(val int)  {
+    // Write your code here
+}
+func (m *MinStack) Pop()  {
+    // Write your code here
+}
+func (m *MinStack) Top() int {
+    // Write your code here
+    return 0
+}
+func (m *MinStack) GetMin() int {
+    // Write your code here
+    return 0
 }`,
 		},
 		{
@@ -9258,6 +8778,111 @@ func (t *Trie) StartsWith(prefix string) bool {
         curr = curr.child[idx]
     }
     return true
+}`,
+			SkelJS: `class TrieNode {
+    constructor() {
+        // Write your code here
+    }
+}
+class Trie {
+    constructor() {
+        // Write your code here
+    }
+    insert(word) {
+        // Write your code here
+    }
+    search(word) {
+        // Write your code here
+    }
+    startsWith(prefix) {
+        // Write your code here
+    }
+}`,
+			SkelPy: `class TrieNode:
+    def __init__(self):
+        # Write your code here
+        pass
+class Trie:
+    def __init__(self):
+        # Write your code here
+        pass
+    def insert(self, word: str) -> None:
+        # Write your code here
+        pass
+    def search(self, word: str) -> bool:
+        # Write your code here
+        pass
+    def startsWith(self, prefix: str) -> bool:
+        # Write your code here
+        pass`,
+			SkelJava: `class Trie {
+    class TrieNode {
+        TrieNode[] child = new TrieNode[26];
+        boolean isEnd = false;
+    }
+    private final TrieNode root = new TrieNode();
+    public Trie() {
+        // Write your code here
+    }
+    public void insert(String word) {
+        // Write your code here
+    }
+    public boolean search(String word) {
+        // Write your code here
+        return false;
+    }
+    public boolean startsWith(String prefix) {
+        // Write your code here
+        return false;
+    }
+}`,
+			SkelCpp: `#include <string>
+#include <vector>
+using namespace std;
+class Trie {
+    struct TrieNode {
+        TrieNode* child[26] = {nullptr};
+        bool isEnd = false;
+    };
+    TrieNode* root = new TrieNode();
+public:
+    Trie() {
+        // Write your code here
+        return {};
+    }
+    void insert(string word) {
+        // Write your code here
+    }
+    bool search(string word) {
+        // Write your code here
+        return false;
+    }
+    bool startsWith(string prefix) {
+        // Write your code here
+        return false;
+    }
+};`,
+			SkelGo: `type TrieNode struct {
+    child [26]*TrieNode
+    isEnd bool
+}
+type Trie struct {
+    root *TrieNode
+}
+func Constructor() Trie {
+    // Write your code here
+    return nil
+}
+func (t *Trie) Insert(word string)  {
+    // Write your code here
+}
+func (t *Trie) Search(word string) bool {
+    // Write your code here
+    return false
+}
+func (t *Trie) StartsWith(prefix string) bool {
+    // Write your code here
+    return false
 }`,
 		},
 		{
@@ -9755,6 +9380,66 @@ func (t *TicTacToe) Move(row int, col int, player int) int {
     if row+col == t.n-1 { t.anti += val }
     abs := func(x int) int { if x < 0 { return -x }; return x }
     if abs(t.rows[row]) == t.n || abs(t.cols[col]) == t.n || abs(t.diag) == t.n || abs(t.anti) == t.n { return player }
+    return 0
+}`,
+			SkelJS: `class TicTacToe {
+    constructor(n) {
+        // Write your code here
+    }
+    move(row, col, player) {
+        // Write your code here
+    }
+}`,
+			SkelPy: `class TicTacToe:
+    def __init__(self, n: int):
+        # Write your code here
+        pass
+    def move(self, row: int, col: int, player: int) -> int:
+        # Write your code here
+        pass`,
+			SkelJava: `class TicTacToe {
+    private final int[] rows;
+    private final int[] cols;
+    private int diag;
+    private int antiDiag;
+    private final int n;
+    public TicTacToe(int n) {
+        // Write your code here
+    }
+    public int move(int row, int col, int player) {
+        // Write your code here
+        return 0;
+    }
+}`,
+			SkelCpp: `#include <vector>
+#include <cmath>
+using namespace std;
+class TicTacToe {
+    vector<int> rows;
+    vector<int> cols;
+    int diag = 0;
+    int antiDiag = 0;
+    int n;
+public:
+    TicTacToe(int n) : rows(n, 0), cols(n, 0), n(n) {}
+    int move(int row, int col, int player) {
+        // Write your code here
+        return 0;
+    }
+};`,
+			SkelGo: `type TicTacToe struct {
+    rows []int
+    cols []int
+    diag int
+    anti int
+    n int
+}
+func Constructor(n int) TicTacToe {
+    // Write your code here
+    return nil
+}
+func (t *TicTacToe) Move(row int, col int, player int) int {
+    // Write your code here
     return 0
 }`,
 		},
@@ -10265,20 +9950,26 @@ func (t *TicTacToe) Move(row int, col int, player int) int {
 	for _, m := range metas {
 		var jsSC, pySC, javaSC, cppSC, goSC string
 
-		if m.FuncName == "lruCache" || m.FuncName == "minStack" || m.FuncName == "trie" || m.FuncName == "ticTacToe" {
-			jsSC = m.SolJS
-			pySC = m.SolPy
-			javaSC = m.SolJava
-			cppSC = m.SolCpp
-			goSC = m.SolGo
+		if m.SkelPy != "" {
+			// Class-design problems: the learner implements a whole class, so
+			// the scaffold is the class with empty method bodies. Previously
+			// these used Sol*, which handed over the finished implementation.
+			jsSC = m.SkelJS
+			pySC = m.SkelPy
+			javaSC = m.SkelJava
+			cppSC = m.SkelCpp
+			goSC = m.SkelGo
 		} else {
-			jsSC = "function " + m.FuncName + "(" + m.ParamsJS + ") {\n    // Write your code here\n" + m.SolJS + "\n}"
-			pySC = "def " + m.FuncName + "(" + m.ParamsPy + ") -> " + m.RetPy + ":\n    # Write your code here\n" + m.SolPy
-			javaSC = "public class Solution {\n    public " + m.RetJava + " " + m.FuncName + "(" + m.ParamsJava + ") {\n        // Write your code here\n" + m.SolJava + "\n    }\n}"
-			cppSC = "class Solution {\npublic:\n    " + m.RetCpp + " " + m.FuncName + "(" + m.ParamsCpp + ") {\n        // Write your code here\n" + m.SolCpp + "\n    }\n};"
+			// Starter code is a SCAFFOLD: signature plus a placeholder return.
+			// The Sol* fields hold the reference solution and must NOT be
+			// concatenated here — doing so ships the answer in the editor.
+			jsSC = "function " + m.FuncName + "(" + m.ParamsJS + ") {\n    // Write your code here\n}"
+			pySC = "def " + m.FuncName + "(" + m.ParamsPy + ") -> " + m.RetPy + ":\n    # Write your code here\n    pass"
+			javaSC = "public class Solution {\n    public " + m.RetJava + " " + m.FuncName + "(" + m.ParamsJava + ") {\n        // Write your code here\n" + javaStubReturn(m.RetJava) + "\n    }\n}"
+			cppSC = "class Solution {\npublic:\n    " + m.RetCpp + " " + m.FuncName + "(" + m.ParamsCpp + ") {\n        // Write your code here\n" + cppStubReturn(m.RetCpp) + "\n    }\n};"
 			retGoSpace := ""
 			if m.RetGo != "" { retGoSpace = " " + m.RetGo }
-			goSC = "package main\n\nfunc " + m.FuncName + "(" + m.ParamsGo + ")" + retGoSpace + " {\n    // Write your code here\n" + m.SolGo + "\n}"
+			goSC = "package main\n\nfunc " + m.FuncName + "(" + m.ParamsGo + ")" + retGoSpace + " {\n    // Write your code here\n" + goStubReturn(m.RetGo) + "\n}"
 		}
 
 		probs = append(probs, Problem{

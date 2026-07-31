@@ -23,6 +23,7 @@ var languageImages = map[string]string{
 	"java":       "skillofide/runner-java:latest",
 	"cpp":        "skillofide/runner-cpp:latest",
 	"go":         "golang:1.22-alpine",
+	"sql":        "skillofide/runner-sql:latest",
 }
 
 // RunRequest contains everything needed to execute user code against one test case.
@@ -79,6 +80,11 @@ func (s *DockerSandbox) Run(ctx context.Context, req *RunRequest) (*RunResult, e
 	} else if langLower == "java" {
 		// Java needs extra time: javac compilation (3-5s) + JVM startup (2-3s) in Alpine Docker
 		timeLimitMs += 15000
+	} else if langLower == "sql" {
+		// The SQL runner boots a PostgreSQL cluster and builds the fixture
+		// tables before the query runs. The cluster is pre-initialised at image
+		// build time, so this only covers pg_ctl start plus schema setup.
+		timeLimitMs += 10000
 	}
 	memLimitMb := req.MemoryLimitMb
 	if memLimitMb <= 0 {
@@ -231,6 +237,13 @@ func wrapUserCode(problemId string, language string, code string) string {
 		problemId = "loop1"
 	case "54574a34-9a68-4e65-ab9a-af05db4c0005":
 		problemId = "str2"
+	}
+
+	// SQL submissions are handed to the runner verbatim. There is no driver to
+	// wrap them in: the harness inside the container builds the fixture tables,
+	// executes this statement, and serialises the result rows itself.
+	if language == "sql" {
+		return code
 	}
 
 	switch language {

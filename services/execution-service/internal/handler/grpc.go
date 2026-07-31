@@ -139,9 +139,9 @@ func validateRunRequest(req *executionv1.RunCodeRequest) error {
 	if req.Code == "" {
 		return fmt.Errorf("code is required")
 	}
-	supported := map[string]bool{"python": true, "javascript": true, "java": true, "cpp": true, "go": true}
+	supported := map[string]bool{"python": true, "javascript": true, "java": true, "cpp": true, "go": true, "sql": true}
 	if !supported[strings.ToLower(req.Language)] {
-		return fmt.Errorf("unsupported language: %s (supported: python, javascript, java, cpp, go)", req.Language)
+		return fmt.Errorf("unsupported language: %s (supported: python, javascript, java, cpp, go, sql)", req.Language)
 	}
 	return nil
 }
