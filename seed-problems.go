@@ -166,6 +166,13 @@ func main() {
 			LevelColor: "#f59e0b",
 			BgColor:    "#1e1b4b",
 		},
+		{
+			ID:         "54574a34-9a68-4e65-ab9a-af05db4ca005",
+			Title:      "Frontend Foundations",
+			Level:      "Intermediate",
+			LevelColor: "#38bdf8",
+			BgColor:    "#1e1b4b",
+		},
 	}
 
 	for _, s := range sets {
@@ -188,6 +195,46 @@ func main() {
 
 	// 2. Define problems
 	problems := []Problem{
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000002",
+			Slug:       "reverse-words",
+			Title:      "Reverse Words in a Sentence",
+			Difficulty: "Easy",
+			Topic:      "Strings",
+			XP:         30,
+			Statement:  "Write a function that reverses the words in a given sentence, keeping the words themselves unchanged.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca005",
+			Tags:       []string{"Strings", "Frontend"},
+			Examples: []Example{
+				{
+					Input:       "sentence = \"the quick brown fox\"",
+					Output:      "\"fox brown quick the\"",
+					Explanation: "Reversing the words yields: fox brown quick the.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Split and Reverse", Body: "Use split(' ') to get words array, reverse it, then join(' ')."},
+			},
+			JavascriptSC: `/**
+ * @param {string} sentence
+ * @return {string}
+ */
+function reverseWords(sentence) {
+    // Write your code here
+    return sentence.split(' ').reverse().join(' ');
+}`,
+			PythonSC:     "def reverseWords(sentence):\n    return ' '.join(sentence.split()[::-1])",
+			JavaSC:       "public class Solution {\n    public static String reverseWords(String sentence) {\n        String[] words = sentence.split(\" \");\n        StringBuilder sb = new StringBuilder();\n        for (int i = words.length - 1; i >= 0; i--) {\n            sb.append(words[i]);\n            if (i > 0) sb.append(\" \");\n        }\n        return sb.toString();\n    }\n}",
+			CppSC:        "// C++ solution",
+			GoSC:         "// Go solution",
+			TestCases: []TestCase{
+				{
+					Input:    "the quick brown fox",
+					Expected: "fox brown quick the",
+					IsHidden: false,
+				},
+			},
+		},
 		{
 			ID:         "98765432-1098-7654-3210-abcdef000001",
 			Slug:       "duplicate-emails",
