@@ -168,9 +168,30 @@ func main() {
 		},
 		{
 			ID:         "54574a34-9a68-4e65-ab9a-af05db4ca005",
-			Title:      "Frontend Foundations",
+			Title:      "HTML Foundations",
+			Level:      "Beginner",
+			LevelColor: "#22c55e",
+			BgColor:    "#1e1b4b",
+		},
+		{
+			ID:         "54574a34-9a68-4e65-ab9a-af05db4ca006",
+			Title:      "CSS Masterclass",
 			Level:      "Intermediate",
-			LevelColor: "#38bdf8",
+			LevelColor: "#3b82f6",
+			BgColor:    "#1e1b4b",
+		},
+		{
+			ID:         "54574a34-9a68-4e65-ab9a-af05db4ca007",
+			Title:      "JavaScript & DOM",
+			Level:      "Intermediate",
+			LevelColor: "#f59e0b",
+			BgColor:    "#1e1b4b",
+		},
+		{
+			ID:         "54574a34-9a68-4e65-ab9a-af05db4ca008",
+			Title:      "React Essentials",
+			Level:      "Advanced",
+			LevelColor: "#9b5cf6",
 			BgColor:    "#1e1b4b",
 		},
 	}
@@ -196,6 +217,78 @@ func main() {
 	// 2. Define problems
 	problems := []Problem{
 		{
+			ID:         "98765432-1098-7654-3210-abcdef000010",
+			Slug:       "html-image-alt",
+			Title:      "HTML Image Tag Alt Attribute",
+			Difficulty: "Easy",
+			Topic:      "HTML",
+			XP:         20,
+			Statement:  "Write an HTML image tag pointing to 'logo.png' with an alt description 'Knovate Logo'.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca005",
+			Tags:       []string{"HTML", "Frontend"},
+			Examples: []Example{
+				{
+					Input:       "logo.png, Knovate Logo",
+					Output:      "<img src=\"logo.png\" alt=\"Knovate Logo\">",
+					Explanation: "An img tag must contain src and alt properties.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Syntax", Body: "Use <img src=\"...\" alt=\"...\">"},
+			},
+			JavascriptSC: `function getImageTag() {
+    // Write your code here
+    return '<img src="logo.png" alt="Knovate Logo">';
+}`,
+			PythonSC:     "def getImageTag():\n    return '<img src=\"logo.png\" alt=\"Knovate Logo\">'",
+			JavaSC:       "public class Solution {\n    public static String getImageTag() {\n        return \"<img src=\\\"logo.png\\\" alt=\\\"Knovate Logo\\\">\";\n    }\n}",
+			CppSC:        "// C++ solution",
+			GoSC:         "// Go solution",
+			TestCases: []TestCase{
+				{
+					Input:    "None",
+					Expected: "<img src=\"logo.png\" alt=\"Knovate Logo\">",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000011",
+			Slug:       "css-flexbox-center",
+			Title:      "Flexbox Center Alignment",
+			Difficulty: "Easy",
+			Topic:      "CSS",
+			XP:         25,
+			Statement:  "Write CSS rules to center align children using Flexbox inside a container selector.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca006",
+			Tags:       []string{"CSS", "Frontend"},
+			Examples: []Example{
+				{
+					Input:       "Center child elements",
+					Output:      ".container { display: flex; justify-content: center; align-items: center; }",
+					Explanation: "Use display: flex, justify-content: center and align-items: center.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "Centering properties", Body: "Apply display: flex with justify-content and align-items set to center."},
+			},
+			JavascriptSC: `function getFlexCenterCSS() {
+    // Write your code here
+    return ".container { display: flex; justify-content: center; align-items: center; }";
+}`,
+			PythonSC:     "def getFlexCenterCSS():\n    return '.container { display: flex; justify-content: center; align-items: center; }'",
+			JavaSC:       "public class Solution {\n    public static String getFlexCenterCSS() {\n        return \".container { display: flex; justify-content: center; align-items: center; }\";\n    }\n}",
+			CppSC:        "// C++ solution",
+			GoSC:         "// Go solution",
+			TestCases: []TestCase{
+				{
+					Input:    "None",
+					Expected: ".container { display: flex; justify-content: center; align-items: center; }",
+					IsHidden: false,
+				},
+			},
+		},
+		{
 			ID:         "98765432-1098-7654-3210-abcdef000002",
 			Slug:       "reverse-words",
 			Title:      "Reverse Words in a Sentence",
@@ -203,7 +296,7 @@ func main() {
 			Topic:      "Strings",
 			XP:         30,
 			Statement:  "Write a function that reverses the words in a given sentence, keeping the words themselves unchanged.",
-			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca005",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca007",
 			Tags:       []string{"Strings", "Frontend"},
 			Examples: []Example{
 				{
@@ -231,6 +324,42 @@ function reverseWords(sentence) {
 				{
 					Input:    "the quick brown fox",
 					Expected: "fox brown quick the",
+					IsHidden: false,
+				},
+			},
+		},
+		{
+			ID:         "98765432-1098-7654-3210-abcdef000012",
+			Slug:       "react-counter-state",
+			Title:      "Counter State Mutation",
+			Difficulty: "Medium",
+			Topic:      "React",
+			XP:         35,
+			Statement:  "Write a simple React functional component that renders a button displaying a click counter.",
+			SetID:      "54574a34-9a68-4e65-ab9a-af05db4ca008",
+			Tags:       []string{"React", "Frontend"},
+			Examples: []Example{
+				{
+					Input:       "Render counter button",
+					Output:      "useState(0)",
+					Explanation: "Use state hooks to manage click counts inside the component.",
+				},
+			},
+			Hints: []Hint{
+				{Title: "React Hooks", Body: "Use React.useState(0) to initialise counts."},
+			},
+			JavascriptSC: `function CounterComponent() {
+    // Write your code here
+    return "useState(0)";
+}`,
+			PythonSC:     "def CounterComponent():\n    return 'useState(0)'",
+			JavaSC:       "public class Solution {\n    public static String CounterComponent() {\n        return \"useState(0)\";\n    }\n}",
+			CppSC:        "// C++ solution",
+			GoSC:         "// Go solution",
+			TestCases: []TestCase{
+				{
+					Input:    "None",
+					Expected: "useState(0)",
 					IsHidden: false,
 				},
 			},
