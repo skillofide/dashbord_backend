@@ -301,6 +301,7 @@ var quizAttemptType = graphql.NewObject(graphql.ObjectConfig{
 		"moduleId":       &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 		"score":          &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
 		"totalQuestions": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"selectedAnswers": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 		"completedAt":    &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 	},
 })

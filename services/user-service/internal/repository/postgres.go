@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -314,6 +315,7 @@ func (r *UserRepository) EnsureQuizTables(ctx context.Context) error {
 			module_id TEXT NOT NULL,
 			score INT NOT NULL,
 			total_questions INT NOT NULL,
+			selected_answers JSONB NOT NULL DEFAULT '{}'::jsonb,
 			completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 			PRIMARY KEY (user_id, module_id)
 		);
@@ -321,6 +323,11 @@ func (r *UserRepository) EnsureQuizTables(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("create quiz tables: %w", err)
 	}
+
+	// Dynamically add selected_answers column to user_quiz_attempts if database already exists
+	_, _ = r.pool.Exec(ctx, `
+		ALTER TABLE user_quiz_attempts ADD COLUMN IF NOT EXISTS selected_answers JSONB NOT NULL DEFAULT '{}'::jsonb;
+	`)
 
 	// Answer keys live in quiz_seed_data.go, generated from the course content
 	// data files. Regenerate that file whenever quiz questions change.
@@ -438,14 +445,16 @@ func (r *UserRepository) SubmitQuiz(ctx context.Context, userID, moduleID string
 
 	// 3. Save attempt. Keep the learner's best score rather than overwriting a
 	// good result with a worse retry.
+	answersJSON, _ := json.Marshal(submitted)
 	_, err = r.pool.Exec(ctx, `
-		INSERT INTO user_quiz_attempts (user_id, module_id, score, total_questions, completed_at)
-		VALUES ($1::uuid, $2, $3, $4, now())
+		INSERT INTO user_quiz_attempts (user_id, module_id, score, total_questions, selected_answers, completed_at)
+		VALUES ($1::uuid, $2, $3, $4, $5::jsonb, now())
 		ON CONFLICT (user_id, module_id)
 		DO UPDATE SET score = GREATEST(user_quiz_attempts.score, EXCLUDED.score),
 		              total_questions = EXCLUDED.total_questions,
+		              selected_answers = EXCLUDED.selected_answers,
 		              completed_at = now();
-	`, userID, moduleID, score, total)
+	`, userID, moduleID, score, total, string(answersJSON))
 	if err != nil {
 		return 0, 0, nil, fmt.Errorf("save quiz attempt: %w", err)
 	}
@@ -456,7 +465,7 @@ func (r *UserRepository) SubmitQuiz(ctx context.Context, userID, moduleID string
 // GetQuizAttempts fetches all saved quiz scores for a user.
 func (r *UserRepository) GetQuizAttempts(ctx context.Context, userID string) ([]*userv1.QuizAttempt, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT module_id, score, total_questions, completed_at
+		SELECT module_id, score, total_questions, selected_answers, completed_at
 		FROM   user_quiz_attempts
 		WHERE  user_id = $1::uuid
 		ORDER  BY completed_at DESC
@@ -470,9 +479,11 @@ func (r *UserRepository) GetQuizAttempts(ctx context.Context, userID string) ([]
 	for rows.Next() {
 		var a userv1.QuizAttempt
 		var completedAt time.Time
-		if err := rows.Scan(&a.ModuleID, &a.Score, &a.TotalQuestions, &completedAt); err != nil {
+		var selectedAnswers []byte
+		if err := rows.Scan(&a.ModuleID, &a.Score, &a.TotalQuestions, &selectedAnswers, &completedAt); err != nil {
 			return nil, fmt.Errorf("scan quiz attempt: %w", err)
 		}
+		a.SelectedAnswers = string(selectedAnswers)
 		a.CompletedAt = completedAt.Format(time.RFC3339)
 		attempts = append(attempts, &a)
 	}

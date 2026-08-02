@@ -473,7 +473,7 @@ except Exception as e:
             }
         }
         if (targetMethod == null) {
-            System.out.println(sol.solveChallenge(input));
+            // Standalone void main class provided by the student (e.g. hello world)
             return;
         }
         Class<?>[] paramTypes = targetMethod.getParameterTypes();
@@ -567,6 +567,13 @@ except Exception as e:
 `
 		}
 		// Inject inside public class Solution
+		normalizedCode := strings.ReplaceAll(code, " ", "")
+		normalizedCode = strings.ReplaceAll(normalizedCode, "\t", "")
+		normalizedCode = strings.ReplaceAll(normalizedCode, "\r", "")
+		normalizedCode = strings.ReplaceAll(normalizedCode, "\n", "")
+		if strings.Contains(normalizedCode, "voidmain(") {
+			return code
+		}
 		lastBrace := strings.LastIndex(code, "}")
 		if lastBrace != -1 {
 			return code[:lastBrace] + "\n" + javaMain + "\n}"
@@ -765,6 +772,14 @@ int main() {
     return 0;
 }
 `, strings.Join(paramParsers, "\n        "), printStr)
+		}
+		// Bypass custom driver injection if the student provides their own main method
+		normalizedCpp := strings.ReplaceAll(code, " ", "")
+		normalizedCpp = strings.ReplaceAll(normalizedCpp, "\t", "")
+		normalizedCpp = strings.ReplaceAll(normalizedCpp, "\r", "")
+		normalizedCpp = strings.ReplaceAll(normalizedCpp, "\n", "")
+		if strings.Contains(normalizedCpp, "intmain(") {
+			return code
 		}
 		return code + "\n" + driver
 

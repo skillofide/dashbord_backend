@@ -83,20 +83,8 @@ func (c *ProblemClients) ListPracticeSets(p graphql.ResolveParams) (interface{},
 		return []interface{}{}, nil
 	}
 
-	// Check if the user is enrolled in Course ID 1 (Fullstack) or 2 (SQL)
-	hasAccess1, _ := c.UserSvc.CheckUserCourseAccess(p.Context, &userv1.CheckUserCourseAccessRequest{
-		UserID:   userID,
-		CourseID: "1",
-	})
-	hasAccess2, _ := c.UserSvc.CheckUserCourseAccess(p.Context, &userv1.CheckUserCourseAccessRequest{
-		UserID:   userID,
-		CourseID: "2",
-	})
-	
-	if (hasAccess1 == nil || !hasAccess1.HasAccess) && (hasAccess2 == nil || !hasAccess2.HasAccess) {
-		// If they don't have access to either, return empty list
-		return []interface{}{}, nil
-	}
+	// No restriction on loading practice sets for authenticated users.
+	// Filter logic is enforced down in problem-service or handled via enrollment cards mapping.
 
 	resp, err := c.ProblemSvc.ListPracticeSets(p.Context, &problemv1.ListPracticeSetsRequest{
 		UserId: userID,
@@ -105,8 +93,11 @@ func (c *ProblemClients) ListPracticeSets(p graphql.ResolveParams) (interface{},
 		return nil, fmt.Errorf("failed to list practice sets: %v", err)
 	}
 
+	c.Log.Info("ListPracticeSets called", zap.String("userId", userID), zap.Int("respCount", len(resp.PracticeSets)))
+
 	result := make([]interface{}, 0, len(resp.PracticeSets))
 	for _, s := range resp.PracticeSets {
+		c.Log.Info("Mapping set item", zap.String("id", s.Id), zap.String("title", s.Title))
 		result = append(result, map[string]interface{}{
 			"id":            mapUUIDToSimpleID(s.Id),
 			"title":         s.Title,

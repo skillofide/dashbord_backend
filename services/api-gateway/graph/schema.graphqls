@@ -270,6 +270,7 @@ type QuizAttempt {
   moduleId: String!
   score: Int!
   totalQuestions: Int!
+  selectedAnswers: String!
   completedAt: String!
 }
 

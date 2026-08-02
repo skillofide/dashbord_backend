@@ -75,10 +75,11 @@ type GetQuizAttemptsRequest struct {
 }
 
 type QuizAttempt struct {
-	ModuleID       string `json:"module_id"`
-	Score          int    `json:"score"`
-	TotalQuestions int    `json:"total_questions"`
-	CompletedAt    string `json:"completed_at"`
+	ModuleID        string `json:"module_id"`
+	Score           int    `json:"score"`
+	TotalQuestions  int    `json:"total_questions"`
+	SelectedAnswers string `json:"selected_answers"`
+	CompletedAt     string `json:"completed_at"`
 }
 
 type GetQuizAttemptsResponse struct {
