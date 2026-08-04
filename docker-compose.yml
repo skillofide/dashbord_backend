@@ -222,6 +222,14 @@ services:
       LOG_LEVEL: info
       # RapidAPI key for JSearch, backing the Placement job board.
       JSEARCH_API_KEY: ${JSEARCH_API_KEY}
+      # Enquiry alerts. Leave SMTP_HOST empty to disable — enquiries are still
+      # captured, they are just logged instead of emailed.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      INQUIRY_NOTIFY_TO: ${INQUIRY_NOTIFY_TO:-}
     ports:
       - "8080:8080"
     depends_on:
