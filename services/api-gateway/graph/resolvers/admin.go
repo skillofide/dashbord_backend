@@ -175,8 +175,10 @@ func (h *AdminHandler) handleUpdateUser(w http.ResponseWriter, r *http.Request, 
 		h.jsonErr(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.Role != "student" && req.Role != "admin" {
-		h.jsonErr(w, http.StatusBadRequest, "role must be 'student' or 'admin'")
+	// `recruiter` grants access to the partner hiring portal; a recruiter still
+	// needs a company_members row before they can see any drive.
+	if req.Role != "student" && req.Role != "admin" && req.Role != "recruiter" {
+		h.jsonErr(w, http.StatusBadRequest, "role must be 'student', 'recruiter' or 'admin'")
 		return
 	}
 	tag, err := h.Pool.Exec(r.Context(),

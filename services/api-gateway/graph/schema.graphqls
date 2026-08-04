@@ -246,6 +246,163 @@ type Query {
   getMyCourses: [Course!]!
   getQuizAttempts: [QuizAttempt!]!
   searchJobs(keywords: String, location: String, page: Int): JobSearchResult!
+
+  # ─── Placement assessments ──────────────────────────────────────────────────
+  listAssessments(scope: String): [AssessmentSummary!]!
+  getAttemptState(attemptId: String!): AttemptState
+  getMyAttempts: [AttemptSummary!]!
+  getAttemptResult(attemptId: String!): AttemptResult
+  getAttemptSubmission(attemptId: String!, submissionId: String!): AttemptSubmissionStatus
+}
+
+# ─── Placement assessments ────────────────────────────────────────────────────
+
+type AssessmentSummary {
+  id: String!
+  title: String!
+  description: String
+  purpose: String          # practice | hiring
+  companyName: String
+  companyLogo: String
+  durationMinutes: Int
+  totalMarks: Int
+  questionCount: Int
+  sectionSummary: String   # e.g. "20 Mcq · 2 Coding"
+  opensAt: String
+  closesAt: String
+  maxAttempts: Int
+  attemptsUsed: Int
+  liveAttemptId: String    # set when there is an in-progress attempt to resume
+  canStart: Boolean
+  blockedReason: String
+}
+
+type McqOption {
+  id: String!
+  body: String!
+  # Only ever populated on a revealed result — never during a live attempt.
+  isCorrect: Boolean
+  orderIndex: Int
+}
+
+type AttemptQuestion {
+  id: String!
+  sectionId: String
+  kind: String             # mcq | coding | descriptive
+  orderIndex: Int
+  marks: Float
+  body: String
+  mcqKind: String          # single | multiple | numeric
+  options: [McqOption!]
+  problemId: String
+  problemTitle: String
+  selectedOptionIds: [String!]
+  textAnswer: String
+  submissionId: String
+  language: String
+  code: String
+  gradingStatus: String
+  visited: Boolean
+  markedReview: Boolean
+  timeSpentMs: Int
+  awardedMarks: Float
+}
+
+type AttemptSection {
+  id: String!
+  title: String
+  kind: String
+  orderIndex: Int
+  durationMinutes: Int
+}
+
+type Proctoring {
+  requireFullscreen: Boolean
+  tabSwitchLimit: Int
+  blockCopyPaste: Boolean
+  webcam: Boolean
+}
+
+type AttemptState {
+  attemptId: String!
+  assessmentId: String
+  title: String
+  status: String
+  allowBacktrack: Boolean
+  proctoring: Proctoring
+  # serverNow/secondsLeft are the authoritative clock; the browser's own time
+  # is display-only.
+  serverNow: String
+  expiresAt: String
+  secondsLeft: Int
+  sections: [AttemptSection!]
+  questions: [AttemptQuestion!]
+  maxScore: Float
+  negativeMarking: Float
+}
+
+type AttemptSummary {
+  id: String!
+  assessmentId: String
+  assessmentName: String
+  attemptNo: Int
+  status: String
+  startedAt: String
+  submittedAt: String
+  evaluatedAt: String
+  score: Float
+  maxScore: Float
+  percent: Float
+  integrityScore: Float
+  passed: Boolean
+}
+
+type AttemptResult {
+  summary: AttemptSummary
+  questions: [AttemptQuestion!]
+  revealed: Boolean
+}
+
+type SaveAnswerResult {
+  saved: Boolean
+  secondsLeft: Int
+}
+
+type AttemptTestResult {
+  input: String
+  expectedOutput: String
+  actualOutput: String
+  status: String
+  executionMs: Int
+  error: String
+}
+
+type RunAttemptCodeResult {
+  overallStatus: String
+  testResults: [AttemptTestResult!]
+  compileError: String
+  runtimeMs: Int
+}
+
+type SubmitAttemptCodeResult {
+  submissionId: String
+  secondsLeft: Int
+}
+
+# Counts only — hidden test-case content is never exposed mid-test.
+type AttemptSubmissionStatus {
+  submissionId: String
+  status: String
+  passedCount: Int
+  totalCount: Int
+  compileError: String
+  runtimeMs: Int
+}
+
+type ProctorEventResult {
+  integrityScore: Float
+  terminated: Boolean
+  warning: String
 }
 
 input QuizAnswerInput {
@@ -282,4 +439,20 @@ type Mutation {
   runScratchpad(language: String!, code: String!, stdin: String): ScratchpadResult!
   upsertProfile(profile: UserProfileInput!): UpsertProfileResult!
   submitQuiz(moduleId: String!, answers: [QuizAnswerInput!]!): SubmitQuizResult!
+
+  # ─── Placement assessments ──────────────────────────────────────────────────
+  startAttempt(assessmentId: String!, inviteToken: String): AttemptState
+  saveAnswer(
+    attemptId: String!
+    questionId: String!
+    selectedOptionIds: [String!]
+    textAnswer: String
+    timeSpentMs: Int
+    markedReview: Boolean
+    clearAnswer: Boolean
+  ): SaveAnswerResult
+  runAttemptCode(attemptId: String!, questionId: String!, language: String!, code: String!): RunAttemptCodeResult
+  submitAttemptCode(attemptId: String!, questionId: String!, language: String!, code: String!): SubmitAttemptCodeResult
+  submitAttempt(attemptId: String!): AttemptSummary
+  recordProctorEvent(attemptId: String!, kind: String!, detail: String): ProctorEventResult
 }

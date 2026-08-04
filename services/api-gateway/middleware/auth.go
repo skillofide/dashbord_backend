@@ -145,7 +145,11 @@ func CORS(allowedOrigins string) func(http.Handler) http.Handler {
 				}
 			}
 
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			// PATCH is used by the admin and recruiter REST surfaces (updating a
+			// user's role, editing a test, grading a written answer, recording a
+			// shortlist decision). Omitting it here fails the browser preflight
+			// even though the route itself works.
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept")
 			w.Header().Set("Access-Control-Max-Age", "86400")
 
