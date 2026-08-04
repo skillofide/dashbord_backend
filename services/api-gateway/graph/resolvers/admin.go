@@ -21,6 +21,8 @@ import (
 type AdminHandler struct {
 	Pool *pgxpool.Pool
 	Log  *zap.Logger
+	// Inquiries serves the enquiry list; nil disables those routes.
+	Inquiries *InquiryHandler
 }
 
 // ServeHTTP dispatches admin REST routes.
@@ -45,6 +47,14 @@ func (h *AdminHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// POST /api/admin/bulk-import
 	case path == "/bulk-import" && r.Method == http.MethodPost:
 		h.handleBulkImport(w, r)
+
+	// GET /api/admin/inquiries
+	case path == "/inquiries" && r.Method == http.MethodGet && h.Inquiries != nil:
+		h.Inquiries.ListInquiries(w, r)
+
+	// PATCH /api/admin/inquiries/{id}   — status / notes
+	case strings.HasPrefix(path, "/inquiries/") && r.Method == http.MethodPatch && h.Inquiries != nil:
+		h.Inquiries.UpdateInquiry(w, r, strings.TrimPrefix(path, "/inquiries/"))
 
 	// GET /api/admin/users
 	case path == "/users" && r.Method == http.MethodGet:

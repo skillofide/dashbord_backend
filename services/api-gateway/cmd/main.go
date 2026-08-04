@@ -145,6 +145,18 @@ func main() {
 		adminHandler := &resolvers.AdminHandler{Pool: adminPool, Log: log}
 		mux.Handle("/api/admin/", adminHandler)
 		log.Info("admin REST endpoints registered at /api/admin/")
+
+		// Enquiry capture. The POST side is public (see publicPaths below) —
+		// visitors filling in a contact form have no account; the admin list
+		// side lives under /api/admin/ and stays behind the role guard.
+		inquiryHandler, err := resolvers.NewInquiryHandler(context.Background(), adminPool, log)
+		if err != nil {
+			log.Error("inquiry handler init failed — enquiry capture disabled", zap.Error(err))
+		} else {
+			mux.Handle("/api/inquiries", inquiryHandler)
+			adminHandler.Inquiries = inquiryHandler
+			log.Info("enquiry capture registered at /api/inquiries")
+		}
 	}
 
 	// Recruiter portal — test authoring, invitations, results and shortlisting.
@@ -171,7 +183,9 @@ func main() {
 	})
 
 	// ── Apply middleware chain ────────────────────────────────────────────────
-	authMW := middleware.Auth(jwtValidator, log, "/api/health", "/api/login") // JWT is parsed for /graphql; resolvers decide per-field auth
+	// JWT is parsed for /graphql; resolvers decide per-field auth.
+	// /api/inquiries is public: it is the marketing site's contact form.
+	authMW := middleware.Auth(jwtValidator, log, "/api/health", "/api/login", "/api/inquiries")
 	corsMW := middleware.CORS(cfg.allowedOrigins)
 
 	handler := corsMW(authMW(mux))
