@@ -19,7 +19,7 @@ type quizKey struct {
 	correctAns string
 }
 
-// quizAnswerKeys holds 623 answer keys across 78 modules.
+// quizAnswerKeys holds 665 answer keys across 106 modules.
 var quizAnswerKeys = []quizKey{
 	// dm-m1 (5 questions)
 	{"dm-m1", 1, "It is a conversion problem, so more traffic will not help"},
@@ -799,4 +799,102 @@ var quizAnswerKeys = []quizKey{
 	{"sql-m17", 3, "GROUP BY email HAVING COUNT(*) > 1"},
 	{"sql-m17", 4, "UNION removes duplicates; UNION ALL keeps them"},
 	{"sql-m17", 5, "EXISTS, because it short-circuits on the first match"},
+
+	// testing-m1 (2 questions)
+	{"testing-m1", 1, "B. Test Planning"},
+	{"testing-m1", 2, "B. To find defects and verify expected behavior"},
+
+	// testing-m2 (2 questions)
+	{"testing-m2", 1, "B. Testing is context dependent"},
+	{"testing-m2", 2, "C. Acceptance Testing"},
+
+	// testing-m3 (2 questions)
+	{"testing-m3", 1, "A. 5, 6, 7, 11, 12, 13"},
+	{"testing-m3", 2, "B. A high-level, static project or organizational policy document defining testing approaches"},
+
+	// testing-m4 (2 questions)
+	{"testing-m4", 1, "B. Invalid/Rejected"},
+	{"testing-m4", 2, "B. Low Severity, High Priority"},
+
+	// testing-m5 (2 questions)
+	{"testing-m5", 1, "C. Product Owner"},
+	{"testing-m5", 2, "B. 15 minutes"},
+
+	// testing-m6 (2 questions)
+	{"testing-m6", 1, "B. POST"},
+	{"testing-m6", 2, "B. Unauthorized (Authentication failed)"},
+
+	// testing-m7 (2 questions)
+	{"testing-m7", 1, "B. LEFT JOIN"},
+	{"testing-m7", 2, "C. UPDATE"},
+
+	// testing-m8 (2 questions)
+	{"testing-m8", 1, "B. quit()"},
+	{"testing-m8", 2, "B. blocks execution for a fixed duration, slowing down tests unnecessarily"},
+
+	// testing-m9 (2 questions)
+	{"testing-m9", 1, "B. pom.xml"},
+	{"testing-m9", 2, "B. Decoupling test code from webpage UI selectors, reducing maintenance costs"},
+
+	// testing-m10 (2 questions)
+	{"testing-m10", 1, "C. Endurance (Soak) Testing"},
+	{"testing-m10", 2, "B. Time taken for a request to travel from client to server and return the first byte"},
+
+	// testing-m11 (2 questions)
+	{"testing-m11", 1, "B. ADB (Android Debug Bridge)"},
+	{"testing-m11", 2, "B. It is cross-platform, letting you use the same API for Android and iOS tests"},
+
+	// testing-m12 (2 questions)
+	{"testing-m12", 1, "A. Open Web Application Security Project"},
+	{"testing-m12", 2, "B. SQL Injection"},
+
+	// testing-m13 (2 questions)
+	{"testing-m13", 1, "B. git checkout -b"},
+	{"testing-m13", 2, "B. Jenkinsfile"},
+
+	// testing-m14 (2 questions)
+	{"testing-m14", 1, "B. Automatically updating selectors when DOM elements change, reducing maintenance"},
+	{"testing-m14", 2, "B. It compares screenshots using machine learning to detect visual deviations, regardless of HTML changes"},
+
+	// testing-m1-assignment (1 questions)
+	{"testing-m1-assignment", 1, "B. Requirements Analysis -> Test Planning -> Test Case Development -> Environment Setup -> Test Execution -> Test Closure"},
+
+	// testing-m10-assignment (1 questions)
+	{"testing-m10-assignment", 1, "B. Throughput"},
+
+	// testing-m11-assignment (1 questions)
+	{"testing-m11-assignment", 1, "C. Hybrid App"},
+
+	// testing-m12-assignment (1 questions)
+	{"testing-m12-assignment", 1, "B. Cross-Site Scripting (XSS)"},
+
+	// testing-m13-assignment (1 questions)
+	{"testing-m13-assignment", 1, "B. git pull"},
+
+	// testing-m14-assignment (1 questions)
+	{"testing-m14-assignment", 1, "B. Applitools Eyes"},
+
+	// testing-m2-assignment (1 questions)
+	{"testing-m2-assignment", 1, "B. Verification evaluates static documents (reviews/walkthroughs); Validation executes the active code to verify system behavior."},
+
+	// testing-m3-assignment (1 questions)
+	{"testing-m3-assignment", 1, "B. 9, 10, 11, 49, 50, 51"},
+
+	// testing-m4-assignment (1 questions)
+	{"testing-m4-assignment", 1, "C. Retesting (or Pending Retest)"},
+
+	// testing-m5-assignment (1 questions)
+	{"testing-m5-assignment", 1, "B. Sprint Retrospective"},
+
+	// testing-m6-assignment (1 questions)
+	{"testing-m6-assignment", 1, "B. pm.test(\"Status is 201\", () => { pm.response.to.have.status(201); });"},
+
+	// testing-m7-assignment (1 questions)
+	{"testing-m7-assignment", 1, "B. SELECT * FROM employees WHERE salary > 50000 ORDER BY last_name;"},
+
+	// testing-m8-assignment (1 questions)
+	{"testing-m8-assignment", 1, "B. WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10)); wait.until(ExpectedConditions.elementToBeClickable(locator));"},
+
+	// testing-m9-assignment (1 questions)
+	{"testing-m9-assignment", 1, "B. @DataProvider"},
 }

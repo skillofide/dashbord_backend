@@ -93,6 +93,19 @@ for (const [modId, mod] of Object.entries(java.JAVA_COURSE_DATA)) {
     }
   }
 }
+// ---------- Testing ----------
+const testing = loadModule(path.join(COURSES, 'modules/TestingCourse/TestingCourseData.ts'));
+for (const [modId, mod] of Object.entries(testing.TESTING_COURSE_DATA)) {
+  if (mod.quiz?.length) {
+    keys[`testing-${modId}`] = mod.quiz.map((q) => ({ id: q.id, correctAnswer: q.correctAnswer }));
+  }
+  if (mod.assignment?.prompts?.length) {
+    const mcqPrompts = mod.assignment.prompts.filter(p => typeof p === 'object' && p.kind === 'mcq');
+    if (mcqPrompts.length > 0) {
+      keys[`testing-${modId}-assignment`] = mcqPrompts.map((q, idx) => ({ id: idx + 1, correctAnswer: q.correctAnswer }));
+    }
+  }
+}
 
 // ---------- SQL ----------
 const sql = loadModule(path.join(COURSES, 'modules/SqlCourse/SqlCourseData.ts'));
