@@ -19,7 +19,7 @@ type quizKey struct {
 	correctAns string
 }
 
-// quizAnswerKeys holds 609 answer keys across 65 modules.
+// quizAnswerKeys holds 623 answer keys across 78 modules.
 var quizAnswerKeys = []quizKey{
 	// dm-m1 (5 questions)
 	{"dm-m1", 1, "It is a conversion problem, so more traffic will not help"},
@@ -605,6 +605,46 @@ var quizAnswerKeys = []quizKey{
 	{"java-m1-assignment", 4, "B. javac App.java"},
 	{"java-m1-assignment", 5, "A. java App"},
 	{"java-m1-assignment", 6, "B. .class"},
+
+	// java-m10-assignment (1 questions)
+	{"java-m10-assignment", 1, "B. When you need the keys to be maintained in a sorted order."},
+
+	// java-m11-assignment (1 questions)
+	{"java-m11-assignment", 1, "C. It buffers input for efficient reading, reducing the number of costly system/disk read operations."},
+
+	// java-m12-assignment (1 questions)
+	{"java-m12-assignment", 1, "B. start() creates a new thread and executes run() asynchronously in it; calling run() directly runs the code synchronously in the current thread."},
+
+	// java-m14-assignment (1 questions)
+	{"java-m14-assignment", 1, "C. It manages the list of database drivers, matches connection requests with the appropriate driver, and establishes the connection."},
+
+	// java-m16-assignment (1 questions)
+	{"java-m16-assignment", 1, "B. Constructor injection allows the class to declare dependencies as final (immutable), enforces required dependencies, and simplifies unit testing."},
+
+	// java-m17-assignment (1 questions)
+	{"java-m17-assignment", 1, "B. JPA is the specification (guidelines/interface); Hibernate is a concrete provider (implementation) of the JPA specification."},
+
+	// java-m18-assignment (2 questions)
+	{"java-m18-assignment", 1, "A. The Authorization header (using Bearer scheme)."},
+	{"java-m18-assignment", 2, "B. BCrypt is a slow, adaptive hashing algorithm that makes brute-force attacks much harder; SHA-256 is extremely fast and vulnerable to hardware-accelerated cracking."},
+
+	// java-m19-assignment (1 questions)
+	{"java-m19-assignment", 1, "B. It removes the target directory (compiled classes, packaged files) to ensure a fresh, full build."},
+
+	// java-m2-assignment (1 questions)
+	{"java-m2-assignment", 1, "A. Widening is done automatically when converting a smaller type to a larger type; narrowing must be done manually."},
+
+	// java-m4-assignment (1 questions)
+	{"java-m4-assignment", 1, "A. break terminates the loop entirely; continue skips the current iteration and moves to the next one."},
+
+	// java-m7-assignment (1 questions)
+	{"java-m7-assignment", 1, "B. The \"==\" operator compares memory references (addresses), not the actual contents."},
+
+	// java-m8-assignment (1 questions)
+	{"java-m8-assignment", 1, "C. An abstract class can have instance fields and constructors; an interface cannot have instance fields or constructors."},
+
+	// java-m9-assignment (1 questions)
+	{"java-m9-assignment", 1, "B. throw is used to explicitly throw a single exception instance; throws is used in method signatures to declare exceptions that might be thrown."},
 
 	// seo-m1 (5 questions)
 	{"seo-m1", 1, "Crawling, indexing, serving"},
