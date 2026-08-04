@@ -35,7 +35,7 @@ func NewJobClients() *JobClients {
 		// RapidAPI key. Without it the resolver returns a clear setup error
 		// rather than an opaque 401 from upstream.
 		apiKey: os.Getenv("JSEARCH_API_KEY"),
-		http:   &http.Client{Timeout: 15 * time.Second},
+		http:   &http.Client{Timeout: 60 * time.Second},
 	}
 }
 
