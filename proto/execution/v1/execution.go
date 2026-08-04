@@ -41,6 +41,25 @@ type RunCodeResponse struct {
 	Memory       int64         `json:"memory_kb"`
 }
 
+// RunScratchpadRequest executes code verbatim against supplied stdin, with no
+// test cases and no grading. It backs the in-lesson code editor used by module
+// assignments, where the learner writes a complete program rather than filling
+// in a graded function body.
+type RunScratchpadRequest struct {
+	Language string `json:"language"` // python | javascript | java | cpp | go | sql
+	Code     string `json:"code"`
+	Stdin    string `json:"stdin"`
+	UserId   string `json:"user_id"`
+}
+
+type RunScratchpadResponse struct {
+	Stdout      string `json:"stdout"`
+	Stderr      string `json:"stderr"`
+	ExitCode    int64  `json:"exit_code"`
+	ExecutionMs int64  `json:"execution_ms"`
+	TimedOut    bool   `json:"timed_out"`
+}
+
 // SubmitCodeRequest is used for the "Submit" button — executes against ALL test cases.
 type SubmitCodeRequest struct {
 	SubmissionId string `json:"submission_id"`
@@ -70,6 +89,7 @@ type ExecutionResult struct {
 
 type ExecutionServiceServer interface {
 	RunCode(context.Context, *RunCodeRequest) (*RunCodeResponse, error)
+	RunScratchpad(context.Context, *RunScratchpadRequest) (*RunScratchpadResponse, error)
 	SubmitCode(context.Context, *SubmitCodeRequest) (*SubmitCodeResponse, error)
 }
 
@@ -77,6 +97,9 @@ type UnimplementedExecutionServiceServer struct{}
 
 func (UnimplementedExecutionServiceServer) RunCode(context.Context, *RunCodeRequest) (*RunCodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunCode not implemented")
+}
+func (UnimplementedExecutionServiceServer) RunScratchpad(context.Context, *RunScratchpadRequest) (*RunScratchpadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RunScratchpad not implemented")
 }
 func (UnimplementedExecutionServiceServer) SubmitCode(context.Context, *SubmitCodeRequest) (*SubmitCodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitCode not implemented")
@@ -86,6 +109,7 @@ func (UnimplementedExecutionServiceServer) SubmitCode(context.Context, *SubmitCo
 
 type ExecutionServiceClient interface {
 	RunCode(ctx context.Context, in *RunCodeRequest, opts ...grpc.CallOption) (*RunCodeResponse, error)
+	RunScratchpad(ctx context.Context, in *RunScratchpadRequest, opts ...grpc.CallOption) (*RunScratchpadResponse, error)
 	SubmitCode(ctx context.Context, in *SubmitCodeRequest, opts ...grpc.CallOption) (*SubmitCodeResponse, error)
 }
 
@@ -98,6 +122,14 @@ func NewExecutionServiceClient(cc grpc.ClientConnInterface) ExecutionServiceClie
 func (c *executionServiceClient) RunCode(ctx context.Context, in *RunCodeRequest, opts ...grpc.CallOption) (*RunCodeResponse, error) {
 	out := new(RunCodeResponse)
 	if err := c.cc.Invoke(ctx, "/execution.v1.ExecutionService/RunCode", in, out, opts...); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *executionServiceClient) RunScratchpad(ctx context.Context, in *RunScratchpadRequest, opts ...grpc.CallOption) (*RunScratchpadResponse, error) {
+	out := new(RunScratchpadResponse)
+	if err := c.cc.Invoke(ctx, "/execution.v1.ExecutionService/RunScratchpad", in, out, opts...); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -122,6 +154,7 @@ var ExecutionService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ExecutionServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{MethodName: "RunCode", Handler: _ExecutionService_RunCode_Handler},
+		{MethodName: "RunScratchpad", Handler: _ExecutionService_RunScratchpad_Handler},
 		{MethodName: "SubmitCode", Handler: _ExecutionService_SubmitCode_Handler},
 	},
 	Streams: []grpc.StreamDesc{},
@@ -138,6 +171,20 @@ func _ExecutionService_RunCode_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, &grpc.UnaryServerInfo{Server: srv, FullMethod: "/execution.v1.ExecutionService/RunCode"},
 		func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.(ExecutionServiceServer).RunCode(ctx, req.(*RunCodeRequest))
+		})
+}
+
+func _ExecutionService_RunScratchpad_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunScratchpadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExecutionServiceServer).RunScratchpad(ctx, in)
+	}
+	return interceptor(ctx, in, &grpc.UnaryServerInfo{Server: srv, FullMethod: "/execution.v1.ExecutionService/RunScratchpad"},
+		func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.(ExecutionServiceServer).RunScratchpad(ctx, req.(*RunScratchpadRequest))
 		})
 }
 

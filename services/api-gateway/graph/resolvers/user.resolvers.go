@@ -185,15 +185,17 @@ func (c *UserClients) UpsertProfile(p graphql.ResolveParams) (interface{}, error
 }
 
 var programModules = map[string][]map[string]interface{}{
-	"1": { // Fullstack
+	"1": { // Java Dev
 		{
 			"id":        "mod-java",
-			"title":     "Java",
+			"title":     "Java Development",
 			"mentor":    "Deeptanshu Kumar",
 			"initial":   "J",
 			"color":     "#6c5ce7",
 			"classTime": "09:00 – 11:30 AM",
 		},
+	},
+	"2": { // Frontend Technologies
 		{
 			"id":        "mod-fe",
 			"title":     "Front-End Technologies",
@@ -202,6 +204,8 @@ var programModules = map[string][]map[string]interface{}{
 			"color":     "#e05a36",
 			"classTime": "11:15 – 01:15 PM",
 		},
+	},
+	"3": { // Mastering SQL
 		{
 			"id":        "mod-sql",
 			"title":     "Mastering SQL",
@@ -211,7 +215,27 @@ var programModules = map[string][]map[string]interface{}{
 			"classTime": "11:30 – 12:45 PM",
 		},
 	},
-	"2": { // Digital Marketing
+	"4": { // Golang
+		{
+			"id":        "mod-golang",
+			"title":     "Golang Engineering",
+			"mentor":    "Deeptanshu Kumar",
+			"initial":   "G",
+			"color":     "#00d2d3",
+			"classTime": "02:00 – 03:30 PM",
+		},
+	},
+	"5": { // Fullstack
+		{
+			"id":        "mod-fullstack",
+			"title":     "Full Stack Engineering",
+			"mentor":    "Deeptanshu & Priya",
+			"initial":   "FS",
+			"color":     "#ff6b6b",
+			"classTime": "04:00 – 06:00 PM",
+		},
+	},
+	"seo": { // SEO
 		{
 			"id":        "mod-seo",
 			"title":     "SEO Fundamentals",
@@ -220,6 +244,8 @@ var programModules = map[string][]map[string]interface{}{
 			"color":     "#f39c12",
 			"classTime": "10:00 – 11:00 AM",
 		},
+	},
+	"digital-marketing": { // Digital Marketing
 		{
 			"id":        "mod-dm",
 			"title":     "Digital Marketing Strategy",
@@ -227,6 +253,16 @@ var programModules = map[string][]map[string]interface{}{
 			"initial":   "D",
 			"color":     "#d35400",
 			"classTime": "01:00 – 02:30 PM",
+		},
+	},
+	"testing": { // Software Testing
+		{
+			"id":        "mod-testing",
+			"title":     "Software Testing",
+			"mentor":    "QA Tech Lead",
+			"initial":   "QA",
+			"color":     "#2ecc71",
+			"classTime": "09:00 – 10:30 AM",
 		},
 	},
 }
@@ -294,7 +330,11 @@ func (c *UserClients) SubmitQuiz(p graphql.ResolveParams) (interface{}, error) {
 			Answer:     ans,
 		})
 	}
-	c.Log.Info("SubmitQuiz parsed answers", zap.Int("count", len(answers)), zap.Any("answers", answers))
+	// Answers are learner submissions, not secrets, but there is no reason to
+	// dump the full payload into logs on every request.
+	c.Log.Info("SubmitQuiz parsed answers",
+		zap.String("module_id", moduleID),
+		zap.Int("count", len(answers)))
 
 	resp, err := c.UserSvc.SubmitQuiz(p.Context, &userv1.SubmitQuizRequest{
 		UserID:   userID,
@@ -306,10 +346,20 @@ func (c *UserClients) SubmitQuiz(p graphql.ResolveParams) (interface{}, error) {
 		return nil, fmt.Errorf("failed to submit quiz: %v", err)
 	}
 
+	results := make([]map[string]interface{}, 0, len(resp.Results))
+	for _, r := range resp.Results {
+		results = append(results, map[string]interface{}{
+			"questionId":    r.QuestionID,
+			"correct":       r.Correct,
+			"correctAnswer": r.CorrectAnswer,
+		})
+	}
+
 	return map[string]interface{}{
 		"success":        resp.Success,
 		"score":          int(resp.Score),
 		"totalQuestions": int(resp.TotalQuestions),
+		"results":        results,
 	}, nil
 }
 
@@ -331,10 +381,11 @@ func (c *UserClients) GetQuizAttempts(p graphql.ResolveParams) (interface{}, err
 	attempts := make([]map[string]interface{}, 0, len(resp.Attempts))
 	for _, att := range resp.Attempts {
 		attempts = append(attempts, map[string]interface{}{
-			"moduleId":       att.ModuleID,
-			"score":          int(att.Score),
-			"totalQuestions": int(att.TotalQuestions),
-			"completedAt":    att.CompletedAt,
+			"moduleId":        att.ModuleID,
+			"score":           int(att.Score),
+			"totalQuestions":  int(att.TotalQuestions),
+			"selectedAnswers": att.SelectedAnswers,
+			"completedAt":     att.CompletedAt,
 		})
 	}
 

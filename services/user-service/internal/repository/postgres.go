@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -298,7 +299,8 @@ func (r *UserRepository) CheckUserCourseAccess(ctx context.Context, userID, cour
 	return exists, nil
 }
 
-// EnsureQuizTables creates the quiz database tables if they do not exist and seeds correct answers for Module 1.
+// EnsureQuizTables creates the quiz database tables if they do not exist and
+// syncs the answer keys for every course module from quizAnswerKeys.
 func (r *UserRepository) EnsureQuizTables(ctx context.Context) error {
 	_, err := r.pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS quiz_keys (
@@ -313,6 +315,7 @@ func (r *UserRepository) EnsureQuizTables(ctx context.Context) error {
 			module_id TEXT NOT NULL,
 			score INT NOT NULL,
 			total_questions INT NOT NULL,
+			selected_answers JSONB NOT NULL DEFAULT '{}'::jsonb,
 			completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 			PRIMARY KEY (user_id, module_id)
 		);
@@ -321,224 +324,148 @@ func (r *UserRepository) EnsureQuizTables(ctx context.Context) error {
 		return fmt.Errorf("create quiz tables: %w", err)
 	}
 
-	// Seed correct answers for Module 1 (20 questions)
-	answers := []struct {
-		moduleID   string
-		questionID int
-		correctAns string
-	}{
-		{"m1", 1, "D. James Gosling"},
-		{"m1", 2, "C. Oak"},
-		{"m1", 3, "A. Write Once, Run Anywhere (WORA)"},
-		{"m1", 4, "B. JRE and development tools like 'javac'"},
-		{"m1", 5, "B. Java Virtual Machine (JVM)"},
-		{"m1", 6, "C. .class"},
-		{"m1", 7, "C. Java Bytecode is platform-independent, but the JVM is platform-dependent."},
-		{"m1", 8, "A. Garbage Collection"},
-		{"m1", 9, "A. public static void main(String[] args)"},
-		{"m1", 10, "C. Welcome.java"},
-		{"m1", 11, "B. Providing an all-in-one text editor, build automation tool, and debugger"},
-		{"m1", 12, "A. javac Test.java"},
-		{"m1", 13, "B. The method does not return any value when it finishes executing."},
-		{"m1", 14, "A. Strong type checking and exception handling mechanisms"},
-		{"m1", 15, "A. java Demo"},
-		{"m1", 16, "C. PATH"},
-		{"m1", 17, "D. System.out.println(\"Hello World\");"},
-		{"m1", 18, "B. To enable the JVM to call the method without creating an instance of the class first"},
-		{"m1", 19, "B. The JDK is a superset that includes the complete JRE plus development tools."},
-		{"m1", 20, "A. They mark the beginning of a single-line text comment."},
-		{"m2", 1, "D. _variable$5"},
-		{"m2", 2, "A. String"},
-		{"m2", 3, "C. Widening casting happens automatically; narrowing casting must be done manually."},
-		{"m2", 4, "B. /** Documentation comment */"},
-		{"m2", 5, "B. next() reads input up to the next whitespace delimiter, while nextLine() reads the entire line until a newline character."},
-		{"m2", 6, "A. %f"},
-		{"m2", 7, "B. They skip evaluating the second condition if the overall result is already determined by the first condition."},
-		{"m2", 8, "B. a=7, b=12"},
-		{"m2", 9, "B. 2.0"},
-		{"m2", 10, "D. 9"},
-		{"m2", 11, "C. Output: 1020"},
-		{"m2", 12, "C. 30 Output"},
-		{"m2", 13, "A. -1"},
-		{"m2", 14, "B. 10"},
-		{"m2", 15, "D. -128"},
-		{"m2", 16, "D. 5.68"},
-		{"m2", 17, "A. n1=20, n2=10"},
-		{"m2", 18, "D. 30"},
-		{"m2", 19, "A. true"},
-		{"m2", 20, "A. B"},
-		{"m3", 1, "C. double"},
-		{"m3", 2, "C. The program falls through, executing subsequent case blocks sequentially until a break or the end of the switch is encountered."},
-		{"m3", 3, "A. The inner 'if' condition is evaluated only if the outer 'if' condition evaluates to true."},
-		{"m3", 4, "A. 3"},
-		{"m3", 5, "C. Passed"},
-		{"m3", 6, "C. Block 2"},
-		{"m3", 7, "B. Set Go Done"},
-		{"m3", 8, "B. High"},
-		{"m3", 9, "B. Divisible"},
-		{"m3", 10, "D. 10"},
-		{"m3", 11, "D. Compilation Error"},
-		{"m3", 12, "C. Off"},
-		{"m3", 13, "A. 20"},
-		{"m3", 14, "C. Allowed"},
-		{"m3", 15, "B. Five"},
-		{"m3", 16, "D. Default One"},
-		{"m3", 17, "A. Warm"},
-		{"m3", 18, "B. 6"},
-		{"m3", 19, "B. 8"},
-		{"m3", 20, "D. Point 3"},
-		{"m4", 1, "C. do-while loop"},
-		{"m4", 2, "B. continue"},
-		{"m4", 3, "B. Infinite loop"},
-		{"m4", 4, "C. O(N^2)"},
-		{"m4", 5, "C. semicolon (;)"},
-		{"m5", 1, "C. void"},
-		{"m5", 2, "B. StackOverflowError"},
-		{"m5", 3, "B. No"},
-		{"m5", 4, "B. Pass by value"},
-		{"m5", 5, "C. Overriding resolution at runtime"},
-		{"m6", 1, "B. 2"},
-		{"m6", 2, "B. length"},
-		{"m6", 3, "C. ArrayIndexOutOfBoundsException"},
-		{"m6", 4, "B. Arrays.sort()"},
-		{"m6", 5, "B. No"},
-		{"m7", 1, "C. String Constant Pool (SCP)"},
-		{"m7", 2, "B. str1.equals(str2)"},
-		{"m7", 3, "C. StringBuilder"},
-		{"m7", 4, "B. \"bc\""},
-		{"m7", 5, "A. For security, caching, and thread safety"},
-		{"m8", 1, "D. Abstraction"},
-		{"m8", 2, "B. this"},
-		{"m8", 3, "B. No"},
-		{"m8", 4, "C. implements"},
-		{"m8", 5, "B. Method Overloading"},
-		{"m9", 1, "C. finally"},
-		{"m9", 2, "B. throws"},
-		{"m9", 3, "A. Throwable"},
-		{"m9", 4, "B. Unchecked"},
-		{"m9", 5, "B. Extend Exception"},
-		{"m10", 1, "C. HashSet"},
-		{"m10", 2, "B. HashMap"},
-		{"m10", 3, "C. TreeSet"},
-		{"m10", 4, "B. map.containsKey()"},
-		{"m10", 5, "B. ConcurrentModificationException"},
-		{"m11", 1, "B. BufferedReader"},
-		{"m11", 2, "B. Try-with-resources"},
-		{"m11", 3, "B. file.exists()"},
-		{"m11", 4, "B. new FileWriter(\"file.txt\", true)"},
-		{"m11", 5, "C. java.io"},
-		{"m12", 1, "B. start()"},
-		{"m12", 2, "C. synchronized"},
-		{"m12", 3, "B. Java supports multiple interface implementations but only single class inheritance"},
-		{"m12", 4, "B. Runnable"},
-		{"m12", 5, "B. Executors"},
-		{"m13", 1, "B. @FunctionalInterface"},
-		{"m13", 2, "C. ::"},
-		{"m13", 3, "C. reduce()"},
-		{"m13", 4, "A. Optional.empty()"},
-		{"m13", 5, "A. Intermediate"},
-		{"m14", 1, "C. ResultSet"},
-		{"m14", 2, "B. They prevent SQL Injection and cache query execution plans"},
-		{"m14", 3, "B. executeQuery()"},
-		{"m14", 4, "B. jdbc:mysql://..."},
-		{"m14", 5, "B. 1"},
-		{"m15", 1, "B. O(log N)"},
-		{"m15", 2, "B. Stack"},
-		{"m15", 3, "B. Breadth First Search (BFS)"},
-		{"m15", 4, "C. O(N^2)"},
-		{"m15", 5, "B. Queue"},
-		{"m16", 1, "B. @RestController"},
-		{"m16", 2, "B. Spring Initializr"},
-		{"m16", 3, "B. @Autowired"},
-		{"m16", 4, "C. Tomcat"},
-		{"m16", 5, "B. JpaRepository"},
-		{"m17", 1, "B. @Id"},
-		{"m17", 2, "B. @Entity"},
-		{"m17", 3, "B. @Valid"},
-		{"m17", 4, "C. @RestControllerAdvice"},
-		{"m17", 5, "B. spring.jpa.hibernate.ddl-auto=update"},
-		{"m18", 1, "B. BCryptPasswordEncoder"},
-		{"m18", 2, "B. JSON Web Token"},
-		{"m18", 3, "B. Authorization Header"},
-		{"m18", 4, "B. csrf().disable()"},
-		{"m18", 5, "B. Authorization"},
-		{"m19", 1, "B. mvn clean package"},
-		{"m19", 2, "B. java -jar app.jar"},
-		{"m19", 3, "A. docker build"},
-		{"m19", 4, "B. target/"},
-		{"m19", 5, "C. Passed via Environment Variables"},
+	// Dynamically add selected_answers column to user_quiz_attempts if database already exists
+	_, _ = r.pool.Exec(ctx, `
+		ALTER TABLE user_quiz_attempts ADD COLUMN IF NOT EXISTS selected_answers JSONB NOT NULL DEFAULT '{}'::jsonb;
+	`)
+
+	// Answer keys live in quiz_seed_data.go, generated from the course content
+	// data files. Regenerate that file whenever quiz questions change.
+	if len(quizAnswerKeys) == 0 {
+		return fmt.Errorf("quizAnswerKeys is empty; regenerate quiz_seed_data.go")
 	}
 
-	for _, a := range answers {
-		_, err = r.pool.Exec(ctx, `
-			INSERT INTO quiz_keys (module_id, question_id, correct_answer)
-			VALUES ($1, $2, $3)
-			ON CONFLICT (module_id, question_id) 
-			DO UPDATE SET correct_answer = EXCLUDED.correct_answer;
-		`, a.moduleID, a.questionID, a.correctAns)
-		if err != nil {
-			return fmt.Errorf("seed quiz key: %w", err)
-		}
+	moduleIDs := make([]string, 0, len(quizAnswerKeys))
+	questionIDs := make([]int32, 0, len(quizAnswerKeys))
+	correctAnswers := make([]string, 0, len(quizAnswerKeys))
+	for _, a := range quizAnswerKeys {
+		moduleIDs = append(moduleIDs, a.moduleID)
+		questionIDs = append(questionIDs, int32(a.questionID))
+		correctAnswers = append(correctAnswers, a.correctAns)
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin quiz seed tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Upsert every key in a single round trip rather than one per row.
+	_, err = tx.Exec(ctx, `
+		INSERT INTO quiz_keys (module_id, question_id, correct_answer)
+		SELECT * FROM unnest($1::text[], $2::int[], $3::text[])
+		ON CONFLICT (module_id, question_id)
+		DO UPDATE SET correct_answer = EXCLUDED.correct_answer;
+	`, moduleIDs, questionIDs, correctAnswers)
+	if err != nil {
+		return fmt.Errorf("seed quiz keys: %w", err)
+	}
+
+	// Drop keys for questions that no longer exist. Without this, a removed
+	// question would linger and inflate the total_questions a learner is
+	// graded against.
+	_, err = tx.Exec(ctx, `
+		DELETE FROM quiz_keys k
+		WHERE NOT EXISTS (
+			SELECT 1 FROM unnest($1::text[], $2::int[]) AS seed(module_id, question_id)
+			WHERE seed.module_id = k.module_id AND seed.question_id = k.question_id
+		);
+	`, moduleIDs, questionIDs)
+	if err != nil {
+		return fmt.Errorf("prune stale quiz keys: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit quiz seed: %w", err)
 	}
 
 	return nil
 }
 
-// SubmitQuiz grades a user's quiz submission and stores the score in the database.
-func (r *UserRepository) SubmitQuiz(ctx context.Context, userID, moduleID string, userAnswers []*userv1.QuizAnswer) (int, int, error) {
+// SubmitQuiz grades a user's quiz submission against the stored answer key,
+// saves the attempt, and returns the score plus a per-question breakdown.
+//
+// Grading is deliberately server-side: the client never receives the answer key
+// before submitting, so answers cannot be read out of the bundle or spoofed.
+func (r *UserRepository) SubmitQuiz(ctx context.Context, userID, moduleID string, userAnswers []*userv1.QuizAnswer) (int, int, []*userv1.QuizQuestionResult, error) {
 	// 1. Fetch correct answers for the module
 	rows, err := r.pool.Query(ctx, `
 		SELECT question_id, correct_answer
 		FROM   quiz_keys
 		WHERE  module_id = $1
+		ORDER  BY question_id
 	`, moduleID)
 	if err != nil {
-		return 0, 0, fmt.Errorf("fetch correct answers: %w", err)
+		return 0, 0, nil, fmt.Errorf("fetch correct answers: %w", err)
 	}
 	defer rows.Close()
 
 	keys := make(map[int]string)
+	var orderedIDs []int
 	for rows.Next() {
 		var qID int
 		var ans string
 		if err := rows.Scan(&qID, &ans); err != nil {
-			return 0, 0, fmt.Errorf("scan correct answer: %w", err)
+			return 0, 0, nil, fmt.Errorf("scan correct answer: %w", err)
 		}
 		keys[qID] = ans
+		orderedIDs = append(orderedIDs, qID)
+	}
+	if err := rows.Err(); err != nil {
+		return 0, 0, nil, fmt.Errorf("iterate correct answers: %w", err)
 	}
 
 	// 2. Grade
-	score := 0
 	total := len(keys)
 	if total == 0 {
-		return 0, 0, fmt.Errorf("no quiz keys found for module %s", moduleID)
+		return 0, 0, nil, fmt.Errorf("no quiz keys found for module %s", moduleID)
 	}
 
+	submitted := make(map[int]string, len(userAnswers))
 	for _, ua := range userAnswers {
-		correctAns, ok := keys[ua.QuestionID]
-		if ok && correctAns == ua.Answer {
+		submitted[ua.QuestionID] = ua.Answer
+	}
+
+	// Iterate the key, not the submission, so unanswered questions are graded
+	// as incorrect rather than silently skipped.
+	score := 0
+	results := make([]*userv1.QuizQuestionResult, 0, total)
+	for _, qID := range orderedIDs {
+		correctAns := keys[qID]
+		isCorrect := submitted[qID] == correctAns
+		if isCorrect {
 			score++
 		}
+		results = append(results, &userv1.QuizQuestionResult{
+			QuestionID:    qID,
+			Correct:       isCorrect,
+			CorrectAnswer: correctAns,
+		})
 	}
 
-	// 3. Save attempt
+	// 3. Save attempt. Keep the learner's best score rather than overwriting a
+	// good result with a worse retry.
+	answersJSON, _ := json.Marshal(submitted)
 	_, err = r.pool.Exec(ctx, `
-		INSERT INTO user_quiz_attempts (user_id, module_id, score, total_questions, completed_at)
-		VALUES ($1::uuid, $2, $3, $4, now())
+		INSERT INTO user_quiz_attempts (user_id, module_id, score, total_questions, selected_answers, completed_at)
+		VALUES ($1::uuid, $2, $3, $4, $5::jsonb, now())
 		ON CONFLICT (user_id, module_id)
-		DO UPDATE SET score = EXCLUDED.score, total_questions = EXCLUDED.total_questions, completed_at = now();
-	`, userID, moduleID, score, total)
+		DO UPDATE SET score = GREATEST(user_quiz_attempts.score, EXCLUDED.score),
+		              total_questions = EXCLUDED.total_questions,
+		              selected_answers = EXCLUDED.selected_answers,
+		              completed_at = now();
+	`, userID, moduleID, score, total, string(answersJSON))
 	if err != nil {
-		return 0, 0, fmt.Errorf("save quiz attempt: %w", err)
+		return 0, 0, nil, fmt.Errorf("save quiz attempt: %w", err)
 	}
 
-	return score, total, nil
+	return score, total, results, nil
 }
 
 // GetQuizAttempts fetches all saved quiz scores for a user.
 func (r *UserRepository) GetQuizAttempts(ctx context.Context, userID string) ([]*userv1.QuizAttempt, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT module_id, score, total_questions, completed_at
+		SELECT module_id, score, total_questions, selected_answers, completed_at
 		FROM   user_quiz_attempts
 		WHERE  user_id = $1::uuid
 		ORDER  BY completed_at DESC
@@ -552,9 +479,11 @@ func (r *UserRepository) GetQuizAttempts(ctx context.Context, userID string) ([]
 	for rows.Next() {
 		var a userv1.QuizAttempt
 		var completedAt time.Time
-		if err := rows.Scan(&a.ModuleID, &a.Score, &a.TotalQuestions, &completedAt); err != nil {
+		var selectedAnswers []byte
+		if err := rows.Scan(&a.ModuleID, &a.Score, &a.TotalQuestions, &selectedAnswers, &completedAt); err != nil {
 			return nil, fmt.Errorf("scan quiz attempt: %w", err)
 		}
+		a.SelectedAnswers = string(selectedAnswers)
 		a.CompletedAt = completedAt.Format(time.RFC3339)
 		attempts = append(attempts, &a)
 	}

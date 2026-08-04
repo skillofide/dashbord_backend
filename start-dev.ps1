@@ -36,6 +36,7 @@ $Runners = [ordered]@{
     'skillofide/runner-javascript:latest' = 'services/execution-service/runners/javascript'
     'skillofide/runner-java:latest'       = 'services/execution-service/runners/java'
     'skillofide/runner-cpp:latest'        = 'services/execution-service/runners/cpp'
+    'skillofide/runner-sql:latest'        = 'services/execution-service/runners/sql'
 }
 
 foreach ($Img in $Runners.Keys) {

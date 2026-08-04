@@ -54,10 +54,20 @@ type SubmitQuizRequest struct {
 	Answers  []*QuizAnswer `json:"answers"`
 }
 
+// QuizQuestionResult reports the outcome of a single graded question. The
+// correct answer is only ever populated in a submission response, so the client
+// can reveal it after grading without shipping the answer key in its bundle.
+type QuizQuestionResult struct {
+	QuestionID    int    `json:"question_id"`
+	Correct       bool   `json:"correct"`
+	CorrectAnswer string `json:"correct_answer"`
+}
+
 type SubmitQuizResponse struct {
-	Success        bool `json:"success"`
-	Score          int  `json:"score"`
-	TotalQuestions int  `json:"total_questions"`
+	Success        bool                  `json:"success"`
+	Score          int                   `json:"score"`
+	TotalQuestions int                   `json:"total_questions"`
+	Results        []*QuizQuestionResult `json:"results"`
 }
 
 type GetQuizAttemptsRequest struct {
@@ -65,10 +75,11 @@ type GetQuizAttemptsRequest struct {
 }
 
 type QuizAttempt struct {
-	ModuleID       string `json:"module_id"`
-	Score          int    `json:"score"`
-	TotalQuestions int    `json:"total_questions"`
-	CompletedAt    string `json:"completed_at"`
+	ModuleID        string `json:"module_id"`
+	Score           int    `json:"score"`
+	TotalQuestions  int    `json:"total_questions"`
+	SelectedAnswers string `json:"selected_answers"`
+	CompletedAt     string `json:"completed_at"`
 }
 
 type GetQuizAttemptsResponse struct {

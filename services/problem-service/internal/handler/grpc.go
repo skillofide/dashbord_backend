@@ -88,19 +88,10 @@ func (h *ProblemHandler) GetTestCases(ctx context.Context, req *problemv1.GetTes
 
 // ListPracticeSets returns all practice sets with optional per-user progress.
 func (h *ProblemHandler) ListPracticeSets(ctx context.Context, req *problemv1.ListPracticeSetsRequest) (*problemv1.ListPracticeSetsResponse, error) {
-	// Try cache
-	if cached, err := h.cache.GetPracticeSets(ctx, req.UserId); err == nil {
-		return cached, nil
-	}
-
 	resp, err := h.repo.ListPracticeSets(ctx, req)
 	if err != nil {
 		h.logger.Error("list practice sets failed", zap.Error(err))
 		return nil, status.Errorf(codes.Internal, "list practice sets: %v", err)
-	}
-
-	if err := h.cache.SetPracticeSets(ctx, req.UserId, resp); err != nil {
-		h.logger.Warn("cache set practice sets failed", zap.Error(err))
 	}
 
 	return resp, nil

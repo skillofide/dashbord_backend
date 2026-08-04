@@ -51,7 +51,7 @@ func (j *Judge) EvaluateTestCase(tc *problemv1.TestCase, res *sandbox.RunResult)
 			tr.Error = "Non-zero exit code"
 		}
 
-	case normalize(res.Stdout) == normalize(tc.ExpectedOutput):
+	case matchesExpected(tc.ExpectedOutput, res.Stdout):
 		tr.Status = StatusAccepted
 
 	default:
@@ -84,6 +84,22 @@ func OverallStatus(results []*executionv1.TestResult) string {
 		}
 	}
 	return worst
+}
+
+// matchesExpected decides whether the sandbox output satisfies the test case.
+//
+// SQL submissions return a JSON result set, which cannot be graded by string
+// comparison: column names come back lower-cased by PostgreSQL, numbers are
+// formatted differently, and most problems permit any row order. When BOTH
+// sides are result sets they are compared semantically; everything else keeps
+// the original whitespace-normalised text comparison.
+func matchesExpected(expected, actual string) bool {
+	expectedRS, expectedOK := parseResultSet(expected)
+	actualRS, actualOK := parseResultSet(actual)
+	if expectedOK && actualOK {
+		return resultSetsEqual(expectedRS, actualRS)
+	}
+	return normalize(actual) == normalize(expected)
 }
 
 // normalize trims trailing whitespace and normalizes line endings for comparison.

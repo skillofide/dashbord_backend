@@ -23,6 +23,7 @@ var languageImages = map[string]string{
 	"java":       "skillofide/runner-java:latest",
 	"cpp":        "skillofide/runner-cpp:latest",
 	"go":         "golang:1.22-alpine",
+	"sql":        "skillofide/runner-sql:latest",
 }
 
 // RunRequest contains everything needed to execute user code against one test case.
@@ -33,6 +34,10 @@ type RunRequest struct {
 	Input         string
 	TimeLimitMs   int32
 	MemoryLimitMb int32
+	// Raw runs the submitted code verbatim, skipping the driver that is
+	// normally generated around a solution function. Scratchpad code is a
+	// complete program with its own entry point, so wrapping it would break it.
+	Raw bool
 }
 
 // RunResult is the output from executing one test case in the sandbox.
@@ -79,14 +84,23 @@ func (s *DockerSandbox) Run(ctx context.Context, req *RunRequest) (*RunResult, e
 	} else if langLower == "java" {
 		// Java needs extra time: javac compilation (3-5s) + JVM startup (2-3s) in Alpine Docker
 		timeLimitMs += 15000
+	} else if langLower == "sql" {
+		// The SQL runner boots a PostgreSQL cluster and builds the fixture
+		// tables before the query runs. The cluster is pre-initialised at image
+		// build time, so this only covers pg_ctl start plus schema setup.
+		timeLimitMs += 10000
 	}
 	memLimitMb := req.MemoryLimitMb
 	if memLimitMb <= 0 {
 		memLimitMb = 256
 	}
 
-	// Wrap user code with driver code to read input and print output
-	wrappedCode := wrapUserCode(req.ProblemId, req.Language, req.Code)
+	// Wrap user code with driver code to read input and print output.
+	// Raw requests are complete programs and must not be wrapped.
+	wrappedCode := req.Code
+	if !req.Raw {
+		wrappedCode = wrapUserCode(req.ProblemId, req.Language, req.Code)
+	}
 
 	// Build environment variables to pass code + input into the container
 	envVars := []string{
@@ -231,6 +245,13 @@ func wrapUserCode(problemId string, language string, code string) string {
 		problemId = "loop1"
 	case "54574a34-9a68-4e65-ab9a-af05db4c0005":
 		problemId = "str2"
+	}
+
+	// SQL submissions are handed to the runner verbatim. There is no driver to
+	// wrap them in: the harness inside the container builds the fixture tables,
+	// executes this statement, and serialises the result rows itself.
+	if language == "sql" {
+		return code
 	}
 
 	switch language {
@@ -452,7 +473,7 @@ except Exception as e:
             }
         }
         if (targetMethod == null) {
-            System.out.println(sol.solveChallenge(input));
+            // Standalone void main class provided by the student (e.g. hello world)
             return;
         }
         Class<?>[] paramTypes = targetMethod.getParameterTypes();
@@ -546,6 +567,13 @@ except Exception as e:
 `
 		}
 		// Inject inside public class Solution
+		normalizedCode := strings.ReplaceAll(code, " ", "")
+		normalizedCode = strings.ReplaceAll(normalizedCode, "\t", "")
+		normalizedCode = strings.ReplaceAll(normalizedCode, "\r", "")
+		normalizedCode = strings.ReplaceAll(normalizedCode, "\n", "")
+		if strings.Contains(normalizedCode, "voidmain(") {
+			return code
+		}
 		lastBrace := strings.LastIndex(code, "}")
 		if lastBrace != -1 {
 			return code[:lastBrace] + "\n" + javaMain + "\n}"
@@ -744,6 +772,14 @@ int main() {
     return 0;
 }
 `, strings.Join(paramParsers, "\n        "), printStr)
+		}
+		// Bypass custom driver injection if the student provides their own main method
+		normalizedCpp := strings.ReplaceAll(code, " ", "")
+		normalizedCpp = strings.ReplaceAll(normalizedCpp, "\t", "")
+		normalizedCpp = strings.ReplaceAll(normalizedCpp, "\r", "")
+		normalizedCpp = strings.ReplaceAll(normalizedCpp, "\n", "")
+		if strings.Contains(normalizedCpp, "intmain(") {
+			return code
 		}
 		return code + "\n" + driver
 

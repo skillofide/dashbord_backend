@@ -97,6 +97,43 @@ func (c *SubmissionClients) SubmitCode(p graphql.ResolveParams) (interface{}, er
 }
 
 // RunCodeResolver handles the runCode GraphQL mutation (sync execution against visible test cases).
+// RunScratchpad executes code verbatim with supplied stdin and returns the raw
+// output. Used by the in-lesson code editor on module assignments, where there
+// is no problem and nothing to grade.
+func (c *SubmissionClients) RunScratchpad(p graphql.ResolveParams) (interface{}, error) {
+	userID := middleware.UserIDFromContext(p.Context)
+	if userID == "" {
+		return nil, fmt.Errorf("authentication required")
+	}
+
+	language := stringArg(p, "language")
+	code := stringArg(p, "code")
+	stdin := stringArg(p, "stdin")
+
+	if language == "" || code == "" {
+		return nil, fmt.Errorf("language and code are required")
+	}
+
+	resp, err := c.ExecutionSvc.RunScratchpad(p.Context, &executionv1.RunScratchpadRequest{
+		Language: language,
+		Code:     code,
+		Stdin:    stdin,
+		UserId:   userID,
+	})
+	if err != nil {
+		c.Log.Error("run scratchpad failed", zap.Error(err))
+		return nil, fmt.Errorf("run failed: %v", err)
+	}
+
+	return map[string]interface{}{
+		"stdout":      resp.Stdout,
+		"stderr":      resp.Stderr,
+		"exitCode":    int(resp.ExitCode),
+		"executionMs": int(resp.ExecutionMs),
+		"timedOut":    resp.TimedOut,
+	}, nil
+}
+
 func (c *SubmissionClients) RunCode(p graphql.ResolveParams) (interface{}, error) {
 	userID := middleware.UserIDFromContext(p.Context)
 	if userID == "" {

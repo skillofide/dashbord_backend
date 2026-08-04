@@ -124,7 +124,7 @@ func (h *UserHandler) SubmitQuiz(ctx context.Context, req *userv1.SubmitQuizRequ
 		return nil, status.Error(codes.InvalidArgument, "user_id and module_id are required")
 	}
 
-	score, total, err := h.repo.SubmitQuiz(ctx, req.UserID, req.ModuleID, req.Answers)
+	score, total, results, err := h.repo.SubmitQuiz(ctx, req.UserID, req.ModuleID, req.Answers)
 	if err != nil {
 		h.logger.Error("submit quiz failed", zap.String("user_id", req.UserID), zap.String("module_id", req.ModuleID), zap.Error(err))
 		return nil, status.Errorf(codes.Internal, "submit quiz failed: %v", err)
@@ -134,6 +134,7 @@ func (h *UserHandler) SubmitQuiz(ctx context.Context, req *userv1.SubmitQuizRequ
 		Success:        true,
 		Score:          score,
 		TotalQuestions: total,
+		Results:        results,
 	}, nil
 }
 

@@ -122,10 +122,17 @@ message SubmitQuizRequest {
   repeated QuizAnswer answers = 3;
 }
 
+message QuizQuestionResult {
+  int32 question_id = 1;
+  bool correct = 2;
+  string correct_answer = 3;
+}
+
 message SubmitQuizResponse {
   bool success = 1;
   int32 score = 2;
   int32 total_questions = 3;
+  repeated QuizQuestionResult results = 4;
 }
 
 message GetQuizAttemptsRequest {

@@ -2,3 +2,10 @@
 # Ignore built binaries
 bin/
 seed-problems-bin
+
+# Reference solutions to practice problems.
+# Deliberately NOT committed: this repository is public, and this file is every
+# answer in one place. Starter code in the database is a scaffold; keeping the
+# solutions out of the client AND out of a public repo is the point.
+# Move it to a private repo or a server-side table before committing anywhere.
+reference-solutions.json

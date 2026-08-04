@@ -160,6 +160,17 @@ var userProgressType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var scratchpadResultType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "ScratchpadResult",
+	Fields: graphql.Fields{
+		"stdout":      &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"stderr":      &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"exitCode":    &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"executionMs": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"timedOut":    &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
+	},
+})
+
 var runCodeResultType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RunCodeResult",
 	Fields: graphql.Fields{
@@ -265,12 +276,22 @@ var quizAnswerInputType = graphql.NewInputObject(graphql.InputObjectConfig{
 	},
 })
 
+var quizQuestionResultType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "QuizQuestionResult",
+	Fields: graphql.Fields{
+		"questionId":    &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"correct":       &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
+		"correctAnswer": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+	},
+})
+
 var submitQuizResultType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "SubmitQuizResult",
 	Fields: graphql.Fields{
 		"success":        &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
 		"score":          &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
 		"totalQuestions": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"results":        &graphql.Field{Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(quizQuestionResultType)))},
 	},
 })
 
@@ -280,6 +301,7 @@ var quizAttemptType = graphql.NewObject(graphql.ObjectConfig{
 		"moduleId":       &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 		"score":          &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
 		"totalQuestions": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"selectedAnswers": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 		"completedAt":    &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 	},
 })
@@ -295,6 +317,10 @@ var jobType = graphql.NewObject(graphql.ObjectConfig{
 		"salary":      &graphql.Field{Type: graphql.String},
 		"date":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 		"site":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		// Extras JSearch provides that Careerjet did not.
+		"employerLogo":   &graphql.Field{Type: graphql.String},
+		"employmentType": &graphql.Field{Type: graphql.String},
+		"isRemote":       &graphql.Field{Type: graphql.NewNonNull(graphql.Boolean)},
 	},
 })
 
@@ -400,6 +426,15 @@ func BuildSchema(clients *Clients) (graphql.Schema, error) {
 					"code":      {Type: graphql.NewNonNull(graphql.String)},
 				},
 				Resolve: clients.Submissions.SubmitCode,
+			},
+			"runScratchpad": {
+				Type: scratchpadResultType,
+				Args: graphql.FieldConfigArgument{
+					"language": {Type: graphql.NewNonNull(graphql.String)},
+					"code":     {Type: graphql.NewNonNull(graphql.String)},
+					"stdin":    {Type: graphql.String},
+				},
+				Resolve: clients.Submissions.RunScratchpad,
 			},
 			"runCode": {
 				Type: runCodeResultType,

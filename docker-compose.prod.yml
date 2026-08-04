@@ -107,3 +107,4 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       DEV_MODE: "false"
       LOG_LEVEL: warn
+      JSEARCH_API_KEY: ${JSEARCH_API_KEY}

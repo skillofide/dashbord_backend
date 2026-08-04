@@ -129,6 +129,47 @@ func (h *ExecutionHandler) SubmitCode(ctx context.Context, req *executionv1.Subm
 	return &executionv1.SubmitCodeResponse{JobId: req.SubmissionId}, nil
 }
 
+// RunScratchpad executes code verbatim against supplied stdin and returns the
+// raw output. There are no test cases and no grading: this backs the in-lesson
+// code editor on module assignments, where the learner writes a complete
+// program rather than filling in a graded function body.
+func (h *ExecutionHandler) RunScratchpad(ctx context.Context, req *executionv1.RunScratchpadRequest) (*executionv1.RunScratchpadResponse, error) {
+	if req.Language == "" {
+		return nil, status.Error(codes.InvalidArgument, "language is required")
+	}
+	if strings.TrimSpace(req.Code) == "" {
+		return nil, status.Error(codes.InvalidArgument, "code is required")
+	}
+	supported := map[string]bool{"python": true, "javascript": true, "java": true, "cpp": true, "go": true, "sql": true}
+	if !supported[strings.ToLower(req.Language)] {
+		return nil, status.Errorf(codes.InvalidArgument, "unsupported language: %s", req.Language)
+	}
+
+	runCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	res, err := h.sb.Run(runCtx, &sandbox.RunRequest{
+		Language:      strings.ToLower(req.Language),
+		Code:          req.Code,
+		Input:         req.Stdin,
+		TimeLimitMs:   5000,
+		MemoryLimitMb: 256,
+		Raw:           true,
+	})
+	if err != nil {
+		h.log.Error("scratchpad run failed", zap.Error(err))
+		return nil, status.Errorf(codes.Internal, "run failed: %v", err)
+	}
+
+	return &executionv1.RunScratchpadResponse{
+		Stdout:      res.Stdout,
+		Stderr:      res.Stderr,
+		ExitCode:    res.ExitCode,
+		ExecutionMs: res.ExecutionMs,
+		TimedOut:    res.TimedOut,
+	}, nil
+}
+
 func validateRunRequest(req *executionv1.RunCodeRequest) error {
 	if req.ProblemId == "" {
 		return fmt.Errorf("problem_id is required")
@@ -139,9 +180,9 @@ func validateRunRequest(req *executionv1.RunCodeRequest) error {
 	if req.Code == "" {
 		return fmt.Errorf("code is required")
 	}
-	supported := map[string]bool{"python": true, "javascript": true, "java": true, "cpp": true, "go": true}
+	supported := map[string]bool{"python": true, "javascript": true, "java": true, "cpp": true, "go": true, "sql": true}
 	if !supported[strings.ToLower(req.Language)] {
-		return fmt.Errorf("unsupported language: %s (supported: python, javascript, java, cpp, go)", req.Language)
+		return fmt.Errorf("unsupported language: %s (supported: python, javascript, java, cpp, go, sql)", req.Language)
 	}
 	return nil
 }
