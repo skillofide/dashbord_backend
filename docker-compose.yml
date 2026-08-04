@@ -50,13 +50,15 @@ services:
       - ./services/problem-service/migrations:/migrations/problem-service:ro
       - ./services/submission-service/migrations:/migrations/submission-service:ro
       - ./services/progress-service/migrations:/migrations/progress-service:ro
+      - ./services/assessment-service/migrations:/migrations/assessment-service:ro
     entrypoint:
       - sh
       - -c
       - |
         /migrate -path=/migrations/problem-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable&x-migrations-table=schema_migrations_problem' up && \
         /migrate -path=/migrations/submission-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable&x-migrations-table=schema_migrations_submission' up && \
-        /migrate -path=/migrations/progress-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable&x-migrations-table=schema_migrations_progress' up
+        /migrate -path=/migrations/progress-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable&x-migrations-table=schema_migrations_progress' up && \
+        /migrate -path=/migrations/assessment-service -database 'postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable&x-migrations-table=schema_migrations_assessment' up
     depends_on:
       postgres:
         condition: service_healthy
@@ -173,6 +175,31 @@ services:
       postgres:
         condition: service_healthy
 
+  assessment-service:
+    build:
+      context: .
+      dockerfile: services/assessment-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_DSN: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
+      NATS_URL: nats://nats:4222
+      SUBMISSION_SERVICE_ADDR: submission-service:50053
+      EXECUTION_SERVICE_ADDR: execution-service:50052
+      GRPC_PORT: "50056"
+      SWEEP_INTERVAL_SECONDS: "30"
+      LOG_LEVEL: info
+    ports:
+      - "50056:50056"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+      submission-service:
+        condition: service_started
+
   api-gateway:
     build:
       context: .
@@ -185,9 +212,11 @@ services:
       EXECUTION_SERVICE_ADDR: execution-service:50052
       PROGRESS_SERVICE_ADDR: progress-service:50054
       USER_SERVICE_ADDR: user-service:50055
+      ASSESSMENT_SERVICE_ADDR: assessment-service:50056
       NOTIFICATION_SERVICE_URL: http://notification-service:8081
       JWT_SECRET: dev-secret-change-in-production
-      ALLOWED_ORIGINS: "https://d12z9kppz632u1.cloudfront.net,http://localhost:5173,http://localhost:5176"
+      # 5173 = skillofied-app, 5174 = admin-panel, 5176 = skillofied-frontend
+      ALLOWED_ORIGINS: "https://d12z9kppz632u1.cloudfront.net,http://localhost:5173,http://localhost:5174,http://localhost:5176"
       DATABASE_URL: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
       DEV_MODE: "true"
       LOG_LEVEL: info
@@ -202,6 +231,7 @@ services:
       - progress-service
       - notification-service
       - user-service
+      - assessment-service
 
 volumes:
   postgres_data:

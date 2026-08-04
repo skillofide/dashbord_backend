@@ -21,6 +21,7 @@ import (
 
 	pkgauth "github.com/skillofide/pkg/auth"
 	pkglog "github.com/skillofide/pkg/logger"
+	assessmentv1 "github.com/skillofide/proto/assessment/v1"
 	"github.com/skillofide/proto/codec"
 	executionv1 "github.com/skillofide/proto/execution/v1"
 	problemv1 "github.com/skillofide/proto/problem/v1"
@@ -84,6 +85,10 @@ func main() {
 	progConn := mustDial(cfg.progressServiceAddr, dialOpts, log)
 	defer progConn.Close()
 
+	assessConn := mustDial(cfg.assessmentServiceAddr, dialOpts, log)
+	defer assessConn.Close()
+	assessmentSvcClient := assessmentv1.NewAssessmentServiceClient(assessConn)
+
 	// ── Build GraphQL schema ──────────────────────────────────────────────────
 	clients := &generated.Clients{
 		Problems: &resolvers.ProblemClients{
@@ -105,6 +110,10 @@ func main() {
 			Log:     log,
 		},
 		Jobs: resolvers.NewJobClients(),
+		Assessments: &resolvers.AssessmentClients{
+			AssessmentSvc: assessmentSvcClient,
+			Log:           log,
+		},
 	}
 
 	schema, err := generated.BuildSchema(clients)
@@ -137,6 +146,12 @@ func main() {
 		mux.Handle("/api/admin/", adminHandler)
 		log.Info("admin REST endpoints registered at /api/admin/")
 	}
+
+	// Recruiter portal — test authoring, invitations, results and shortlisting.
+	// Role and company-membership checks live inside the handler.
+	recruiterHandler := &resolvers.RecruiterHandler{AssessmentSvc: assessmentSvcClient, Log: log}
+	mux.Handle("/api/recruiter/", recruiterHandler)
+	log.Info("recruiter REST endpoints registered at /api/recruiter/")
 
 	// WebSocket proxy to notification-service
 	if cfg.notificationServiceURL != "" {
@@ -207,6 +222,7 @@ type config struct {
 	submissionServiceAddr  string
 	executionServiceAddr   string
 	progressServiceAddr    string
+	assessmentServiceAddr  string
 	userServiceAddr        string
 	notificationServiceURL string
 	jwtSecret              string
@@ -224,6 +240,7 @@ func loadConfig() config {
 		submissionServiceAddr:  env("SUBMISSION_SERVICE_ADDR", "localhost:50053"),
 		executionServiceAddr:   env("EXECUTION_SERVICE_ADDR", "localhost:50052"),
 		progressServiceAddr:    env("PROGRESS_SERVICE_ADDR", "localhost:50054"),
+		assessmentServiceAddr:  env("ASSESSMENT_SERVICE_ADDR", "localhost:50056"),
 		userServiceAddr:        env("USER_SERVICE_ADDR", "localhost:50055"),
 		notificationServiceURL: env("NOTIFICATION_SERVICE_URL", "http://localhost:8081"),
 		jwtSecret:              env("JWT_SECRET", "dev-secret-change-in-production"),

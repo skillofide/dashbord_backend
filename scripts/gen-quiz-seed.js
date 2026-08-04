@@ -83,8 +83,15 @@ const keys = {};
 // ---------- Java ----------
 const java = loadModule(path.join(COURSES, 'modules/JavaCourse/JavaCourseData.ts'));
 for (const [modId, mod] of Object.entries(java.JAVA_COURSE_DATA)) {
-  if (!mod.quiz?.length) continue;
-  keys[`java-${modId}`] = mod.quiz.map((q) => ({ id: q.id, correctAnswer: q.correctAnswer }));
+  if (mod.quiz?.length) {
+    keys[`java-${modId}`] = mod.quiz.map((q) => ({ id: q.id, correctAnswer: q.correctAnswer }));
+  }
+  if (mod.assignment?.prompts?.length) {
+    const mcqPrompts = mod.assignment.prompts.filter(p => typeof p === 'object' && p.kind === 'mcq');
+    if (mcqPrompts.length > 0) {
+      keys[`java-${modId}-assignment`] = mcqPrompts.map((q, idx) => ({ id: idx + 1, correctAnswer: q.correctAnswer }));
+    }
+  }
 }
 
 // ---------- SQL ----------

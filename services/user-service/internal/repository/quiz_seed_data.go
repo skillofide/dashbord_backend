@@ -19,7 +19,7 @@ type quizKey struct {
 	correctAns string
 }
 
-// quizAnswerKeys holds 603 answer keys across 64 modules.
+// quizAnswerKeys holds 609 answer keys across 65 modules.
 var quizAnswerKeys = []quizKey{
 	// dm-m1 (5 questions)
 	{"dm-m1", 1, "It is a conversion problem, so more traffic will not help"},
@@ -597,6 +597,14 @@ var quizAnswerKeys = []quizKey{
 	{"java-m19", 18, "B. A compromise would inherit full privileges"},
 	{"java-m19", 19, "B. They are permanently visible in the image history"},
 	{"java-m19", 20, "B. By the service name, e.g. jdbc:postgresql://db:5432/..."},
+
+	// java-m1-assignment (6 questions)
+	{"java-m1-assignment", 1, "C. Java Development Kit (JDK)"},
+	{"java-m1-assignment", 2, "B. The compiled bytecode (.class) is platform-neutral and can run on any JVM."},
+	{"java-m1-assignment", 3, "B. The JVM is platform-dependent; a specific version must be installed for each OS."},
+	{"java-m1-assignment", 4, "B. javac App.java"},
+	{"java-m1-assignment", 5, "A. java App"},
+	{"java-m1-assignment", 6, "B. .class"},
 
 	// seo-m1 (5 questions)
 	{"seo-m1", 1, "Crawling, indexing, serving"},

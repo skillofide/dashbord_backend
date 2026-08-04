@@ -50,6 +50,9 @@ func (r *ProblemRepository) ListProblems(ctx context.Context, req *problemv1.Lis
 		filterArgs = append(filterArgs, req.Difficulty)
 		filterClauses = append(filterClauses, fmt.Sprintf("p.difficulty = $%d", len(filterArgs)))
 	}
+	// Company-owned questions authored for a hiring drive must never appear in
+	// the public practice listing. They stay reachable by id for a live attempt.
+	filterClauses = append(filterClauses, "p.is_private = false")
 
 	whereSQL := ""
 	if len(filterClauses) > 0 {

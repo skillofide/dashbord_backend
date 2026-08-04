@@ -4,6 +4,7 @@ use (
 	./pkg
 	./proto
 	./services/api-gateway
+	./services/assessment-service
 	./services/execution-service
 	./services/notification-service
 	./services/problem-service

@@ -1,0 +1,14 @@
+DROP TABLE IF EXISTS shortlist_entries;
+DROP TABLE IF EXISTS shortlists;
+DROP TABLE IF EXISTS proctor_events;
+DROP TABLE IF EXISTS attempt_submissions;
+DROP TABLE IF EXISTS attempt_questions;
+DROP TABLE IF EXISTS attempts;
+DROP TABLE IF EXISTS assessment_invites;
+DROP TABLE IF EXISTS section_questions;
+DROP TABLE IF EXISTS assessment_sections;
+DROP TABLE IF EXISTS assessments;
+DROP TABLE IF EXISTS mcq_options;
+DROP TABLE IF EXISTS mcq_questions;
+DROP TABLE IF EXISTS company_members;
+DROP TABLE IF EXISTS companies;

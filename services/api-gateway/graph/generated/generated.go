@@ -298,11 +298,11 @@ var submitQuizResultType = graphql.NewObject(graphql.ObjectConfig{
 var quizAttemptType = graphql.NewObject(graphql.ObjectConfig{
 	Name: "QuizAttempt",
 	Fields: graphql.Fields{
-		"moduleId":       &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
-		"score":          &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
-		"totalQuestions": &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"moduleId":        &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"score":           &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
+		"totalQuestions":  &graphql.Field{Type: graphql.NewNonNull(graphql.Int)},
 		"selectedAnswers": &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
-		"completedAt":    &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"completedAt":     &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 	},
 })
 
@@ -342,129 +342,141 @@ type Clients struct {
 	Progress    *resolvers.ProgressClients
 	User        *resolvers.UserClients
 	Jobs        *resolvers.JobClients
+	Assessments *resolvers.AssessmentClients
+}
+
+// merge folds a feature's fields into a root type's field map. It panics on a
+// duplicate field name rather than silently letting one resolver shadow
+// another — that would be a wiring bug, and a startup panic is where you want
+// to find it.
+func merge(dst, src graphql.Fields) {
+	for name, field := range src {
+		if _, exists := dst[name]; exists {
+			panic("duplicate GraphQL field: " + name)
+		}
+		dst[name] = field
+	}
 }
 
 // BuildSchema constructs the full GraphQL schema wiring resolvers to types.
 func BuildSchema(clients *Clients) (graphql.Schema, error) {
-	queryType := graphql.NewObject(graphql.ObjectConfig{
-		Name: "Query",
-		Fields: graphql.Fields{
-			"listProblems": {
-				Type: listProblemsResultType,
-				Args: graphql.FieldConfigArgument{
-					"setId":      {Type: graphql.String},
-					"topic":      {Type: graphql.String},
-					"difficulty": {Type: graphql.String},
-					"page":       {Type: graphql.Int},
-					"pageSize":   {Type: graphql.Int},
-				},
-				Resolve: clients.Problems.ListProblems,
+	queryFields := graphql.Fields{
+		"listProblems": {
+			Type: listProblemsResultType,
+			Args: graphql.FieldConfigArgument{
+				"setId":      {Type: graphql.String},
+				"topic":      {Type: graphql.String},
+				"difficulty": {Type: graphql.String},
+				"page":       {Type: graphql.Int},
+				"pageSize":   {Type: graphql.Int},
 			},
-			"getProblem": {
-				Type: problemType,
-				Args: graphql.FieldConfigArgument{
-					"id": {Type: graphql.NewNonNull(graphql.String)},
-				},
-				Resolve: clients.Problems.GetProblem,
-			},
-			"listPracticeSets": {
-				Type:    graphql.NewList(practiceSetType),
-				Resolve: clients.Problems.ListPracticeSets,
-			},
-			"getSubmission": {
-				Type: submissionType,
-				Args: graphql.FieldConfigArgument{
-					"id": {Type: graphql.NewNonNull(graphql.String)},
-				},
-				Resolve: clients.Submissions.GetSubmission,
-			},
-			"listSubmissions": {
-				Type: listSubmissionsResultType,
-				Args: graphql.FieldConfigArgument{
-					"problemId": {Type: graphql.String},
-					"page":      {Type: graphql.Int},
-					"pageSize":  {Type: graphql.Int},
-				},
-				Resolve: clients.Submissions.ListSubmissions,
-			},
-			"getUserProgress": {
-				Type:    userProgressType,
-				Resolve: clients.Progress.GetUserProgress,
-			},
-			"getProfile": {
-				Type:    userProfileType,
-				Resolve: clients.User.GetProfile,
-			},
-			"getMyCourses": {
-				Type:    graphql.NewList(courseType),
-				Resolve: clients.User.GetMyCourses,
-			},
-			"getQuizAttempts": {
-				Type:    graphql.NewList(quizAttemptType),
-				Resolve: clients.User.GetQuizAttempts,
-			},
-			"searchJobs": {
-				Type: graphql.NewNonNull(jobSearchResultType),
-				Args: graphql.FieldConfigArgument{
-					"keywords": {Type: graphql.String},
-					"location": {Type: graphql.String},
-					"page":     {Type: graphql.Int},
-				},
-				Resolve: clients.Jobs.SearchJobs,
-			},
+			Resolve: clients.Problems.ListProblems,
 		},
-	})
+		"getProblem": {
+			Type: problemType,
+			Args: graphql.FieldConfigArgument{
+				"id": {Type: graphql.NewNonNull(graphql.String)},
+			},
+			Resolve: clients.Problems.GetProblem,
+		},
+		"listPracticeSets": {
+			Type:    graphql.NewList(practiceSetType),
+			Resolve: clients.Problems.ListPracticeSets,
+		},
+		"getSubmission": {
+			Type: submissionType,
+			Args: graphql.FieldConfigArgument{
+				"id": {Type: graphql.NewNonNull(graphql.String)},
+			},
+			Resolve: clients.Submissions.GetSubmission,
+		},
+		"listSubmissions": {
+			Type: listSubmissionsResultType,
+			Args: graphql.FieldConfigArgument{
+				"problemId": {Type: graphql.String},
+				"page":      {Type: graphql.Int},
+				"pageSize":  {Type: graphql.Int},
+			},
+			Resolve: clients.Submissions.ListSubmissions,
+		},
+		"getUserProgress": {
+			Type:    userProgressType,
+			Resolve: clients.Progress.GetUserProgress,
+		},
+		"getProfile": {
+			Type:    userProfileType,
+			Resolve: clients.User.GetProfile,
+		},
+		"getMyCourses": {
+			Type:    graphql.NewList(courseType),
+			Resolve: clients.User.GetMyCourses,
+		},
+		"getQuizAttempts": {
+			Type:    graphql.NewList(quizAttemptType),
+			Resolve: clients.User.GetQuizAttempts,
+		},
+		"searchJobs": {
+			Type: graphql.NewNonNull(jobSearchResultType),
+			Args: graphql.FieldConfigArgument{
+				"keywords": {Type: graphql.String},
+				"location": {Type: graphql.String},
+				"page":     {Type: graphql.Int},
+			},
+			Resolve: clients.Jobs.SearchJobs,
+		},
+	}
 
-	mutationType := graphql.NewObject(graphql.ObjectConfig{
-		Name: "Mutation",
-		Fields: graphql.Fields{
-			"submitCode": {
-				Type: submitResultType,
-				Args: graphql.FieldConfigArgument{
-					"problemId": {Type: graphql.NewNonNull(graphql.String)},
-					"language":  {Type: graphql.NewNonNull(graphql.String)},
-					"code":      {Type: graphql.NewNonNull(graphql.String)},
-				},
-				Resolve: clients.Submissions.SubmitCode,
+	mutationFields := graphql.Fields{
+		"submitCode": {
+			Type: submitResultType,
+			Args: graphql.FieldConfigArgument{
+				"problemId": {Type: graphql.NewNonNull(graphql.String)},
+				"language":  {Type: graphql.NewNonNull(graphql.String)},
+				"code":      {Type: graphql.NewNonNull(graphql.String)},
 			},
-			"runScratchpad": {
-				Type: scratchpadResultType,
-				Args: graphql.FieldConfigArgument{
-					"language": {Type: graphql.NewNonNull(graphql.String)},
-					"code":     {Type: graphql.NewNonNull(graphql.String)},
-					"stdin":    {Type: graphql.String},
-				},
-				Resolve: clients.Submissions.RunScratchpad,
-			},
-			"runCode": {
-				Type: runCodeResultType,
-				Args: graphql.FieldConfigArgument{
-					"problemId": {Type: graphql.NewNonNull(graphql.String)},
-					"language":  {Type: graphql.NewNonNull(graphql.String)},
-					"code":      {Type: graphql.NewNonNull(graphql.String)},
-				},
-				Resolve: clients.Submissions.RunCode,
-			},
-			"upsertProfile": {
-				Type: upsertProfileResultType,
-				Args: graphql.FieldConfigArgument{
-					"profile": {Type: graphql.NewNonNull(userProfileInputType)},
-				},
-				Resolve: clients.User.UpsertProfile,
-			},
-			"submitQuiz": {
-				Type: submitQuizResultType,
-				Args: graphql.FieldConfigArgument{
-					"moduleId": {Type: graphql.NewNonNull(graphql.String)},
-					"answers":  {Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(quizAnswerInputType)))},
-				},
-				Resolve: clients.User.SubmitQuiz,
-			},
+			Resolve: clients.Submissions.SubmitCode,
 		},
-	})
+		"runScratchpad": {
+			Type: scratchpadResultType,
+			Args: graphql.FieldConfigArgument{
+				"language": {Type: graphql.NewNonNull(graphql.String)},
+				"code":     {Type: graphql.NewNonNull(graphql.String)},
+				"stdin":    {Type: graphql.String},
+			},
+			Resolve: clients.Submissions.RunScratchpad,
+		},
+		"runCode": {
+			Type: runCodeResultType,
+			Args: graphql.FieldConfigArgument{
+				"problemId": {Type: graphql.NewNonNull(graphql.String)},
+				"language":  {Type: graphql.NewNonNull(graphql.String)},
+				"code":      {Type: graphql.NewNonNull(graphql.String)},
+			},
+			Resolve: clients.Submissions.RunCode,
+		},
+		"upsertProfile": {
+			Type: upsertProfileResultType,
+			Args: graphql.FieldConfigArgument{
+				"profile": {Type: graphql.NewNonNull(userProfileInputType)},
+			},
+			Resolve: clients.User.UpsertProfile,
+		},
+		"submitQuiz": {
+			Type: submitQuizResultType,
+			Args: graphql.FieldConfigArgument{
+				"moduleId": {Type: graphql.NewNonNull(graphql.String)},
+				"answers":  {Type: graphql.NewNonNull(graphql.NewList(graphql.NewNonNull(quizAnswerInputType)))},
+			},
+			Resolve: clients.User.SubmitQuiz,
+		},
+	}
+
+	// Placement assessments live in their own file to keep this one readable.
+	merge(queryFields, assessmentQueryFields(clients.Assessments))
+	merge(mutationFields, assessmentMutationFields(clients.Assessments))
 
 	return graphql.NewSchema(graphql.SchemaConfig{
-		Query:    queryType,
-		Mutation: mutationType,
+		Query:    graphql.NewObject(graphql.ObjectConfig{Name: "Query", Fields: queryFields}),
+		Mutation: graphql.NewObject(graphql.ObjectConfig{Name: "Mutation", Fields: mutationFields}),
 	})
 }
