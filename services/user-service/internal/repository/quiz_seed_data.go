@@ -19,7 +19,7 @@ type quizKey struct {
 	correctAns string
 }
 
-// quizAnswerKeys holds 665 answer keys across 106 modules.
+// quizAnswerKeys holds 666 answer keys across 107 modules.
 var quizAnswerKeys = []quizKey{
 	// dm-m1 (5 questions)
 	{"dm-m1", 1, "It is a conversion problem, so more traffic will not help"},
@@ -873,6 +873,9 @@ var quizAnswerKeys = []quizKey{
 
 	// testing-m14-assignment (1 questions)
 	{"testing-m14-assignment", 1, "B. Applitools Eyes"},
+
+	// testing-m15-assignment (1 questions)
+	{"testing-m15-assignment", 1, "B. To combine POM, Data-Driven testing, custom logging, and visual HTML reporting into an extensible, reusable test engine."},
 
 	// testing-m2-assignment (1 questions)
 	{"testing-m2-assignment", 1, "B. Verification evaluates static documents (reviews/walkthroughs); Validation executes the active code to verify system behavior."},

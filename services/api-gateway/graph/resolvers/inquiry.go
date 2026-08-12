@@ -30,6 +30,7 @@ type InquiryHandler struct {
 	Pool    *pgxpool.Pool
 	Log     *zap.Logger
 	limiter *rateLimiter
+	mailer  *mailer
 }
 
 // NewInquiryHandler wires the handler and ensures its table exists.
@@ -42,6 +43,7 @@ func NewInquiryHandler(ctx context.Context, pool *pgxpool.Pool, log *zap.Logger)
 		// would lock out real enquiries during a campaign. The honeypot does
 		// most of the anti-bot work; this only stops a runaway flood.
 		limiter: newRateLimiter(30, 10*time.Minute),
+		mailer:  newMailer(log),
 	}
 	if err := h.ensureTable(ctx); err != nil {
 		return nil, err
@@ -56,6 +58,7 @@ func (h *InquiryHandler) ensureTable(ctx context.Context) error {
 			name       TEXT NOT NULL,
 			email      TEXT NOT NULL,
 			phone      TEXT NOT NULL DEFAULT '',
+			whatsapp   TEXT NOT NULL DEFAULT '',
 			interest   TEXT NOT NULL DEFAULT '',
 			message    TEXT NOT NULL DEFAULT '',
 			-- Which form it came from: contact | demo | register | other.
@@ -69,6 +72,10 @@ func (h *InquiryHandler) ensureTable(ctx context.Context) error {
 		);
 		CREATE INDEX IF NOT EXISTS idx_inquiries_created ON inquiries(created_at DESC);
 		CREATE INDEX IF NOT EXISTS idx_inquiries_status  ON inquiries(status);
+
+		-- CREATE TABLE IF NOT EXISTS is a no-op once the table exists, so new
+		-- columns need their own ALTER to reach databases created earlier.
+		ALTER TABLE inquiries ADD COLUMN IF NOT EXISTS whatsapp TEXT NOT NULL DEFAULT '';
 	`)
 	if err != nil {
 		return fmt.Errorf("create inquiries table: %w", err)
@@ -82,6 +89,7 @@ type inquiryInput struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Phone    string `json:"phone"`
+	WhatsApp string `json:"whatsapp"`
 	Interest string `json:"interest"`
 	Message  string `json:"message"`
 	Source   string `json:"source"`
@@ -132,9 +140,9 @@ func (h *InquiryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := h.Pool.Exec(r.Context(), `
-		INSERT INTO inquiries (name, email, phone, interest, message, source, page_url)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`, name, email, clip(in.Phone, 40), clip(in.Interest, 120),
+		INSERT INTO inquiries (name, email, phone, whatsapp, interest, message, source, page_url)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`, name, email, clip(in.Phone, 40), clip(in.WhatsApp, 40), clip(in.Interest, 120),
 		clip(in.Message, 4000), normalizeSource(in.Source), clip(in.PageURL, 300))
 	if err != nil {
 		h.Log.Error("save inquiry failed", zap.Error(err))
@@ -143,6 +151,9 @@ func (h *InquiryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Log.Info("inquiry received", zap.String("source", normalizeSource(in.Source)), zap.String("email", email))
+	// Fired after the row is committed, and asynchronously — a slow or broken
+	// SMTP server must never delay or fail the visitor's submission.
+	h.mailer.notify(in, name, email)
 	h.ok(w)
 }
 
@@ -201,6 +212,7 @@ type inquiryRow struct {
 	Name      string `json:"name"`
 	Email     string `json:"email"`
 	Phone     string `json:"phone"`
+	WhatsApp  string `json:"whatsapp"`
 	Interest  string `json:"interest"`
 	Message   string `json:"message"`
 	Source    string `json:"source"`
@@ -250,7 +262,7 @@ func (h *InquiryHandler) ListInquiries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := h.Pool.Query(r.Context(), fmt.Sprintf(`
-		SELECT id::text, name, email, phone, interest, message, source, page_url, status, notes, created_at
+		SELECT id::text, name, email, phone, whatsapp, interest, message, source, page_url, status, notes, created_at
 		FROM   inquiries %s
 		ORDER  BY created_at DESC
 		LIMIT $%d OFFSET $%d
@@ -266,7 +278,7 @@ func (h *InquiryHandler) ListInquiries(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var i inquiryRow
 		var created time.Time
-		if err := rows.Scan(&i.ID, &i.Name, &i.Email, &i.Phone, &i.Interest, &i.Message,
+		if err := rows.Scan(&i.ID, &i.Name, &i.Email, &i.Phone, &i.WhatsApp, &i.Interest, &i.Message,
 			&i.Source, &i.PageURL, &i.Status, &i.Notes, &created); err != nil {
 			h.Log.Error("scan inquiry failed", zap.Error(err))
 			h.fail(w, http.StatusInternalServerError, "could not load enquiries")
