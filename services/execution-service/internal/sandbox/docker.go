@@ -22,7 +22,7 @@ var languageImages = map[string]string{
 	"javascript": "skillofide/runner-javascript:latest",
 	"java":       "skillofide/runner-java:latest",
 	"cpp":        "skillofide/runner-cpp:latest",
-	"go":         "golang:1.22-alpine",
+	"go":         "skillofide/runner-go:latest",
 	"sql":        "skillofide/runner-sql:latest",
 }
 
@@ -113,11 +113,6 @@ func (s *DockerSandbox) Run(ctx context.Context, req *RunRequest) (*RunResult, e
 		Image: image,
 		Env:   envVars,
 	}
-	if req.Language == "go" {
-		containerCfg.Entrypoint = []string{"sh", "-c"}
-		containerCfg.Cmd = []string{`echo "$USER_CODE" > /tmp/solution.go && echo "$USER_INPUT" | go run /tmp/solution.go`}
-	}
-
 	// Create container with strict resource limits
 	resp, err := s.cli.ContainerCreate(ctx,
 		containerCfg,

@@ -107,6 +107,36 @@ for (const [modId, mod] of Object.entries(testing.TESTING_COURSE_DATA)) {
   }
 }
 
+// ---------- Golang / Fullstack ----------
+// Same shape as Java and Testing: a Record<moduleId, ModuleData> export whose
+// module ids are namespaced with the course prefix by the renderer.
+const RECORD_COURSES = [
+  ['golang', 'modules/GolangCourse/GolangCourseData.ts', 'GOLANG_COURSE_DATA'],
+  ['fullstack', 'modules/FullStackCourse/FullstackCourseData.ts', 'FULLSTACK_COURSE_DATA'],
+  ['genai', 'modules/GenAICourse/GenAICourseData.ts', 'GENAI_COURSE_DATA'],
+];
+
+for (const [prefix, file, exportName] of RECORD_COURSES) {
+  const mod = loadModule(path.join(COURSES, file));
+  const data = mod[exportName];
+  if (!data) {
+    console.error(`  ! ${exportName} not found in ${file}`);
+    process.exitCode = 1;
+    continue;
+  }
+  for (const [modId, m] of Object.entries(data)) {
+    if (m.quiz?.length) {
+      keys[`${prefix}-${modId}`] = m.quiz.map((q) => ({ id: q.id, correctAnswer: q.correctAnswer }));
+    }
+    if (m.assignment?.prompts?.length) {
+      const mcqPrompts = m.assignment.prompts.filter(p => typeof p === 'object' && p.kind === 'mcq');
+      if (mcqPrompts.length > 0) {
+        keys[`${prefix}-${modId}-assignment`] = mcqPrompts.map((q, idx) => ({ id: idx + 1, correctAnswer: q.correctAnswer }));
+      }
+    }
+  }
+}
+
 // ---------- SQL ----------
 const sql = loadModule(path.join(COURSES, 'modules/SqlCourse/SqlCourseData.ts'));
 for (const [key, questions] of Object.entries(sql.sqlQuizzes)) {
@@ -223,16 +253,21 @@ fs.writeFileSync(
 
 // Code generated from the course content data files. DO NOT EDIT BY HAND.
 //
-// Source of truth:
-//   skillofied-app/src/components/courses/modules/JavaCourse/JavaCourseData.ts
-//   skillofied-app/src/components/courses/modules/SqlCourse/SqlCourseData.ts
-//   skillofied-app/src/components/courses/modules/FrontendCourse/Module*.tsx
+// Source of truth (skillofied-app/src/components/courses/modules/):
+//   JavaCourse/JavaCourseData.ts
+//   TestingCourse/TestingCourseData.ts
+//   GolangCourse/GolangCourseData.ts
+//   FullStackCourse/FullstackCourseData.ts
+//   SqlCourse/SqlCourseData.ts
+//   FrontendCourse/Module*.tsx
+//   MarketingCourses/SeoCourseData.ts, MarketingCourses/DigitalMarketingCourseData.ts
 //
 // Regenerate with: node scripts/gen-quiz-seed.js
 //
-// Module IDs are namespaced by course ("java-m1", "sql-m1", "frontend-m1")
-// because all three courses number their modules from m1 and quiz_keys is
-// keyed on (module_id, question_id).
+// Module IDs are namespaced by course ("java-m1", "golang-m1", "frontend-m1")
+// because every course numbers its modules from m1 and quiz_keys is keyed on
+// (module_id, question_id). The prefix must match what the course's
+// ModuleQuiz call site submits.
 
 type quizKey struct {
 \tmoduleID   string

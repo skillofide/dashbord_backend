@@ -2,16 +2,21 @@ package repository
 
 // Code generated from the course content data files. DO NOT EDIT BY HAND.
 //
-// Source of truth:
-//   skillofied-app/src/components/courses/modules/JavaCourse/JavaCourseData.ts
-//   skillofied-app/src/components/courses/modules/SqlCourse/SqlCourseData.ts
-//   skillofied-app/src/components/courses/modules/FrontendCourse/Module*.tsx
+// Source of truth (skillofied-app/src/components/courses/modules/):
+//   JavaCourse/JavaCourseData.ts
+//   TestingCourse/TestingCourseData.ts
+//   GolangCourse/GolangCourseData.ts
+//   FullStackCourse/FullstackCourseData.ts
+//   SqlCourse/SqlCourseData.ts
+//   FrontendCourse/Module*.tsx
+//   MarketingCourses/SeoCourseData.ts, MarketingCourses/DigitalMarketingCourseData.ts
 //
 // Regenerate with: node scripts/gen-quiz-seed.js
 //
-// Module IDs are namespaced by course ("java-m1", "sql-m1", "frontend-m1")
-// because all three courses number their modules from m1 and quiz_keys is
-// keyed on (module_id, question_id).
+// Module IDs are namespaced by course ("java-m1", "golang-m1", "frontend-m1")
+// because every course numbers its modules from m1 and quiz_keys is keyed on
+// (module_id, question_id). The prefix must match what the course's
+// ModuleQuiz call site submits.
 
 type quizKey struct {
 	moduleID   string
@@ -19,7 +24,7 @@ type quizKey struct {
 	correctAns string
 }
 
-// quizAnswerKeys holds 666 answer keys across 107 modules.
+// quizAnswerKeys holds 722 answer keys across 139 modules.
 var quizAnswerKeys = []quizKey{
 	// dm-m1 (5 questions)
 	{"dm-m1", 1, "It is a conversion problem, so more traffic will not help"},
@@ -179,6 +184,126 @@ var quizAnswerKeys = []quizKey{
 	{"frontend-assessment", 2, "B. Data deletion timeline"},
 	{"frontend-assessment", 3, "C. It skips rendering updates"},
 	{"frontend-assessment", 4, "D. Linking local repositories to remote GitHub locations"},
+
+	// fullstack-m1 (1 questions)
+	{"fullstack-m1", 1, "article"},
+
+	// fullstack-m2 (1 questions)
+	{"fullstack-m2", 1, "PUT"},
+
+	// genai-m1 (3 questions)
+	{"genai-m1", 1, "It lets one process wait on many I/O-bound calls at once"},
+	{"genai-m1", 2, "metadata: dict = field(default_factory=dict)"},
+	{"genai-m1", 3, "Parse inside a try/except and handle failure explicitly"},
+
+	// genai-m2 (3 questions)
+	{"genai-m2", 1, "It may be predicting \"not fraud\" every time"},
+	{"genai-m2", 2, "Overfitting"},
+	{"genai-m2", 3, "The next token in the text acts as the label"},
+
+	// genai-m3 (3 questions)
+	{"genai-m3", 1, "System prompt, history, context and the response together"},
+	{"genai-m3", 2, "At or near 0"},
+	{"genai-m3", 3, "Attention cost grows quadratically with sequence length"},
+
+	// genai-m4 (3 questions)
+	{"genai-m4", 1, "It preserves the instruction/data boundary that injection attacks exploit"},
+	{"genai-m4", 2, "Malicious instructions hidden in retrieved documents or web pages"},
+	{"genai-m4", 3, "Retry once with the validation error included in the prompt"},
+
+	// genai-m5 (3 questions)
+	{"genai-m5", 1, "Direction carries meaning while magnitude often reflects incidental length"},
+	{"genai-m5", 2, "Re-embed the entire corpus"},
+	{"genai-m5", 3, "Inside the query itself"},
+
+	// genai-m6 (3 questions)
+	{"genai-m6", 1, "Whether retrieval surfaced the correct chunk at all"},
+	{"genai-m6", 2, "Whether the correct chunk appeared in the top k results"},
+	{"genai-m6", 3, "A fabricated citation — a detectable hallucination"},
+
+	// genai-m7 (3 questions)
+	{"genai-m7", 1, "Your application code, after validating the arguments"},
+	{"genai-m7", 2, "A confused agent will loop indefinitely and keep billing you"},
+	{"genai-m7", 3, "Return the error to the model as an observation so it can recover"},
+
+	// genai-m8 (3 questions)
+	{"genai-m8", 1, "Streaming TTS from the first sentence rather than the full response"},
+	{"genai-m8", 2, "Converting the chart to text destroys the visual information you needed"},
+	{"genai-m8", 3, "Text inside an image can carry a prompt injection"},
+
+	// genai-m9 (3 questions)
+	{"genai-m9", 1, "RAG"},
+	{"genai-m9", 2, "A small number of inserted low-rank matrices, with the base frozen"},
+	{"genai-m9", 3, "The best prompt on the original model, on the same held-out set"},
+
+	// genai-m10 (3 questions)
+	{"genai-m10", 1, "Without it, retries synchronise and re-create the overload"},
+	{"genai-m10", 2, "Time to first token"},
+	{"genai-m10", 3, "A request validation error"},
+
+	// genai-m11 (3 questions)
+	{"genai-m11", 1, "Responses return 200 OK while being wrong"},
+	{"genai-m11", 2, "Validate the judge against human ratings"},
+	{"genai-m11", 3, "The model may have started inventing answers instead of declining"},
+
+	// genai-m12 (3 questions)
+	{"genai-m12", 1, "Find the underlying problem and who the users are"},
+	{"genai-m12", 2, "At ingestion and inside the retrieval query, from day one"},
+	{"genai-m12", 3, "Hosted model APIs are ruled out; you need open-weight models running locally"},
+
+	// golang-m1 (1 questions)
+	{"golang-m1", 1, "go run"},
+
+	// golang-m2 (1 questions)
+	{"golang-m2", 1, "%T"},
+
+	// golang-m3 (1 questions)
+	{"golang-m3", 1, "for"},
+
+	// golang-m4 (1 questions)
+	{"golang-m4", 1, "Using _ blank identifier"},
+
+	// golang-m5 (1 questions)
+	{"golang-m5", 1, "append"},
+
+	// golang-m6 (1 questions)
+	{"golang-m6", 1, "Capitalize the first letter"},
+
+	// golang-m7 (1 questions)
+	{"golang-m7", 1, "None (implicit)"},
+
+	// golang-m8 (1 questions)
+	{"golang-m8", 1, "LIFO (Last In First Out)"},
+
+	// golang-m9 (1 questions)
+	{"golang-m9", 1, "go.mod"},
+
+	// golang-m10 (1 questions)
+	{"golang-m10", 1, "encoding/json"},
+
+	// golang-m11 (1 questions)
+	{"golang-m11", 1, "go run -race"},
+
+	// golang-m12 (1 questions)
+	{"golang-m12", 1, "_test.go"},
+
+	// golang-m13 (1 questions)
+	{"golang-m13", 1, "net/http"},
+
+	// golang-m14 (1 questions)
+	{"golang-m14", 1, "To prevent SQL Injection"},
+
+	// golang-m15 (1 questions)
+	{"golang-m15", 1, "binding"},
+
+	// golang-m16 (1 questions)
+	{"golang-m16", 1, "bcrypt"},
+
+	// golang-m17 (1 questions)
+	{"golang-m17", 1, "Protocol Buffers"},
+
+	// golang-m18 (1 questions)
+	{"golang-m18", 1, "Generates a single self-contained binary"},
 
 	// java-m1 (20 questions)
 	{"java-m1", 1, "D. James Gosling"},
