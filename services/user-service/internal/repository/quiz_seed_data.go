@@ -24,7 +24,7 @@ type quizKey struct {
 	correctAns string
 }
 
-// quizAnswerKeys holds 722 answer keys across 139 modules.
+// quizAnswerKeys holds 782 answer keys across 139 modules.
 var quizAnswerKeys = []quizKey{
 	// dm-m1 (5 questions)
 	{"dm-m1", 1, "It is a conversion problem, so more traffic will not help"},
@@ -191,65 +191,125 @@ var quizAnswerKeys = []quizKey{
 	// fullstack-m2 (1 questions)
 	{"fullstack-m2", 1, "PUT"},
 
-	// genai-m1 (3 questions)
+	// genai-m1 (8 questions)
 	{"genai-m1", 1, "It lets one process wait on many I/O-bound calls at once"},
 	{"genai-m1", 2, "metadata: dict = field(default_factory=dict)"},
 	{"genai-m1", 3, "Parse inside a try/except and handle failure explicitly"},
+	{"genai-m1", 4, "A set"},
+	{"genai-m1", 5, "Nothing — they document the expected shape for readers and tools"},
+	{"genai-m1", 6, "It stalls every other coroutine on the event loop"},
+	{"genai-m1", 7, "Provider SDKs move fast and can change response shapes between minor versions"},
+	{"genai-m1", 8, "It contains swapping providers, adding fallback and logging cost to one place"},
 
-	// genai-m2 (3 questions)
+	// genai-m2 (8 questions)
 	{"genai-m2", 1, "It may be predicting \"not fraud\" every time"},
 	{"genai-m2", 2, "Overfitting"},
 	{"genai-m2", 3, "The next token in the text acts as the label"},
+	{"genai-m2", 4, "A single final estimate of real-world performance"},
+	{"genai-m2", 5, "Recall"},
+	{"genai-m2", 6, "Word order and synonymy"},
+	{"genai-m2", 7, "Overfitted the prompt to a tiny sample"},
+	{"genai-m2", 8, "Return 0.0 for the affected metrics instead of dividing by zero"},
 
-	// genai-m3 (3 questions)
+	// genai-m3 (8 questions)
 	{"genai-m3", 1, "System prompt, history, context and the response together"},
 	{"genai-m3", 2, "At or near 0"},
 	{"genai-m3", 3, "Attention cost grows quadratically with sequence length"},
+	{"genai-m3", 4, "Produces the most plausible continuation given its weights"},
+	{"genai-m3", 5, "How sharply probability concentrates on the leading tokens"},
+	{"genai-m3", 6, "It restricts sampling to the smallest set of tokens whose probabilities sum to p"},
+	{"genai-m3", 7, "Output tokens"},
+	{"genai-m3", 8, "Only that the output is well-formed"},
 
-	// genai-m4 (3 questions)
+	// genai-m4 (8 questions)
 	{"genai-m4", 1, "It preserves the instruction/data boundary that injection attacks exploit"},
 	{"genai-m4", 2, "Malicious instructions hidden in retrieved documents or web pages"},
 	{"genai-m4", 3, "Retry once with the validation error included in the prompt"},
+	{"genai-m4", 4, "Only by schema validation after parsing"},
+	{"genai-m4", 5, "Tone and framing"},
+	{"genai-m4", 6, "Insert it literally by substituting in a single pass"},
+	{"genai-m4", 7, "So reasoning can be logged for debugging while users see only the conclusion"},
+	{"genai-m4", 8, "Their tokens are billed on every single request"},
 
-	// genai-m5 (3 questions)
+	// genai-m5 (8 questions)
 	{"genai-m5", 1, "Direction carries meaning while magnitude often reflects incidental length"},
 	{"genai-m5", 2, "Re-embed the entire corpus"},
 	{"genai-m5", 3, "Inside the query itself"},
+	{"genai-m5", 4, "Cosine matches, dot product rewards the longer one"},
+	{"genai-m5", 5, "A little recall"},
+	{"genai-m5", 6, "Each chunk stays a coherent unit that can answer a question"},
+	{"genai-m5", 7, "Hybrid search blending vector similarity with keyword matching"},
+	{"genai-m5", 8, "It is what makes verifiable citations possible later"},
 
-	// genai-m6 (3 questions)
+	// genai-m6 (8 questions)
 	{"genai-m6", 1, "Whether retrieval surfaced the correct chunk at all"},
 	{"genai-m6", 2, "Whether the correct chunk appeared in the top k results"},
 	{"genai-m6", 3, "A fabricated citation — a detectable hallucination"},
+	{"genai-m6", 4, "Re-running an interrupted ingestion job does not create duplicate chunks"},
+	{"genai-m6", 5, "It reads the query and the document together rather than encoding each separately"},
+	{"genai-m6", 6, "Decline to answer"},
+	{"genai-m6", 7, "At the beginning and end, where models attend most reliably"},
+	{"genai-m6", 8, "A golden set of 50–100 real questions with expected sources"},
 
-	// genai-m7 (3 questions)
+	// genai-m7 (8 questions)
 	{"genai-m7", 1, "Your application code, after validating the arguments"},
 	{"genai-m7", 2, "A confused agent will loop indefinitely and keep billing you"},
 	{"genai-m7", 3, "Return the error to the model as an observation so it can recover"},
+	{"genai-m7", 4, "A loop that takes actions with real side effects"},
+	{"genai-m7", 5, "The model returns plain text instead of a tool call"},
+	{"genai-m7", 6, "Tool-selection accuracy degrades as the list grows"},
+	{"genai-m7", 7, "Not giving it a delete tool at all"},
+	{"genai-m7", 8, "Summarise the evicted turns and keep the summary"},
 
-	// genai-m8 (3 questions)
+	// genai-m8 (8 questions)
 	{"genai-m8", 1, "Streaming TTS from the first sentence rather than the full response"},
 	{"genai-m8", 2, "Converting the chart to text destroys the visual information you needed"},
 	{"genai-m8", 3, "Text inside an image can carry a prompt injection"},
+	{"genai-m8", 4, "Every stage leaves an artefact you can inspect, log and evaluate"},
+	{"genai-m8", 5, "Retrieval silently searches for something that does not exist"},
+	{"genai-m8", 6, "About 800ms"},
+	{"genai-m8", 7, "The one contributing the most milliseconds"},
+	{"genai-m8", 8, "Cancelling in-flight generation and synthesis immediately"},
 
-	// genai-m9 (3 questions)
+	// genai-m9 (8 questions)
 	{"genai-m9", 1, "RAG"},
 	{"genai-m9", 2, "A small number of inserted low-rank matrices, with the base frozen"},
 	{"genai-m9", 3, "The best prompt on the original model, on the same held-out set"},
+	{"genai-m9", 4, "To be inconsistent"},
+	{"genai-m9", 5, "Continue the text, possibly with more questions"},
+	{"genai-m9", 6, "You are nudging an already instruction-tuned model toward one output shape"},
+	{"genai-m9", 7, "Quantisation of the frozen base to reduce memory"},
+	{"genai-m9", 8, "Regression outside the training distribution"},
 
-	// genai-m10 (3 questions)
+	// genai-m10 (8 questions)
 	{"genai-m10", 1, "Without it, retries synchronise and re-create the overload"},
 	{"genai-m10", 2, "Time to first token"},
 	{"genai-m10", 3, "A request validation error"},
+	{"genai-m10", 4, "Cancellation must propagate to the provider call or you keep paying for tokens"},
+	{"genai-m10", 5, "Spend is rarely even — attribution finds the tenant or feature that dominates"},
+	{"genai-m10", 6, "Serving a stale answer to a subtly different question"},
+	{"genai-m10", 7, "Show the retrieved passages without a generated summary"},
+	{"genai-m10", 8, "It leaves headroom for spikes and other clients sharing the quota"},
 
-	// genai-m11 (3 questions)
+	// genai-m11 (8 questions)
 	{"genai-m11", 1, "Responses return 200 OK while being wrong"},
 	{"genai-m11", 2, "Validate the judge against human ratings"},
 	{"genai-m11", 3, "The model may have started inventing answers instead of declining"},
+	{"genai-m11", 4, "A few very slow requests barely move the average but ruin those users' experience"},
+	{"genai-m11", 5, "Prompt version"},
+	{"genai-m11", 6, "Before the request leaves your network"},
+	{"genai-m11", 7, "A number in the answer that appears nowhere in the context"},
+	{"genai-m11", 8, "Checks applied around the model, on input and output"},
 
-	// genai-m12 (3 questions)
+	// genai-m12 (8 questions)
 	{"genai-m12", 1, "Find the underlying problem and who the users are"},
 	{"genai-m12", 2, "At ingestion and inside the retrieval query, from day one"},
 	{"genai-m12", 3, "Hosted model APIs are ruled out; you need open-weight models running locally"},
+	{"genai-m12", 4, "What does a wrong answer cost you?"},
+	{"genai-m12", 5, "Ingestion and data extraction"},
+	{"genai-m12", 6, "The restriction cannot be enforced during retrieval at all"},
+	{"genai-m12", 7, "One document type and one team, shipped in weeks and measurable"},
+	{"genai-m12", 8, "Naming it first is what makes your other numbers credible"},
 
 	// golang-m1 (1 questions)
 	{"golang-m1", 1, "go run"},
