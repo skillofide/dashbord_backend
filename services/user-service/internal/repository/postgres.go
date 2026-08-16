@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	pkgauth "github.com/skillofide/pkg/auth"
 	userv1 "github.com/skillofide/proto/user/v1"
 )
 
@@ -35,9 +36,21 @@ func (r *UserRepository) VerifyUser(ctx context.Context, email, password string)
 		return nil, fmt.Errorf("query user: %w", err)
 	}
 
-	// Plain-text check as currently done by api-gateway
-	if password != dbPassword {
+	ok, legacy := pkgauth.CheckPassword(dbPassword, password)
+	if !ok {
 		return nil, fmt.Errorf("invalid password")
+	}
+
+	// The row predates hashing. Now that the plaintext has been proven correct,
+	// replace it with a hash — this is the only moment the real password is
+	// available to upgrade. A failure here is logged by the caller's error path
+	// but must not block a valid login, so it is deliberately not returned.
+	if legacy {
+		if hashed, err := pkgauth.HashPassword(password); err == nil {
+			_, _ = r.pool.Exec(ctx, `
+				UPDATE users SET password = $1, updated_at = now() WHERE id = $2::uuid
+			`, hashed, id)
+		}
 	}
 
 	return &userv1.VerifyUserResponse{
@@ -50,12 +63,17 @@ func (r *UserRepository) VerifyUser(ctx context.Context, email, password string)
 
 // CreateOrUpdateUser inserts or updates a user record.
 func (r *UserRepository) CreateOrUpdateUser(ctx context.Context, email, name, password, role string) error {
-	_, err := r.pool.Exec(ctx, `
+	hashed, err := pkgauth.HashPassword(password)
+	if err != nil {
+		return fmt.Errorf("hash password: %w", err)
+	}
+
+	_, err = r.pool.Exec(ctx, `
 		INSERT INTO users (email, name, password, role)
 		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (email) 
+		ON CONFLICT (email)
 		DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password, role = EXCLUDED.role, updated_at = now();
-	`, email, name, password, role)
+	`, email, name, hashed, role)
 	if err != nil {
 		return fmt.Errorf("upsert user: %w", err)
 	}
@@ -79,13 +97,23 @@ func (r *UserRepository) EnsureUsersTable(ctx context.Context) error {
 		return fmt.Errorf("create users table: %w", err)
 	}
 
-	// Seed default user
+	// Seed default users. The passwords are hashed here rather than embedded as
+	// literals, so a fresh database never contains a plaintext password.
+	knovatePw, err := pkgauth.HashPassword("knovate123")
+	if err != nil {
+		return fmt.Errorf("hash seed password: %w", err)
+	}
+	skillofiedPw, err := pkgauth.HashPassword("skillofied123")
+	if err != nil {
+		return fmt.Errorf("hash seed password: %w", err)
+	}
+
 	_, err = r.pool.Exec(ctx, `
 		INSERT INTO users (email, name, password, role)
-		VALUES ('admin@knovate.com', 'Admin User', 'knovate123', 'admin'),
-		       ('admin@skillofied.com', 'Admin User', 'skillofied123', 'admin')
+		VALUES ('admin@knovate.com', 'Admin User', $1, 'admin'),
+		       ('admin@skillofied.com', 'Admin User', $2, 'admin')
 		ON CONFLICT (email) DO NOTHING;
-	`)
+	`, knovatePw, skillofiedPw)
 	if err != nil {
 		return fmt.Errorf("seed default user: %w", err)
 	}
@@ -538,15 +566,25 @@ func (r *UserRepository) BulkUpsertUsers(ctx context.Context, rows []ImportUserR
 			role = "student"
 		}
 
+		hashed, err := pkgauth.HashPassword(row.Password)
+		if err != nil {
+			results = append(results, ImportRowResult{
+				Email:   row.Email,
+				Success: false,
+				Message: fmt.Sprintf("hash password: %v", err),
+			})
+			continue
+		}
+
 		// Upsert user and return its UUID
 		var userID string
-		err := r.pool.QueryRow(ctx, `
+		err = r.pool.QueryRow(ctx, `
 			INSERT INTO users (email, name, password, role)
 			VALUES ($1, $2, $3, $4)
 			ON CONFLICT (email)
 			DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password, role = EXCLUDED.role, updated_at = now()
 			RETURNING id::text
-		`, row.Email, row.Name, row.Password, role).Scan(&userID)
+		`, row.Email, row.Name, hashed, role).Scan(&userID)
 		if err != nil {
 			results = append(results, ImportRowResult{
 				Email:   row.Email,

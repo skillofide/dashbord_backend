@@ -8,3 +8,5 @@ require (
 	github.com/redis/go-redis/v9 v9.5.3
 	go.uber.org/zap v1.27.0
 )
+
+require golang.org/x/crypto v0.17.0 // indirect
