@@ -265,6 +265,18 @@ var programModules = map[string][]map[string]interface{}{
 			"classTime": "09:00 – 10:30 AM",
 		},
 	},
+	"genai": { // GenAI & Forward Deployed Engineering
+		{
+			// The title must keep the "GenAI" prefix: the student sidebar and the
+			// course-card route map both match on it to unlock /courses/genai.
+			"id":        "mod-genai",
+			"title":     "GenAI & Forward Deployed Engineering",
+			"mentor":    "AI Engineering Team",
+			"initial":   "AI",
+			"color":     "#8e44ad",
+			"classTime": "03:30 – 05:30 PM",
+		},
+	},
 }
 
 // GetMyCourses handles the getMyCourses GraphQL query.

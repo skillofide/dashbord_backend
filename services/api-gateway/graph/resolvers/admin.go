@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/skillofide/api-gateway/middleware"
+	pkgauth "github.com/skillofide/pkg/auth"
 )
 
 // AdminHandler handles /api/admin/* REST endpoints.
@@ -271,14 +272,24 @@ func (h *AdminHandler) bulkUpsertUsers(ctx context.Context, rows []importUserRow
 			role = "student"
 		}
 
+		hashed, err := pkgauth.HashPassword(row.Password)
+		if err != nil {
+			results = append(results, importRowResult{
+				Email:   row.Email,
+				Success: false,
+				Message: fmt.Sprintf("hash password: %v", err),
+			})
+			continue
+		}
+
 		var userID string
-		err := h.Pool.QueryRow(ctx, `
+		err = h.Pool.QueryRow(ctx, `
 			INSERT INTO users (email, name, password, role)
 			VALUES ($1, $2, $3, $4)
 			ON CONFLICT (email)
 			DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password, role = EXCLUDED.role, updated_at = now()
 			RETURNING id::text
-		`, row.Email, row.Name, row.Password, role).Scan(&userID)
+		`, row.Email, row.Name, hashed, role).Scan(&userID)
 		if err != nil {
 			results = append(results, importRowResult{
 				Email:   row.Email,

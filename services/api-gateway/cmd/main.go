@@ -157,6 +157,19 @@ func main() {
 			adminHandler.Inquiries = inquiryHandler
 			log.Info("enquiry capture registered at /api/inquiries")
 		}
+
+		// Self-service password reset. Public for the same reason as the
+		// enquiry form: someone locked out of their account cannot authenticate
+		// to ask for a way back in. The handler carries its own rate limiting,
+		// single-use expiring codes, and identical responses for known and
+		// unknown addresses.
+		resetHandler, err := resolvers.NewPasswordResetHandler(context.Background(), adminPool, log)
+		if err != nil {
+			log.Error("password reset handler init failed — password reset disabled", zap.Error(err))
+		} else {
+			mux.Handle("/api/password-reset/", resetHandler)
+			log.Info("password reset registered at /api/password-reset/")
+		}
 	}
 
 	// Recruiter portal — test authoring, invitations, results and shortlisting.
@@ -185,7 +198,13 @@ func main() {
 	// ── Apply middleware chain ────────────────────────────────────────────────
 	// JWT is parsed for /graphql; resolvers decide per-field auth.
 	// /api/inquiries is public: it is the marketing site's contact form.
-	authMW := middleware.Auth(jwtValidator, log, "/api/health", "/api/login", "/api/inquiries")
+	// The two password-reset paths are public because someone locked out of
+	// their account cannot authenticate to ask for a way back in. They are
+	// listed individually rather than by prefix — publicPaths is an exact-match
+	// set, and nothing else under that subtree should be reachable unauthenticated.
+	authMW := middleware.Auth(jwtValidator, log,
+		"/api/health", "/api/login", "/api/inquiries",
+		"/api/password-reset/request", "/api/password-reset/confirm")
 	corsMW := middleware.CORS(cfg.allowedOrigins)
 
 	handler := corsMW(authMW(mux))
