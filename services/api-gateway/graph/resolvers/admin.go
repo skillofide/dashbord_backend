@@ -57,6 +57,10 @@ func (h *AdminHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case strings.HasPrefix(path, "/inquiries/") && r.Method == http.MethodPatch && h.Inquiries != nil:
 		h.Inquiries.UpdateInquiry(w, r, strings.TrimPrefix(path, "/inquiries/"))
 
+	// GET /api/admin/courses — catalog for the admin UI dropdowns
+	case path == "/courses" && r.Method == http.MethodGet:
+		h.handleListCourses(w, r)
+
 	// GET /api/admin/users
 	case path == "/users" && r.Method == http.MethodGet:
 		h.handleListUsers(w, r)
@@ -100,6 +104,7 @@ func (h *AdminHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type importUserRow struct {
 	Name      string   `json:"name"`
 	Email     string   `json:"email"`
+	Phone     string   `json:"phone"`
 	Password  string   `json:"password"`
 	Role      string   `json:"role"`
 	CourseIDs []string `json:"course_ids"`
@@ -179,31 +184,95 @@ func (h *AdminHandler) handleListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) handleUpdateUser(w http.ResponseWriter, r *http.Request, userID string) {
+	// All fields optional; only the ones provided are changed. Pointers let us
+	// tell "omitted" apart from "set to empty".
 	var req struct {
-		Role string `json:"role"`
+		Name  *string `json:"name"`
+		Email *string `json:"email"`
+		Phone *string `json:"phone"`
+		Role  *string `json:"role"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.jsonErr(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	// `recruiter` grants access to the partner hiring portal; a recruiter still
-	// needs a company_members row before they can see any drive.
-	if req.Role != "student" && req.Role != "admin" && req.Role != "recruiter" {
-		h.jsonErr(w, http.StatusBadRequest, "role must be 'student', 'recruiter' or 'admin'")
-		return
+
+	if req.Role != nil {
+		// `recruiter` grants access to the partner hiring portal; a recruiter still
+		// needs a company_members row before they can see any drive.
+		if *req.Role != "student" && *req.Role != "admin" && *req.Role != "recruiter" {
+			h.jsonErr(w, http.StatusBadRequest, "role must be 'student', 'recruiter' or 'admin'")
+			return
+		}
 	}
-	tag, err := h.Pool.Exec(r.Context(),
-		`UPDATE users SET role = $2, updated_at = now() WHERE id = $1::uuid`, userID, req.Role)
-	if err != nil {
-		h.Log.Error("update user role failed", zap.String("userID", userID), zap.Error(err))
-		h.jsonErr(w, http.StatusInternalServerError, err.Error())
-		return
+
+	// Build a dynamic UPDATE over whichever core fields were supplied.
+	sets := []string{}
+	args := []interface{}{userID}
+	add := func(col string, val interface{}) {
+		args = append(args, val)
+		sets = append(sets, fmt.Sprintf("%s = $%d", col, len(args)))
 	}
-	if tag.RowsAffected() == 0 {
-		h.jsonErr(w, http.StatusNotFound, "user not found")
-		return
+	if req.Name != nil {
+		add("name", *req.Name)
 	}
+	if req.Email != nil {
+		add("email", strings.ToLower(strings.TrimSpace(*req.Email)))
+	}
+	if req.Role != nil {
+		add("role", *req.Role)
+	}
+
+	if len(sets) > 0 {
+		q := fmt.Sprintf(`UPDATE users SET %s, updated_at = now() WHERE id = $1::uuid`, strings.Join(sets, ", "))
+		tag, err := h.Pool.Exec(r.Context(), q, args...)
+		if err != nil {
+			h.Log.Error("update user failed", zap.String("userID", userID), zap.Error(err))
+			h.jsonErr(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if tag.RowsAffected() == 0 {
+			h.jsonErr(w, http.StatusNotFound, "user not found")
+			return
+		}
+	}
+
+	// Phone lives on the profile row; upsert it independently.
+	if req.Phone != nil {
+		_, err := h.Pool.Exec(r.Context(), `
+			INSERT INTO user_profiles (user_id, phone)
+			VALUES ($1::uuid, $2)
+			ON CONFLICT (user_id) DO UPDATE SET phone = EXCLUDED.phone, updated_at = now()
+		`, userID, *req.Phone)
+		if err != nil {
+			h.Log.Error("update user phone failed", zap.String("userID", userID), zap.Error(err))
+			h.jsonErr(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
 	h.json(w, http.StatusOK, map[string]bool{"success": true})
+}
+
+// handleListCourses returns the course catalog used by the admin UI. This is the
+// single source of truth the frontend reads so its dropdowns never drift from the
+// backend's programModules access map.
+func (h *AdminHandler) handleListCourses(w http.ResponseWriter, r *http.Request) {
+	type course struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+	h.json(w, http.StatusOK, map[string]interface{}{"courses": []course{
+		{ID: "1", Name: "Java Development"},
+		{ID: "2", Name: "Front-End Technologies"},
+		{ID: "3", Name: "Mastering SQL"},
+		{ID: "4", Name: "Golang"},
+		{ID: "5", Name: "Full Stack Development"},
+		{ID: "genai", Name: "GenAI & Forward Deployed Engineering"},
+		{ID: "seo", Name: "SEO"},
+		{ID: "digital-marketing", Name: "Digital Marketing"},
+		{ID: "testing", Name: "Software Testing"},
+	}})
 }
 
 func (h *AdminHandler) handleDeleteUser(w http.ResponseWriter, r *http.Request, userID string) {
@@ -297,6 +366,16 @@ func (h *AdminHandler) bulkUpsertUsers(ctx context.Context, rows []importUserRow
 				Message: fmt.Sprintf("upsert user: %v", err),
 			})
 			continue
+		}
+
+		// Persist phone on the profile row. Blank phone still creates the row so
+		// the profile page has something to show; a later edit overwrites it.
+		if row.Phone != "" {
+			_, _ = h.Pool.Exec(ctx, `
+				INSERT INTO user_profiles (user_id, phone)
+				VALUES ($1::uuid, $2)
+				ON CONFLICT (user_id) DO UPDATE SET phone = EXCLUDED.phone, updated_at = now()
+			`, userID, row.Phone)
 		}
 
 		for _, courseID := range row.CourseIDs {
