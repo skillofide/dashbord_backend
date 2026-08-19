@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -158,13 +159,20 @@ func (h *InquiryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func normalizeSource(s string) string {
-	switch strings.ToLower(strings.TrimSpace(s)) {
-	case "contact", "demo", "register":
-		return strings.ToLower(strings.TrimSpace(s))
-	default:
+	v := strings.ToLower(strings.TrimSpace(s))
+	// Preserve any concise, safe source slug so the marketing site can tag which
+	// form/page a lead came from (e.g. "home_hero", "course_full-stack",
+	// "pricing", "contact"). Anything unexpected collapses to "other".
+	if v == "" {
 		return "other"
 	}
+	if len(v) > 40 || !sourceSlug.MatchString(v) {
+		return "other"
+	}
+	return v
 }
+
+var sourceSlug = regexp.MustCompile(`^[a-z0-9_-]+$`)
 
 // looksLikeEmail is a deliberately loose check. Strict validation rejects real
 // addresses; the only thing worth catching here is obvious junk.
