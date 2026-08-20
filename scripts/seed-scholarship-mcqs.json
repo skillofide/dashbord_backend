@@ -1,0 +1,123 @@
+{
+  "questions": [
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"What comes next in the sequence: 2, 6, 12, 20, 30, ?",
+     "explanation":"The gaps grow by two each time: 4, 6, 8, 10, then 12. So 30 + 12 = 42.",
+     "options":[{"body":"36","is_correct":false,"order_index":0},{"body":"40","is_correct":false,"order_index":1},{"body":"42","is_correct":true,"order_index":2},{"body":"44","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"All Bloops are Razzies. All Razzies are Lazzies. Which statement must be true?",
+     "explanation":"The relation chains one way only: Bloops sit inside Razzies, which sit inside Lazzies. Nothing is claimed about the reverse direction.",
+     "options":[{"body":"All Bloops are Lazzies","is_correct":true,"order_index":0},{"body":"All Lazzies are Bloops","is_correct":false,"order_index":1},{"body":"No Bloops are Lazzies","is_correct":false,"order_index":2},{"body":"Some Lazzies are not Razzies","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"What is 15% of 240?",
+     "explanation":"10% is 24 and 5% is 12, so 15% is 36.",
+     "options":[{"body":"30","is_correct":false,"order_index":0},{"body":"36","is_correct":true,"order_index":1},{"body":"40","is_correct":false,"order_index":2},{"body":"45","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"The average of 5 numbers is 20. If the number 30 is removed, what is the average of the remaining 4?",
+     "explanation":"The total is 5 x 20 = 100. Removing 30 leaves 70 across 4 numbers, so 17.5.",
+     "options":[{"body":"16","is_correct":false,"order_index":0},{"body":"17.5","is_correct":true,"order_index":1},{"body":"18","is_correct":false,"order_index":2},{"body":"20","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"Three workers build a wall in 12 days. Working at the same rate, how long would four workers take?",
+     "explanation":"The job is 36 worker-days. Split across 4 workers that is 9 days.",
+     "options":[{"body":"8 days","is_correct":false,"order_index":0},{"body":"9 days","is_correct":true,"order_index":1},{"body":"10 days","is_correct":false,"order_index":2},{"body":"16 days","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"Which number does not belong: 2, 3, 5, 7, 9, 11?",
+     "explanation":"Every other number is prime. 9 is 3 x 3.",
+     "options":[{"body":"2","is_correct":false,"order_index":0},{"body":"7","is_correct":false,"order_index":1},{"body":"9","is_correct":true,"order_index":2},{"body":"11","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"A shop raises a price by 20%, then offers 20% off the new price. Compared with the original, the final price is:",
+     "explanation":"100 becomes 120, then 20% off 120 is 96. A percentage rise and the same percentage fall do not cancel.",
+     "options":[{"body":"4% lower","is_correct":true,"order_index":0},{"body":"the same","is_correct":false,"order_index":1},{"body":"4% higher","is_correct":false,"order_index":2},{"body":"20% lower","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"A 120 m long train travels at 60 km/h. Roughly how long does it take to pass a stationary pole?",
+     "explanation":"60 km/h is about 16.7 m/s. 120 / 16.7 is about 7.2 seconds.",
+     "options":[{"body":"2 seconds","is_correct":false,"order_index":0},{"body":"7.2 seconds","is_correct":true,"order_index":1},{"body":"12 seconds","is_correct":false,"order_index":2},{"body":"20 seconds","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"After this runs, what is sum?\n\nsum = 0\nfor i in 1..5:\n    sum = sum + i",
+     "explanation":"It adds 1 through 5, which is 15.",
+     "options":[{"body":"5","is_correct":false,"order_index":0},{"body":"10","is_correct":false,"order_index":1},{"body":"15","is_correct":true,"order_index":2},{"body":"25","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"Which data structure removes the most recently added item first?",
+     "explanation":"A stack is last-in, first-out. A queue is first-in, first-out.",
+     "options":[{"body":"Queue","is_correct":false,"order_index":0},{"body":"Stack","is_correct":true,"order_index":1},{"body":"Linked list","is_correct":false,"order_index":2},{"body":"Tree","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"In most programming languages, the first element of an array is at index:",
+     "explanation":"Array indexing is zero-based in C, Java, Python, JavaScript, Go and most others.",
+     "options":[{"body":"0","is_correct":true,"order_index":0},{"body":"1","is_correct":false,"order_index":1},{"body":"-1","is_correct":false,"order_index":2},{"body":"It depends on the array length","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"A boolean variable can hold:",
+     "explanation":"A boolean is a two-state value: true or false.",
+     "options":[{"body":"Any whole number","is_correct":false,"order_index":0},{"body":"Only true or false","is_correct":true,"order_index":1},{"body":"Any text","is_correct":false,"order_index":2},{"body":"A list of values","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"What is the worst-case time complexity of searching an unsorted array of n items one by one?",
+     "explanation":"The target may be last or absent, so every one of the n items is checked.",
+     "options":[{"body":"O(1)","is_correct":false,"order_index":0},{"body":"O(log n)","is_correct":false,"order_index":1},{"body":"O(n)","is_correct":true,"order_index":2},{"body":"O(n^2)","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"Binary search only works correctly when the data is:",
+     "explanation":"Each step discards half the range based on order, which requires the data to be sorted.",
+     "options":[{"body":"Sorted","is_correct":true,"order_index":0},{"body":"Unique","is_correct":false,"order_index":1},{"body":"Numeric","is_correct":false,"order_index":2},{"body":"Stored in a linked list","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"Reading an array element by its index takes:",
+     "explanation":"The address is computed directly from the index, so it costs the same regardless of size.",
+     "options":[{"body":"Constant time, O(1)","is_correct":true,"order_index":0},{"body":"Time proportional to the index","is_correct":false,"order_index":1},{"body":"Time proportional to the array length","is_correct":false,"order_index":2},{"body":"O(log n)","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"The main reason to put code in a function is to:",
+     "explanation":"Functions let one named, tested block be reused and changed in a single place.",
+     "options":[{"body":"Make the program run faster","is_correct":false,"order_index":0},{"body":"Reuse it and keep changes in one place","is_correct":true,"order_index":1},{"body":"Use less memory","is_correct":false,"order_index":2},{"body":"Avoid using variables","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"What is the decimal value of the binary number 1011?",
+     "explanation":"8 + 0 + 2 + 1 = 11.",
+     "options":[{"body":"9","is_correct":false,"order_index":0},{"body":"11","is_correct":true,"order_index":1},{"body":"13","is_correct":false,"order_index":2},{"body":"15","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"One kilobyte is conventionally:",
+     "explanation":"Storage sizes are powers of two: 2^10 is 1024.",
+     "options":[{"body":"1000 bytes","is_correct":false,"order_index":0},{"body":"1024 bytes","is_correct":true,"order_index":1},{"body":"1024 bits","is_correct":false,"order_index":2},{"body":"512 bytes","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"Which sorting algorithm has O(n log n) average-case time?",
+     "explanation":"Merge sort splits and merges in O(n log n). Bubble, insertion and selection sort are O(n^2) on average.",
+     "options":[{"body":"Bubble sort","is_correct":false,"order_index":0},{"body":"Insertion sort","is_correct":false,"order_index":1},{"body":"Merge sort","is_correct":true,"order_index":2},{"body":"Selection sort","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Easy","kind":"single","is_active":true,
+     "body":"RAM is described as volatile memory because:",
+     "explanation":"Volatile means the contents need power to persist; they are lost when the machine is switched off.",
+     "options":[{"body":"Its contents are lost when power is removed","is_correct":true,"order_index":0},{"body":"It can be written to only once","is_correct":false,"order_index":1},{"body":"It is slower than a hard disk","is_correct":false,"order_index":2},{"body":"It stores only program code","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"A compiler is best described as a program that:",
+     "explanation":"A compiler translates source code into another form, usually machine code, ahead of running it.",
+     "options":[{"body":"Runs source code one line at a time","is_correct":false,"order_index":0},{"body":"Translates source code into machine code","is_correct":true,"order_index":1},{"body":"Finds every bug in a program","is_correct":false,"order_index":2},{"body":"Stores source code in a database","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"Which of these is a markup language rather than a programming language?",
+     "explanation":"HTML describes the structure of a document. It has no variables, conditionals or loops.",
+     "options":[{"body":"Python","is_correct":false,"order_index":0},{"body":"HTML","is_correct":true,"order_index":1},{"body":"Java","is_correct":false,"order_index":2},{"body":"Go","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Medium","kind":"single","is_active":true,
+     "body":"How many times does this loop print?\n\ni = 0\nwhile i < 10:\n    print(i)\n    i = i + 2",
+     "explanation":"i takes the values 0, 2, 4, 6 and 8, then 10 fails the condition. That is 5 prints.",
+     "options":[{"body":"4","is_correct":false,"order_index":0},{"body":"5","is_correct":true,"order_index":1},{"body":"10","is_correct":false,"order_index":2},{"body":"It never stops","is_correct":false,"order_index":3}]},
+
+    {"topic":"Scholarship Aptitude","difficulty":"Hard","kind":"single","is_active":true,
+     "body":"A function calls itself with a smaller input until it reaches a base case. This technique is called:",
+     "explanation":"Recursion. Without a base case the calls never stop and the stack overflows.",
+     "options":[{"body":"Iteration","is_correct":false,"order_index":0},{"body":"Recursion","is_correct":true,"order_index":1},{"body":"Overloading","is_correct":false,"order_index":2},{"body":"Inheritance","is_correct":false,"order_index":3}]}
+  ]
+}

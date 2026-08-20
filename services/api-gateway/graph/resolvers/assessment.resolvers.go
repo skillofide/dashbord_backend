@@ -173,6 +173,8 @@ func (c *AssessmentClients) SaveAnswer(p graphql.ResolveParams) (interface{}, er
 		TimeSpentMs:       int64(int32Arg(p, "timeSpentMs", 0)),
 		MarkedReview:      boolArg(p, "markedReview"),
 		ClearAnswer:       boolArg(p, "clearAnswer"),
+		Language:          stringArg(p, "language"),
+		Code:              stringArg(p, "code"),
 	})
 	if err != nil {
 		return nil, cleanErr(err, "could not save your answer")

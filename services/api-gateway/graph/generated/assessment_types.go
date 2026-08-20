@@ -259,6 +259,9 @@ func assessmentMutationFields(c *resolversAssessment) graphql.Fields {
 				"timeSpentMs":       {Type: graphql.Int},
 				"markedReview":      {Type: graphql.Boolean},
 				"clearAnswer":       {Type: graphql.Boolean},
+				// Coding drafts ride the same autosave as every other answer.
+				"language": {Type: graphql.String},
+				"code":     {Type: graphql.String},
 			},
 			Resolve: c.SaveAnswer,
 		},

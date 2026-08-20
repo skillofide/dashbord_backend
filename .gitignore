@@ -9,3 +9,7 @@ seed-problems-bin
 # solutions out of the client AND out of a public repo is the point.
 # Move it to a private repo or a server-side table before committing anywhere.
 reference-solutions.json
+
+# Python bytecode from scripts/
+__pycache__/
+*.pyc

@@ -24,6 +24,9 @@ type AdminHandler struct {
 	Log  *zap.Logger
 	// Inquiries serves the enquiry list; nil disables those routes.
 	Inquiries *InquiryHandler
+	// Scholarships serves the scholarship application and programme screens;
+	// nil disables those routes.
+	Scholarships *ScholarshipHandler
 }
 
 // ServeHTTP dispatches admin REST routes.
@@ -56,6 +59,36 @@ func (h *AdminHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// PATCH /api/admin/inquiries/{id}   — status / notes
 	case strings.HasPrefix(path, "/inquiries/") && r.Method == http.MethodPatch && h.Inquiries != nil:
 		h.Inquiries.UpdateInquiry(w, r, strings.TrimPrefix(path, "/inquiries/"))
+
+	// GET /api/admin/scholarships — applications, with live attempt scores
+	case path == "/scholarships" && r.Method == http.MethodGet && h.Scholarships != nil:
+		h.Scholarships.ListApplications(w, r)
+
+	// GET /api/admin/scholarships/export.csv — same filters as the table
+	case path == "/scholarships/export.csv" && r.Method == http.MethodGet && h.Scholarships != nil:
+		h.Scholarships.ExportApplications(w, r)
+
+	// POST /api/admin/scholarships/{id}/resend — a fresh link, emailed again
+	case strings.HasPrefix(path, "/scholarships/") && strings.HasSuffix(path, "/resend") &&
+		r.Method == http.MethodPost && h.Scholarships != nil:
+		inner := strings.TrimPrefix(path, "/scholarships/")
+		h.Scholarships.ResendLink(w, r, strings.TrimSuffix(inner, "/resend"))
+
+	// DELETE /api/admin/scholarships/{id}  — remove the application entirely
+	case strings.HasPrefix(path, "/scholarships/") && r.Method == http.MethodDelete && h.Scholarships != nil:
+		h.Scholarships.DeleteApplication(w, r, strings.TrimPrefix(path, "/scholarships/"))
+
+	// PATCH /api/admin/scholarships/{id}   — award decision / notes
+	case strings.HasPrefix(path, "/scholarships/") && r.Method == http.MethodPatch && h.Scholarships != nil:
+		h.Scholarships.UpdateApplication(w, r, strings.TrimPrefix(path, "/scholarships/"))
+
+	// GET /api/admin/scholarship-programs — course-to-paper mapping
+	case path == "/scholarship-programs" && r.Method == http.MethodGet && h.Scholarships != nil:
+		h.Scholarships.ListPrograms(w, r)
+
+	// POST /api/admin/scholarship-programs — create or repoint a programme
+	case path == "/scholarship-programs" && r.Method == http.MethodPost && h.Scholarships != nil:
+		h.Scholarships.UpsertProgram(w, r)
 
 	// GET /api/admin/courses — catalog for the admin UI dropdowns
 	case path == "/courses" && r.Method == http.MethodGet:

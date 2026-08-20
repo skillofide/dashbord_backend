@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -158,6 +159,30 @@ func main() {
 			log.Info("enquiry capture registered at /api/inquiries")
 		}
 
+		// Scholarship funnel. The apply/claim/config side is public (see
+		// publicPaths below) — an applicant has no account yet, which is the
+		// whole point of the flow. The application and programme screens live
+		// under /api/admin/ and stay behind the role guard.
+		//
+		// Eligibility is not granted here: apply writes an assessment_invites
+		// row, and assessment-service decides on that row alone whether a paper
+		// may be started.
+		scholarshipHandler, err := resolvers.NewScholarshipHandler(
+			context.Background(), adminPool, log, cfg.jwtSecret, cfg.appBaseURL)
+		if err != nil {
+			log.Error("scholarship handler init failed — scholarship funnel disabled", zap.Error(err))
+		} else {
+			mux.Handle("/api/scholarship/", scholarshipHandler)
+			adminHandler.Scholarships = scholarshipHandler
+			// Retires links that lapsed without ever being used, so the admin
+			// list distinguishes a candidate about to sit the test from one who
+			// walked away weeks ago.
+			scholarshipHandler.StartExpirySweeper(context.Background(),
+				time.Duration(envInt("SCHOLARSHIP_SWEEP_MIN", 15))*time.Minute)
+			log.Info("scholarship funnel registered at /api/scholarship/",
+				zap.String("app_base_url", cfg.appBaseURL))
+		}
+
 		// Self-service password reset. Public for the same reason as the
 		// enquiry form: someone locked out of their account cannot authenticate
 		// to ask for a way back in. The handler carries its own rate limiting,
@@ -202,9 +227,12 @@ func main() {
 	// their account cannot authenticate to ask for a way back in. They are
 	// listed individually rather than by prefix — publicPaths is an exact-match
 	// set, and nothing else under that subtree should be reachable unauthenticated.
+	// The three scholarship paths are public for the same reason and listed the
+	// same way: an applicant has no account until /apply creates one.
 	authMW := middleware.Auth(jwtValidator, log,
 		"/api/health", "/api/login", "/api/inquiries",
-		"/api/password-reset/request", "/api/password-reset/confirm")
+		"/api/password-reset/request", "/api/password-reset/confirm",
+		"/api/scholarship/config", "/api/scholarship/apply", "/api/scholarship/claim")
 	corsMW := middleware.CORS(cfg.allowedOrigins)
 
 	handler := corsMW(authMW(mux))
@@ -261,6 +289,7 @@ type config struct {
 	jwtSecret              string
 	jwtPublicKey           string
 	allowedOrigins         string
+	appBaseURL             string // test portal origin, for scholarship claim links
 	databaseURL            string // for admin panel direct DB access
 	devMode                bool
 	logLevel               string
@@ -279,10 +308,26 @@ func loadConfig() config {
 		jwtSecret:              env("JWT_SECRET", "dev-secret-change-in-production"),
 		jwtPublicKey:           env("JWT_PUBLIC_KEY", ""),
 		allowedOrigins:         env("ALLOWED_ORIGINS", "*"),
-		databaseURL:            env("DATABASE_URL", ""), // shared with user-service
-		devMode:                env("DEV_MODE", "true") == "true",
-		logLevel:               env("LOG_LEVEL", "info"),
+		// Where a scholarship applicant is sent to sit their test. Must be the
+		// portal's public origin in production — the claim link is built from
+		// it, and a wrong value sends applicants nowhere.
+		appBaseURL:  env("APP_BASE_URL", "http://localhost:5173"),
+		databaseURL: env("DATABASE_URL", ""), // shared with user-service
+		devMode:     env("DEV_MODE", "true") == "true",
+		logLevel:    env("LOG_LEVEL", "info"),
 	}
+}
+
+// envInt reads a positive integer setting, falling back when unset or nonsense.
+// A zero or negative value would turn a periodic job into a busy loop, so it
+// degrades to the default rather than to whatever was typed.
+func envInt(key string, fallback int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return fallback
 }
 
 func env(key, fallback string) string {
@@ -389,6 +434,15 @@ func handleLogin(userSvc userv1.UserServiceClient, jwtSecret string, log *zap.Lo
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte(`{"error":"Invalid email or password"}`)) //nolint:errcheck
+				return
+			}
+			// A blank email or password is the caller's mistake, not ours.
+			// Reporting it as a 500 sends operators hunting a server fault
+			// every time somebody submits an empty form.
+			if st, ok := status.FromError(err); ok && st.Code() == codes.InvalidArgument {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(`{"error":"Email and password are required"}`)) //nolint:errcheck
 				return
 			}
 			log.Error("login verification failed", zap.Error(err))

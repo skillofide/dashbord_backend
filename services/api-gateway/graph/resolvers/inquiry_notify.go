@@ -109,7 +109,16 @@ func (m *mailer) notify(in inquiryInput, name, email string) {
 			body,
 		}, "\r\n"))
 
-		auth := smtp.PlainAuth("", m.user, m.pass, m.host)
+		// Only offer credentials when there are credentials to offer. Go's
+		// PlainAuth refuses to send a username over an unencrypted connection
+		// to anything but localhost, so passing an empty auth turns every
+		// no-auth relay — a local mail catcher, an internal smarthost, SES on
+		// an allow-listed IP — into "unencrypted connection" instead of a sent
+		// email. SendMail accepts a nil auth and simply skips AUTH.
+		var auth smtp.Auth
+		if m.user != "" {
+			auth = smtp.PlainAuth("", m.user, m.pass, m.host)
+		}
 		addr := m.host + ":" + m.port
 		if err := smtp.SendMail(addr, auth, m.from, m.to, msg); err != nil {
 			// The enquiry is already saved, so this is an alerting failure, not

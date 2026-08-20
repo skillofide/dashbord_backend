@@ -109,7 +109,7 @@ func (r *Repo) ListAvailableAssessments(ctx context.Context, req *assessmentv1.L
 		       ON i.assessment_id = a.id AND lower(i.email) = lower($2)
 		WHERE  a.status = 'published'
 		  AND  (a.purpose = 'practice' OR i.id IS NOT NULL)
-		ORDER  BY (a.purpose = 'hiring') DESC, a.created_at DESC
+		ORDER  BY (a.purpose IN ('hiring', 'scholarship')) DESC, a.created_at DESC
 	`, req.UserId, email)
 	if err != nil {
 		return nil, fmt.Errorf("list available assessments: %w", err)
@@ -135,7 +135,7 @@ func (r *Repo) ListAvailableAssessments(ctx context.Context, req *assessmentv1.L
 
 		switch req.Scope {
 		case "invited":
-			if s.Purpose != "hiring" {
+			if !inviteOnly(s.Purpose) {
 				continue
 			}
 		case "completed":
@@ -305,10 +305,31 @@ func initialGradingStatus(kind string) string {
 	return "ungraded"
 }
 
-// resolveInvite enforces invite-only access to hiring drives and returns the
-// invite id to link to the attempt.
+// inviteOnly reports whether a purpose may only be attempted by someone holding
+// an invite.
+//
+// This is the single definition of "who is allowed in", deliberately shared by
+// resolveInvite and the candidate-facing listing so the two can never drift.
+//
+// It is written as a denylist of one rather than an allowlist of many, so that
+// it fails closed: a purpose added to the assessments_purpose_check constraint
+// but forgotten here becomes invite-gated, which surfaces as a candidate unable
+// to start a paper. An allowlist fails the other way — the new purpose silently
+// becomes open to every logged-in user, and nobody finds out until someone
+// farms a paper they were never invited to. This also mirrors the SQL in
+// ListAvailableAssessments, which already admits 'practice' and requires an
+// invite for everything else.
+func inviteOnly(purpose string) bool {
+	return !strings.EqualFold(strings.TrimSpace(purpose), "practice")
+}
+
+// resolveInvite enforces invite-only access to hiring drives and scholarship
+// papers, and returns the invite id to link to the attempt.
 func (r *Repo) resolveInvite(ctx context.Context, a *assessmentv1.Assessment, req *assessmentv1.StartAttemptRequest) (string, error) {
-	if a.Purpose != "hiring" {
+	// A practice test needs no invite. Everything else does: the invite row is
+	// the entire eligibility record, so returning early here for a scholarship
+	// paper would let any authenticated student start one uninvited.
+	if !inviteOnly(a.Purpose) {
 		return "", nil
 	}
 
@@ -356,7 +377,13 @@ type paperQuestion struct {
 	ProblemID     string
 	OrderIndex    int32
 	Marks         float64
-	OptionOrder   []string
+	// OptionOrder must never be nil. It maps to attempt_questions.option_order,
+	// which is NOT NULL DEFAULT '{}' — and a column DEFAULT applies only when
+	// the column is omitted from the INSERT, not when NULL is passed for it.
+	// pgx encodes a nil []string as SQL NULL, so a nil here fails the insert.
+	// Coding and descriptive questions have no options and would otherwise
+	// leave it nil, which broke every mixed MCQ + coding paper.
+	OptionOrder []string
 }
 
 // buildPaper draws and orders the questions for one attempt. Everything is
@@ -379,6 +406,7 @@ func (r *Repo) buildPaper(ctx context.Context, a *assessmentv1.Assessment, seed 
 					McqQuestionID: q.McqQuestionId,
 					ProblemID:     q.ProblemId,
 					Marks:         float64(maxInt32(q.Marks, 1)),
+					OptionOrder:   []string{},
 				})
 			}
 			if s.PickCount > 0 && int(s.PickCount) < len(picked) {
@@ -401,6 +429,7 @@ func (r *Repo) buildPaper(ctx context.Context, a *assessmentv1.Assessment, seed 
 					Kind:          s.Kind,
 					McqQuestionID: id,
 					Marks:         float64(maxInt32(s.PickMarks, 1)),
+					OptionOrder:   []string{},
 				})
 			}
 		}
@@ -520,7 +549,9 @@ func (r *Repo) assignOptionOrder(ctx context.Context, paper []*paperQuestion, rn
 		if q.McqQuestionID == "" {
 			continue
 		}
-		opts := append([]string(nil), byQuestion[q.McqQuestionID]...)
+		// Starts from an empty slice, not nil: a question whose options failed
+		// to load would otherwise re-introduce the nil this guards against.
+		opts := append([]string{}, byQuestion[q.McqQuestionID]...)
 		if rng != nil {
 			rng.Shuffle(len(opts), func(i, j int) { opts[i], opts[j] = opts[j], opts[i] })
 		}
@@ -777,8 +808,25 @@ func (r *Repo) SaveAnswer(ctx context.Context, req *assessmentv1.SaveAnswerReque
 	if err != nil {
 		return 0, fmt.Errorf("lookup attempt question: %w", err)
 	}
+	// A coding question saves a draft, not an answer: the editor's contents are
+	// stored verbatim and nothing is graded. Grading still only happens through
+	// SubmitAttemptCode, so this cannot be used to sneak an ungraded run past
+	// the judge — but it does mean a candidate who navigates away, refreshes or
+	// crashes keeps the code they had written.
 	if kind == "coding" {
-		return 0, fmt.Errorf("use submitAttemptCode for coding questions")
+		if _, err := r.pool.Exec(ctx, `
+			UPDATE attempt_questions SET
+				language      = COALESCE(NULLIF($3, ''), language),
+				code          = $4,
+				marked_review = $5,
+				visited       = true,
+				time_spent_ms = time_spent_ms + GREATEST($6, 0)
+			WHERE id = $1 AND attempt_id = $2
+		`, req.QuestionId, req.AttemptId, req.Language, req.Code,
+			req.MarkedReview, req.TimeSpentMs); err != nil {
+			return 0, fmt.Errorf("save coding draft: %w", err)
+		}
+		return a.secondsLeft(time.Now().UTC()), nil
 	}
 
 	if !a.AllowBacktrack {

@@ -44,6 +44,23 @@ services:
       timeout: 3s
       retries: 10
 
+  # A local inbox. Catches every email the stack sends and shows them at
+  # http://localhost:8025 — so the scholarship link, the staff alert and the
+  # password-reset code can all be read without wiring a real mail account, and
+  # without any risk of a test run emailing a real candidate.
+  #
+  # Development only. Production points SMTP_HOST at a real relay.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025"   # web UI
+      - "1025:1025"   # SMTP
+    environment:
+      MP_MAX_MESSAGES: "5000"
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+
   db-migrate:
     image: migrate/migrate:v4.17.1
     volumes:
@@ -90,6 +107,15 @@ services:
       dockerfile: services/execution-service/Dockerfile
     restart: unless-stopped
     environment:
+      # Allowance added to every time limit for container start and interpreter
+      # boot, which the judge's clock would otherwise charge to the candidate.
+      # Raise it on a slow or busy host; near-zero is right on a dedicated
+      # Linux runner.
+      EXEC_STARTUP_GRACE_MS: ${EXEC_STARTUP_GRACE_MS:-3000}
+      # How many sandboxed runs may execute at once. Each is pinned to one CPU,
+      # so oversubscribing does not add throughput — it makes every run slow
+      # enough to fail its time limit. Defaults to CPUs-2.
+      EXEC_MAX_CONCURRENT: ${EXEC_MAX_CONCURRENT:-}
       PROBLEM_SERVICE_ADDR: problem-service:50051
       NATS_URL: nats://nats:4222
       GRPC_PORT: "50052"
@@ -215,8 +241,9 @@ services:
       ASSESSMENT_SERVICE_ADDR: assessment-service:50056
       NOTIFICATION_SERVICE_URL: http://notification-service:8081
       JWT_SECRET: dev-secret-change-in-production
-      # 5173 = skillofied-app, 5174 = admin-panel, 5176 = skillofied-frontend
-      ALLOWED_ORIGINS: "https://d12z9kppz632u1.cloudfront.net,http://localhost:5173,http://localhost:5174,http://localhost:5176"
+      # 5173 = skillofied-app, 5174 = admin-panel, 5176 = skillofied-frontend,
+      # 3000 = knovate-web (marketing site: enquiry form + scholarship apply)
+      ALLOWED_ORIGINS: "https://d12z9kppz632u1.cloudfront.net,http://localhost:5173,http://localhost:5174,http://localhost:5176,http://localhost:3000"
       DATABASE_URL: postgres://skillofide:password@postgres:5432/skillofide?sslmode=disable
       DEV_MODE: "true"
       LOG_LEVEL: info
@@ -224,12 +251,31 @@ services:
       JSEARCH_API_KEY: ${JSEARCH_API_KEY}
       # Enquiry alerts. Leave SMTP_HOST empty to disable — enquiries are still
       # captured, they are just logged instead of emailed.
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
+      # Defaults point at the local mailpit inbox so email works out of the box
+      # in development and nothing can reach a real address. Override all five
+      # for production.
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-}
-      INQUIRY_NOTIFY_TO: ${INQUIRY_NOTIFY_TO:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@knovate.local}
+      INQUIRY_NOTIFY_TO: ${INQUIRY_NOTIFY_TO:-admissions@knovate.local}
+      # Where a scholarship applicant is redirected to sit their test. The claim
+      # link is built from this, so in production it must be the test portal's
+      # public origin — a wrong value sends every applicant nowhere.
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      # Staff alerts for new scholarship applications. Falls back to
+      # INQUIRY_NOTIFY_TO when unset.
+      SCHOLARSHIP_NOTIFY_TO: ${SCHOLARSHIP_NOTIFY_TO:-admissions@knovate.local}
+      # Rate limits on the public apply/claim endpoints. The per-IP cap is a
+      # flood stop sized for a cohort applying together from one campus NAT
+      # address; the per-email cap is the actual abuse control. Raise the IP
+      # limit for a large drive rather than removing it.
+      SCHOLARSHIP_IP_LIMIT: ${SCHOLARSHIP_IP_LIMIT:-200}
+      SCHOLARSHIP_IP_WINDOW_MIN: ${SCHOLARSHIP_IP_WINDOW_MIN:-10}
+      SCHOLARSHIP_EMAIL_LIMIT: ${SCHOLARSHIP_EMAIL_LIMIT:-5}
+      # How often to retire scholarship links that lapsed unused, in minutes.
+      SCHOLARSHIP_SWEEP_MIN: ${SCHOLARSHIP_SWEEP_MIN:-15}
     ports:
       - "8080:8080"
     depends_on:

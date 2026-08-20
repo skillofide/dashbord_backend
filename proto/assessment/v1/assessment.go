@@ -179,7 +179,7 @@ type Assessment struct {
 	CompanyName      string      `json:"company_name,omitempty"`
 	Title            string      `json:"title"`
 	Description      string      `json:"description"`
-	Purpose          string      `json:"purpose"` // practice | hiring
+	Purpose          string      `json:"purpose"` // practice | hiring | scholarship
 	DurationMinutes  int32       `json:"duration_minutes"`
 	TotalMarks       int32       `json:"total_marks"`
 	PassingMarks     int32       `json:"passing_marks"`
@@ -417,6 +417,11 @@ type SaveAnswerRequest struct {
 	TimeSpentMs       int64    `json:"time_spent_ms,omitempty"`
 	MarkedReview      bool     `json:"marked_review,omitempty"`
 	ClearAnswer       bool     `json:"clear_answer,omitempty"`
+	// Coding drafts. Saving these grades nothing — it only keeps the editor's
+	// contents so a candidate who navigates away, refreshes or crashes does not
+	// lose work in a one-attempt timed exam.
+	Language string `json:"language,omitempty"`
+	Code     string `json:"code,omitempty"`
 }
 
 type SaveAnswerResponse struct {

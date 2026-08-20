@@ -7,7 +7,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
+	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -55,15 +58,75 @@ type RunResult struct {
 type DockerSandbox struct {
 	cli *client.Client
 	log *zap.Logger
+	// slots bounds how many containers run at once. See New.
+	slots chan struct{}
 }
 
 // New creates a DockerSandbox using the DOCKER_HOST environment variable (or default socket).
+//
+// Concurrency is bounded on purpose. Every container is given a full CPU, so
+// letting an unbounded number start together does not make the judge faster —
+// it makes each one slower, and once they are slow enough they blow their time
+// limit and come back as TimeLimitExceeded. A candidate cannot tell that from a
+// wrong answer, so under load the judge silently starts marking correct code
+// wrong. A dozen simultaneous runs on a laptop took 21 seconds each and every
+// one failed that way.
+//
+// Queueing is the better failure: waiting for a slot costs a candidate a few
+// seconds and still returns the right verdict. The wait is deliberately outside
+// the timed region in Run, so queue time is never charged to their code.
 func New(log *zap.Logger) (*DockerSandbox, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, fmt.Errorf("create docker client: %w", err)
 	}
-	return &DockerSandbox{cli: cli, log: log}, nil
+
+	n := maxConcurrentRuns()
+	log.Info("docker sandbox ready", zap.Int("max_concurrent_runs", n))
+	return &DockerSandbox{cli: cli, log: log, slots: make(chan struct{}, n)}, nil
+}
+
+// maxConcurrentRuns sizes the pool. Each container is pinned to one CPU, so the
+// question is how many can run before they start stealing time from each other
+// and from the services around them.
+//
+// Half the cores, measured rather than guessed. On an 8-core host, eight
+// simultaneous runs of the same accepted solution came back:
+//
+//	2 →  8/8 accepted, p50 4.8s
+//	3 →  8/8 accepted, p50 3.8s
+//	4 →  8/8 accepted, p50 6.3s
+//	5 →  8/8 accepted, p50 6.9s
+//	6 →  6/8 TIMED OUT, p50 37s     ← correct code, marked wrong
+//
+// The cliff is sharp and it is silent: past it the judge does not slow down
+// gracefully, it starts failing correct submissions. NumCPU/2 sits well clear
+// of it with room for a busier host, and EXEC_MAX_CONCURRENT tunes it for
+// hardware that measures differently.
+func maxConcurrentRuns() int {
+	if v := os.Getenv("EXEC_MAX_CONCURRENT"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	n := runtime.NumCPU() / 2
+	if n < 2 {
+		n = 2
+	}
+	return n
+}
+
+// startupGraceMs is the allowance added to every language's time limit to cover
+// container start and interpreter boot. Tunable because the right value depends
+// entirely on the host: near-zero on a dedicated Linux runner, seconds on a
+// laptop VM or a box under drive-day load.
+func startupGraceMs() int {
+	if v := os.Getenv("EXEC_STARTUP_GRACE_MS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			return n
+		}
+	}
+	return 3000
 }
 
 // Run executes code for a single test case and returns the raw output.
@@ -73,11 +136,35 @@ func (s *DockerSandbox) Run(ctx context.Context, req *RunRequest) (*RunResult, e
 		return nil, fmt.Errorf("unsupported language: %s", req.Language)
 	}
 
+	// Wait for a slot before anything is timed. A queued run is a slow run, not
+	// a failed one.
+	if s.slots != nil {
+		select {
+		case s.slots <- struct{}{}:
+			defer func() { <-s.slots }()
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
 	timeLimitMs := req.TimeLimitMs
 	if timeLimitMs <= 0 {
 		timeLimitMs = 2000
 	}
-	// Add compilation grace period for compiled languages
+	// The clock below starts at ContainerStart, so it covers the container
+	// coming up and the interpreter booting as well as the candidate's code.
+	// On a Linux host that overhead is a couple of hundred milliseconds and
+	// nobody notices; on a busy host — a campus drive with a dozen runs landing
+	// together — it is seconds, and a correct solution comes back as
+	// TimeLimitExceeded, which a candidate cannot tell from a wrong answer.
+	//
+	// So every language gets a startup allowance on top of its problem time
+	// limit. It buys the container's boot, not the algorithm's runtime: a real
+	// infinite loop is still killed, just a moment later.
+	timeLimitMs += int32(startupGraceMs())
+
+	// Compiled and heavyweight languages need more on top, for the compiler or
+	// the VM rather than for the container.
 	langLower := strings.ToLower(req.Language)
 	if langLower == "cpp" || langLower == "go" {
 		timeLimitMs += 8000
