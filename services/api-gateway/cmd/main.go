@@ -143,7 +143,11 @@ func main() {
 
 	// Admin panel endpoints — require role=admin in JWT
 	if adminPool != nil {
-		adminHandler := &resolvers.AdminHandler{Pool: adminPool, Log: log}
+		adminHandler := &resolvers.AdminHandler{
+			Pool:   adminPool,
+			Log:    log,
+			Mailer: resolvers.NewUserMailer(cfg.appBaseURL, log),
+		}
 		mux.Handle("/api/admin/", adminHandler)
 		log.Info("admin REST endpoints registered at /api/admin/")
 

@@ -27,6 +27,9 @@ type AdminHandler struct {
 	// Scholarships serves the scholarship application and programme screens;
 	// nil disables those routes.
 	Scholarships *ScholarshipHandler
+	// Mailer sends a new account its login details; nil sends nothing (the
+	// account is still created and its password still returned to the admin).
+	Mailer *userMailer
 }
 
 // ServeHTTP dispatches admin REST routes.
@@ -153,6 +156,11 @@ type importRowResult struct {
 	Email   string `json:"email"`
 	Success bool   `json:"success"`
 	Message string `json:"message"`
+	// Emailed reports whether a welcome email was actually dispatched — false
+	// when welcome was not requested, the row was an update, or SMTP is off.
+	Emailed bool `json:"emailed"`
+	// IsNewUser distinguishes a created account from an updated one.
+	IsNewUser bool `json:"is_new_user"`
 }
 
 type adminUserRow struct {
@@ -171,6 +179,10 @@ type adminUserRow struct {
 func (h *AdminHandler) handleBulkImport(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Users []importUserRow `json:"users"`
+		// SendWelcome emails each newly created account its credentials. The
+		// single Add-user form sets it; a CSV import leaves it off so a large
+		// upload does not fan out into a surprise mail blast.
+		SendWelcome bool `json:"send_welcome"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.jsonErr(w, http.StatusBadRequest, "invalid request body")
@@ -178,7 +190,7 @@ func (h *AdminHandler) handleBulkImport(w http.ResponseWriter, r *http.Request) 
 	}
 
 	ctx := context.Background()
-	results := h.bulkUpsertUsers(ctx, req.Users)
+	results := h.bulkUpsertUsers(ctx, req.Users, req.SendWelcome)
 
 	successCount := 0
 	for _, res := range results {
@@ -364,7 +376,7 @@ func (h *AdminHandler) handleRevokeCourse(w http.ResponseWriter, r *http.Request
 // Internal DB helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-func (h *AdminHandler) bulkUpsertUsers(ctx context.Context, rows []importUserRow) []importRowResult {
+func (h *AdminHandler) bulkUpsertUsers(ctx context.Context, rows []importUserRow, sendWelcome bool) []importRowResult {
 	results := make([]importRowResult, 0, len(rows))
 	for _, row := range rows {
 		if row.Email == "" || row.Name == "" || row.Password == "" {
@@ -390,14 +402,18 @@ func (h *AdminHandler) bulkUpsertUsers(ctx context.Context, rows []importUserRow
 			continue
 		}
 
+		// (xmax = 0) is true only when this row was inserted, not updated —
+		// so a welcome email goes to genuinely new accounts and never re-mails
+		// (and silently resets the password of) somebody who already exists.
 		var userID string
+		var isNewAccount bool
 		err = h.Pool.QueryRow(ctx, `
 			INSERT INTO users (email, name, password, role)
 			VALUES ($1, $2, $3, $4)
 			ON CONFLICT (email)
 			DO UPDATE SET name = EXCLUDED.name, password = EXCLUDED.password, role = EXCLUDED.role, updated_at = now()
-			RETURNING id::text
-		`, row.Email, row.Name, hashed, role).Scan(&userID)
+			RETURNING id::text, (xmax = 0)
+		`, row.Email, row.Name, hashed, role).Scan(&userID, &isNewAccount)
 		if err != nil {
 			results = append(results, importRowResult{
 				Email:   row.Email,
@@ -428,10 +444,19 @@ func (h *AdminHandler) bulkUpsertUsers(ctx context.Context, rows []importUserRow
 			`, userID, courseID)
 		}
 
+		if sendWelcome && isNewAccount && h.Mailer != nil {
+			// row.Password is the plaintext the admin generated; it exists only
+			// here, before it is hashed away, which is the one moment we can
+			// tell the new user what it is.
+			h.Mailer.notifyNewUser(row.Name, row.Email, row.Password)
+		}
+
 		results = append(results, importRowResult{
-			Email:   row.Email,
-			Success: true,
-			Message: "imported successfully",
+			Email:     row.Email,
+			Success:   true,
+			Message:   "imported successfully",
+			Emailed:   sendWelcome && isNewAccount && h.Mailer != nil && h.Mailer.enabled(),
+			IsNewUser: isNewAccount,
 		})
 	}
 	return results
