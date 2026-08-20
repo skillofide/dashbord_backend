@@ -53,6 +53,7 @@ type attemptCtx struct {
 	RevealResults   bool
 	NegativeMarking float64
 	PassingMarks    float64
+	Purpose         string
 	Proctoring      *assessmentv1.Proctoring
 }
 
@@ -330,6 +331,23 @@ func initialGradingStatus(kind string) string {
 // farms a paper they were never invited to. This also mirrors the SQL in
 // ListAvailableAssessments, which already admits 'practice' and requires an
 // invite for everything else.
+// resultsWithheld reports whether the candidate is allowed to see their own
+// score for this kind of paper.
+//
+// A scholarship result is not a test score, it is a fee decision: it is
+// reviewed against the award ladder, can be adjusted by staff, and is delivered
+// by email. Showing a raw percentage the moment the paper is submitted
+// pre-empts that decision and — when coding answers are still grading — shows a
+// zero that is simply wrong.
+//
+// Unlike inviteOnly this is an allowlist of one, and that is the right way
+// round here: a purpose nobody has thought about should show results normally
+// (the existing behaviour for practice and hiring), not silently stop showing
+// them.
+func resultsWithheld(purpose string) bool {
+	return strings.EqualFold(strings.TrimSpace(purpose), "scholarship")
+}
+
 func inviteOnly(purpose string) bool {
 	return !strings.EqualFold(strings.TrimSpace(purpose), "practice")
 }
@@ -610,14 +628,14 @@ func (r *Repo) loadAttempt(ctx context.Context, q querier, attemptID string, loc
 		SELECT at.id::text, at.assessment_id::text, at.user_id::text, at.status, at.seed,
 		       at.started_at, at.expires_at, at.max_score, at.score, at.integrity_score,
 		       a.title, a.allow_backtrack, a.reveal_results, a.negative_marking,
-		       a.passing_marks, a.proctoring
+		       a.passing_marks, a.purpose, a.proctoring
 		FROM   attempts at
 		JOIN   assessments a ON a.id = at.assessment_id
 		WHERE  at.id = $1`+suffix, attemptID).
 		Scan(&a.ID, &a.AssessmentID, &a.UserID, &a.Status, &a.Seed,
 			&a.StartedAt, &a.ExpiresAt, &a.MaxScore, &a.Score, &a.IntegrityScore,
 			&a.Title, &a.AllowBacktrack, &a.RevealResults, &a.NegativeMarking,
-			&a.PassingMarks, &proctoring)
+			&a.PassingMarks, &a.Purpose, &proctoring)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -665,6 +683,7 @@ func (r *Repo) GetAttemptState(ctx context.Context, attemptID, userID string) (*
 		SecondsLeft:     a.secondsLeft(now),
 		MaxScore:        a.MaxScore,
 		NegativeMarking: a.NegativeMarking,
+		ResultsWithheld: resultsWithheld(a.Purpose),
 	}
 
 	if state.Sections, err = r.attemptSections(ctx, a.AssessmentID); err != nil {

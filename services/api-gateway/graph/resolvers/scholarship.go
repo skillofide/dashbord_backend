@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -498,11 +497,20 @@ func (h *ScholarshipHandler) handleApply(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// role 'applicant', not 'student'. Somebody who has asked to sit a test is
+	// not enrolled in anything — they become a student when they pass and pay,
+	// and that is a decision staff make, not a side effect of a form. The row
+	// exists because the assessment engine keys an attempt to a user id; it is
+	// the mechanism for running the test, not a place on the course.
+	//
+	// ON CONFLICT deliberately leaves role alone: a real student who applies for
+	// a scholarship on a second course must not be demoted out of their own
+	// enrolment.
 	var userID string
 	var isNewAccount bool
 	if err := tx.QueryRow(ctx, `
 		INSERT INTO users (email, name, password, role)
-		VALUES ($1, $2, $3, 'student')
+		VALUES ($1, $2, $3, 'applicant')
 		ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name, updated_at = now()
 		RETURNING id::text, (xmax = 0)
 	`, email, name, placeholder).Scan(&userID, &isNewAccount); err != nil {
@@ -782,13 +790,18 @@ func bandFor(slabs []awardSlab, percent float64) (awardSlab, bool) {
 	return awardSlab{}, false
 }
 
-// handleOutcome tells a candidate what their score earned them.
+// handleOutcome tells a candidate that their paper arrived. It deliberately
+// does not tell them how they did.
 //
-// Authenticated, and scoped to the caller: the query matches on the session's
-// own user id, so an attempt id belonging to somebody else simply is not found.
-// The award is computed from the programme's live slabs rather than read from
-// the application row, so it is right the moment the judge finishes — an admin
-// confirming the decision later does not change what the candidate was told.
+// A scholarship result is a fee decision, not a test score. It is reviewed
+// against the award ladder, staff can adjust it, and it is delivered by email
+// along with what happens next. This endpoint used to hand back the percentage,
+// the band and the whole ladder the moment the paper was submitted, which
+// pre-empted that decision — and because coding answers grade asynchronously it
+// frequently showed a confident zero to somebody who had in fact passed.
+//
+// The score is still computed and stored; it is read by staff through the
+// applications list, which is a different path with a different audience.
 func (h *ScholarshipHandler) handleOutcome(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 	if userID == "" {
@@ -801,20 +814,14 @@ func (h *ScholarshipHandler) handleOutcome(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	var courseName, appStatus string
-	var slabsRaw []byte
-	var score, maxScore *float64
-	var attemptStatus string
-	var awardPercent *int
+	var courseName, appStatus, contactEmail string
 	err := h.Pool.QueryRow(r.Context(), `
-		SELECT p.course_name, p.award_slabs, s.status, s.award_percent,
-		       at.status, at.score, at.max_score
+		SELECT p.course_name, s.status, s.email
 		FROM   scholarship_applications s
 		JOIN   scholarship_programs p ON p.id = s.program_id
 		JOIN   attempts at ON at.assessment_id = s.assessment_id AND at.user_id = s.user_id
 		WHERE  at.id = $1::uuid AND s.user_id = $2::uuid
-	`, attemptID, userID).Scan(&courseName, &slabsRaw, &appStatus, &awardPercent,
-		&attemptStatus, &score, &maxScore)
+	`, attemptID, userID).Scan(&courseName, &appStatus, &contactEmail)
 	if errors.Is(err, pgx.ErrNoRows) {
 		// Not an error worth alarming anyone about: most attempts are practice
 		// or hiring, and have no scholarship attached.
@@ -828,51 +835,16 @@ func (h *ScholarshipHandler) handleOutcome(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	out := map[string]any{
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]any{
 		"isScholarship": true,
+		"withheld":      true,
 		"courseName":    courseName,
 		"status":        appStatus,
-	}
-
-	// Coding questions grade asynchronously, so a submitted attempt can sit
-	// without a final score for a while. Saying so beats showing a zero.
-	if attemptStatus != "evaluated" || score == nil || maxScore == nil || *maxScore == 0 {
-		out["pending"] = true
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(out)
-		return
-	}
-
-	percent := (*score / *maxScore) * 100
-	out["percent"] = math.Round(percent*10) / 10
-	out["score"], out["maxScore"] = *score, *maxScore
-
-	var slabs []awardSlab
-	if len(slabsRaw) > 0 {
-		_ = json.Unmarshal(slabsRaw, &slabs)
-	}
-	out["slabs"] = slabs
-
-	if band, qualified := bandFor(slabs, percent); qualified {
-		out["qualified"] = true
-		out["awardPercent"] = band.AwardPercent
-		out["bandMinPercent"] = band.MinPercent
-	} else {
-		out["qualified"] = false
-		// What they would have needed, so the page can say something useful
-		// rather than only "no".
-		if len(slabs) > 0 {
-			out["nextBandMinPercent"] = slabs[len(slabs)-1].MinPercent
-			out["nextBandAwardPercent"] = slabs[len(slabs)-1].AwardPercent
-		}
-	}
-	// An admin decision, once made, is the final word and overrides the ladder.
-	if awardPercent != nil {
-		out["confirmedAwardPercent"] = *awardPercent
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(out)
+		// Echoed so the page can say "we will write to you at <address>" —
+		// which is also the moment a candidate notices they typed it wrong.
+		"email": contactEmail,
+	})
 }
 
 // ─── Admin surface ────────────────────────────────────────────────────────────
@@ -1247,7 +1219,7 @@ func (h *ScholarshipHandler) DeleteApplication(w http.ResponseWriter, r *http.Re
 		tag, err := tx.Exec(ctx, `
 			DELETE FROM users u
 			 WHERE u.id = $1::uuid
-			   AND u.role = 'student'
+			   AND u.role = 'applicant'
 			   AND u.password LIKE '$2a$unusable$%'
 			   AND NOT EXISTS (SELECT 1 FROM user_courses c WHERE c.user_id = u.id)
 			   AND NOT EXISTS (SELECT 1 FROM scholarship_applications s WHERE s.user_id = u.id)
@@ -1669,4 +1641,88 @@ func (h *ScholarshipHandler) ok(w http.ResponseWriter) {
 func (h *ScholarshipHandler) fail(w http.ResponseWriter, code int, msg string) {
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+}
+
+// EnrolApplicant promotes an applicant to a student and grants them the course.
+//
+// This is the only way somebody crosses from "sat our test" to "is on the
+// course", and it is deliberately a button a human presses. Applying does not
+// enrol anyone; passing does not enrol anyone. Staff enrol them once the fee is
+// settled, and that judgement has no reliable signal in this system — there is
+// no payment record here to key it off.
+//
+// Both writes are in one transaction: a role that says student with no course
+// attached would show up in the Users list as a phantom enrolment.
+func (h *ScholarshipHandler) EnrolApplicant(w http.ResponseWriter, r *http.Request, id string) {
+	if r.Method != http.MethodPost {
+		h.fail(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	id = clip(id, 60)
+	if id == "" {
+		h.fail(w, http.StatusBadRequest, "application id is required")
+		return
+	}
+
+	ctx := r.Context()
+	tx, err := h.Pool.Begin(ctx)
+	if err != nil {
+		h.Log.Error("begin enrol failed", zap.Error(err))
+		h.fail(w, http.StatusInternalServerError, "could not enrol this applicant")
+		return
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var userID, email, courseID, courseName string
+	err = tx.QueryRow(ctx, `
+		SELECT s.user_id::text, s.email, p.course_id, p.course_name
+		FROM   scholarship_applications s
+		JOIN   scholarship_programs p ON p.id = s.program_id
+		WHERE  s.id = $1::uuid
+	`, id).Scan(&userID, &email, &courseID, &courseName)
+	if errors.Is(err, pgx.ErrNoRows) {
+		h.fail(w, http.StatusNotFound, "application not found")
+		return
+	}
+	if err != nil {
+		h.Log.Error("load application for enrol failed", zap.Error(err))
+		h.fail(w, http.StatusInternalServerError, "could not enrol this applicant")
+		return
+	}
+
+	// Only promote out of 'applicant'. An admin or recruiter who once applied
+	// for a scholarship must not be demoted to student by this button.
+	if _, err := tx.Exec(ctx, `
+		UPDATE users SET role = 'student', updated_at = now()
+		 WHERE id = $1::uuid AND role = 'applicant'
+	`, userID); err != nil {
+		h.Log.Error("promote applicant failed", zap.Error(err))
+		h.fail(w, http.StatusInternalServerError, "could not enrol this applicant")
+		return
+	}
+
+	// Idempotent: enrolling twice is a double-click, not an error.
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO user_courses (user_id, course_id)
+		VALUES ($1::uuid, $2)
+		ON CONFLICT DO NOTHING
+	`, userID, courseID); err != nil {
+		h.Log.Error("grant course failed", zap.Error(err))
+		h.fail(w, http.StatusInternalServerError, "could not enrol this applicant")
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		h.Log.Error("commit enrol failed", zap.Error(err))
+		h.fail(w, http.StatusInternalServerError, "could not enrol this applicant")
+		return
+	}
+
+	h.Log.Info("scholarship applicant enrolled",
+		zap.String("email", email), zap.String("course_id", courseID))
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"success": true, "email": email, "courseName": courseName,
+	})
 }

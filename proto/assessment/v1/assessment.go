@@ -370,6 +370,10 @@ type AttemptState struct {
 	Questions       []*AttemptQuestion `json:"questions"`
 	MaxScore        float64            `json:"max_score"`
 	NegativeMarking float64            `json:"negative_marking"`
+	// ResultsWithheld marks a paper whose score is never shown to the person
+	// sitting it. Scholarship results are communicated by staff, by email,
+	// after review — so the player must not end on a score screen.
+	ResultsWithheld bool `json:"results_withheld"`
 }
 
 type AttemptSummary struct {
@@ -395,6 +399,10 @@ type AttemptSummary struct {
 	// render "12/20" per section without a second query.
 	SectionMax map[string]float64 `json:"section_max,omitempty"`
 	Decision   string             `json:"decision,omitempty"`
+	// Purpose is the parent assessment's purpose. It is not exposed to
+	// candidates; it is carried so the candidate-facing paths can tell which
+	// summaries must have their score stripped before they leave the service.
+	Purpose string `json:"purpose,omitempty"`
 }
 
 type StartAttemptRequest struct {
@@ -556,6 +564,10 @@ type AttemptResult struct {
 	// Questions is populated only when the assessment allows result reveal.
 	Questions []*AttemptQuestion `json:"questions,omitempty"`
 	Revealed  bool               `json:"revealed"`
+	// Withheld says the score exists but is deliberately not being served to
+	// this candidate. Distinct from Revealed, which is about the answer key:
+	// a withheld result carries no marks at all, not even the total.
+	Withheld bool `json:"withheld"`
 }
 
 // ─── Recruiter reporting ──────────────────────────────────────────────────────

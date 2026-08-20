@@ -114,6 +114,9 @@ var attemptStateType = graphql.NewObject(graphql.ObjectConfig{
 		"questions":       &graphql.Field{Type: graphql.NewList(attemptQuestionType)},
 		"maxScore":        &graphql.Field{Type: graphql.Float},
 		"negativeMarking": &graphql.Field{Type: graphql.Float},
+		// Lets the player end on "submitted" rather than a score screen,
+		// without the client having to know what a scholarship is.
+		"resultsWithheld": &graphql.Field{Type: graphql.Boolean},
 	},
 })
 
@@ -142,6 +145,7 @@ var attemptResultType = graphql.NewObject(graphql.ObjectConfig{
 		"summary":   &graphql.Field{Type: attemptSummaryType},
 		"questions": &graphql.Field{Type: graphql.NewList(attemptQuestionType)},
 		"revealed":  &graphql.Field{Type: graphql.Boolean},
+		"withheld":  &graphql.Field{Type: graphql.Boolean},
 	},
 })
 

@@ -147,6 +147,7 @@ func (c *AssessmentClients) GetAttemptResult(p graphql.ResolveParams) (interface
 		"summary":   attemptSummaryToMap(res.Summary),
 		"questions": questions,
 		"revealed":  res.Revealed,
+		"withheld":  res.Withheld,
 	}, nil
 }
 
@@ -368,6 +369,7 @@ func attemptStateToMap(s *assessmentv1.AttemptState) map[string]interface{} {
 		"questions":       questions,
 		"maxScore":        s.MaxScore,
 		"negativeMarking": s.NegativeMarking,
+		"resultsWithheld": s.ResultsWithheld,
 	}
 }
 

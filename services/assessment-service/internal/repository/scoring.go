@@ -379,7 +379,7 @@ func (r *Repo) attemptSummaries(ctx context.Context, where string, args []any, o
 		       COALESCE(u.name, ''), COALESCE(u.email, ''), at.attempt_no, at.status,
 		       at.started_at, at.submitted_at, at.evaluated_at,
 		       at.score, at.max_score, at.integrity_score, a.passing_marks,
-		       at.section_scores,
+		       at.section_scores, a.purpose,
 		       COALESCE((
 		         SELECT jsonb_object_agg(x.section_id, x.total)
 		         FROM (
@@ -418,7 +418,7 @@ func (r *Repo) attemptSummaries(ctx context.Context, where string, args []any, o
 			&s.UserName, &s.UserEmail, &s.AttemptNo, &s.Status,
 			&startedAt, &submittedAt, &evaluatedAt,
 			&s.Score, &s.MaxScore, &s.IntegrityScore, &passingMarks,
-			&sectionScores, &sectionMax, &s.Decision); err != nil {
+			&sectionScores, &s.Purpose, &sectionMax, &s.Decision); err != nil {
 			return nil, fmt.Errorf("scan attempt summary: %w", err)
 		}
 
@@ -438,7 +438,30 @@ func (r *Repo) attemptSummaries(ctx context.Context, where string, args []any, o
 
 // ListMyAttempts returns a student's own attempt history.
 func (r *Repo) ListMyAttempts(ctx context.Context, userID string) ([]*assessmentv1.AttemptSummary, error) {
-	return r.attemptSummaries(ctx, `WHERE at.user_id = $1`, []any{userID}, "", 0, 0)
+	out, err := r.attemptSummaries(ctx, `WHERE at.user_id = $1`, []any{userID}, "", 0, 0)
+	if err != nil {
+		return nil, err
+	}
+	// This is the one summary list a candidate reads about themselves, so it is
+	// also a way to learn a withheld score. Strip the marks here rather than in
+	// the caller: every future caller of "my attempts" inherits the redaction.
+	for _, s := range out {
+		redactWithheld(s)
+	}
+	return out, nil
+}
+
+// redactWithheld strips the marks from a summary the candidate may not see.
+//
+// It clears the numbers rather than dropping the row: the candidate should
+// still be told the paper is submitted and when — silence after an hour of work
+// reads as a system failure.
+func redactWithheld(s *assessmentv1.AttemptSummary) {
+	if s == nil || !resultsWithheld(s.Purpose) {
+		return
+	}
+	s.Score, s.MaxScore, s.Percent, s.Passed = 0, 0, 0, false
+	s.SectionScores, s.SectionMax, s.Decision = nil, nil, ""
 }
 
 // GetAttemptResult returns a student's own result. The question-by-question
@@ -460,6 +483,14 @@ func (r *Repo) GetAttemptResult(ctx context.Context, attemptID, userID string) (
 	if err != nil {
 		return nil, err
 	}
+	// Withholding happens before anything else is attached. Returning early
+	// with a redacted summary means there is no path from here to a mark, a
+	// percentage or an answer key, whatever reveal_results happens to say.
+	if resultsWithheld(a.Purpose) {
+		redactWithheld(summary)
+		return &assessmentv1.AttemptResult{Summary: summary, Withheld: true}, nil
+	}
+
 	out := &assessmentv1.AttemptResult{Summary: summary, Revealed: a.RevealResults}
 	if !a.RevealResults {
 		return out, nil

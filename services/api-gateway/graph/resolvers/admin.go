@@ -68,6 +68,12 @@ func (h *AdminHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case path == "/scholarships/export.csv" && r.Method == http.MethodGet && h.Scholarships != nil:
 		h.Scholarships.ExportApplications(w, r)
 
+	// POST /api/admin/scholarships/{id}/enrol — applicant becomes a student
+	case strings.HasPrefix(path, "/scholarships/") && strings.HasSuffix(path, "/enrol") &&
+		r.Method == http.MethodPost && h.Scholarships != nil:
+		inner := strings.TrimPrefix(path, "/scholarships/")
+		h.Scholarships.EnrolApplicant(w, r, strings.TrimSuffix(inner, "/enrol"))
+
 	// POST /api/admin/scholarships/{id}/resend — a fresh link, emailed again
 	case strings.HasPrefix(path, "/scholarships/") && strings.HasSuffix(path, "/resend") &&
 		r.Method == http.MethodPost && h.Scholarships != nil:
@@ -434,11 +440,20 @@ func (h *AdminHandler) bulkUpsertUsers(ctx context.Context, rows []importUserRow
 func (h *AdminHandler) listUsers(ctx context.Context, page, pageSize int, search string) ([]adminUserRow, int, error) {
 	offset := (page - 1) * pageSize
 
+	// Scholarship applicants are excluded. They hold a users row because the
+	// assessment engine keys an attempt to a user id, but they are not on a
+	// course and nobody has enrolled them — showing them here would make the
+	// Users screen a list of everyone who ever filled in a form, and would put
+	// people in it that staff never added. They appear under Scholarship, and
+	// join this list when someone enrols them.
+	const notApplicant = `u.role <> 'applicant'`
+
 	var total int
-	countQuery := `SELECT COUNT(*) FROM users`
+	countQuery := `SELECT COUNT(*) FROM users u WHERE ` + notApplicant
 	countArgs := []interface{}{}
 	if search != "" {
-		countQuery = `SELECT COUNT(*) FROM users WHERE email ILIKE $1 OR name ILIKE $1`
+		countQuery = `SELECT COUNT(*) FROM users u WHERE ` + notApplicant +
+			` AND (u.email ILIKE $1 OR u.name ILIKE $1)`
 		countArgs = []interface{}{"%" + search + "%"}
 	}
 	if err := h.Pool.QueryRow(ctx, countQuery, countArgs...).Scan(&total); err != nil {
@@ -453,7 +468,7 @@ func (h *AdminHandler) listUsers(ctx context.Context, page, pageSize int, search
 			       COALESCE(array_agg(uc.course_id) FILTER (WHERE uc.course_id IS NOT NULL), '{}') AS course_ids
 			FROM users u
 			LEFT JOIN user_courses uc ON uc.user_id = u.id
-			WHERE u.email ILIKE $3 OR u.name ILIKE $3
+			WHERE ` + notApplicant + ` AND (u.email ILIKE $3 OR u.name ILIKE $3)
 			GROUP BY u.id, u.email, u.name, u.role, u.created_at
 			ORDER BY u.created_at DESC
 			LIMIT $1 OFFSET $2`
@@ -464,6 +479,7 @@ func (h *AdminHandler) listUsers(ctx context.Context, page, pageSize int, search
 			       COALESCE(array_agg(uc.course_id) FILTER (WHERE uc.course_id IS NOT NULL), '{}') AS course_ids
 			FROM users u
 			LEFT JOIN user_courses uc ON uc.user_id = u.id
+			WHERE ` + notApplicant + `
 			GROUP BY u.id, u.email, u.name, u.role, u.created_at
 			ORDER BY u.created_at DESC
 			LIMIT $1 OFFSET $2`
