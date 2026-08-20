@@ -528,6 +528,10 @@ type AssessmentSummary struct {
 	LiveAttemptId string `json:"live_attempt_id,omitempty"`
 	CanStart      bool   `json:"can_start"`
 	BlockedReason string `json:"blocked_reason,omitempty"`
+	// Proctoring travels with the summary so a candidate can be told what will
+	// be monitored *before* they consent and the clock starts. Learning about a
+	// camera at the moment it turns on is not consent.
+	Proctoring *Proctoring `json:"proctoring,omitempty"`
 }
 
 type ListAvailableAssessmentsResponse struct {

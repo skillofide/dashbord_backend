@@ -122,3 +122,30 @@ func TestIntegrityPenaltyIsNeverFree(t *testing.T) {
 		t.Error("a devtools event should cost more than a copy event")
 	}
 }
+
+// TestIntegrityPenaltyRanking pins the shape of the ledger rather than exact
+// numbers: what matters is that a deliberate act costs more than an ambiguous
+// one, so a candidate in a dim room is not ranked alongside one who killed
+// their camera.
+func TestIntegrityPenaltyRanking(t *testing.T) {
+	deliberate := []string{"devtools", "camera_denied", "camera_off", "paste"}
+	ambiguous := []string{"camera_dark", "no_motion", "voice_detected", "tab_blur", "copy", "disconnect"}
+
+	worstAmbiguous := 0.0
+	for _, k := range ambiguous {
+		if p := IntegrityPenalty(k); p > worstAmbiguous {
+			worstAmbiguous = p
+		}
+	}
+	for _, k := range deliberate {
+		if got := IntegrityPenalty(k); got <= worstAmbiguous {
+			t.Errorf("%q costs %v, no more than the worst ambiguous signal (%v) — "+
+				"a deliberate act must rank above a maybe", k, got, worstAmbiguous)
+		}
+	}
+
+	// An unrecognised kind must still be recorded, and must not be free.
+	if IntegrityPenalty("something_new") <= 0 {
+		t.Error("an unknown signal should carry a small cost, not none")
+	}
+}

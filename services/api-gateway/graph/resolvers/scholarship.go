@@ -1363,16 +1363,26 @@ func (h *ScholarshipHandler) ResendLink(w http.ResponseWriter, r *http.Request, 
 
 	testURL := h.appBase + "/scholarship/start?t=" + raw
 	h.Log.Info("scholarship link resent", zap.String("email", email), zap.String("application_id", id))
-	h.mailer.notifyApplicant(name, email, courseName, assessmentTitle, testURL,
+
+	// Sent synchronously, unlike the applicant's own submission. Somebody is
+	// watching this button and acting on what it says; reporting "emailed" for
+	// a message the relay refused sends a counsellor away believing a candidate
+	// has their link when they do not. The link itself is still returned either
+	// way, so a failed send leaves them something to pass on by hand.
+	sendErr := h.mailer.deliverApplicant(name, email, courseName, assessmentTitle, testURL,
 		durationMinutes, totalMarks, false)
 
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"success": true,
+	body := map[string]any{
+		"success": sendErr == nil,
 		"email":   email,
 		"testUrl": testURL,
 		"expires": expires.Format(time.RFC3339),
-	})
+	}
+	if sendErr != nil {
+		body["emailError"] = sendErr.Error()
+	}
+	_ = json.NewEncoder(w).Encode(body)
 }
 
 type programRow struct {

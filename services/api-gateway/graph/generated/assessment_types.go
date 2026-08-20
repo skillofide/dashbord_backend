@@ -35,6 +35,7 @@ var assessmentSummaryType = graphql.NewObject(graphql.ObjectConfig{
 		"liveAttemptId":   &graphql.Field{Type: graphql.String},
 		"canStart":        &graphql.Field{Type: graphql.Boolean},
 		"blockedReason":   &graphql.Field{Type: graphql.String},
+		"proctoring":      &graphql.Field{Type: proctoringType},
 	},
 })
 

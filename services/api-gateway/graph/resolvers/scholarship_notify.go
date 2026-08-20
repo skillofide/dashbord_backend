@@ -84,6 +84,14 @@ func (m *scholarshipMailer) notifyApplicant(name, email, courseName, testTitle, 
 		return
 	}
 
+	subject, text := applicantSubjectAndText(name, email, courseName, testTitle, testURL, durationMinutes, isNewAccount)
+	m.send([]string{email}, "", subject, text,
+		applicantHTML(name, courseName, testTitle, testURL, durationMinutes, totalMarks, isNewAccount), email)
+}
+
+// applicantSubjectAndText builds the plain-text half, shared by the
+// fire-and-forget path and the synchronous one so the two cannot drift.
+func applicantSubjectAndText(name, email, courseName, testTitle, testURL string, durationMinutes int32, isNewAccount bool) (string, string) {
 	lines := []string{
 		"Hi " + name + ",",
 		"",
@@ -108,9 +116,7 @@ func (m *scholarshipMailer) notifyApplicant(name, email, courseName, testTitle, 
 			"on the login page to set one.")
 	}
 	lines = append(lines, "", "Good luck.")
-
-	m.send([]string{email}, "", "Your "+courseName+" scholarship test is ready",
-		strings.Join(lines, "\n"), applicantHTML(name, courseName, testTitle, testURL, durationMinutes, totalMarks, isNewAccount), email)
+	return "Your " + courseName + " scholarship test is ready", strings.Join(lines, "\n")
 }
 
 // notifyStaff alerts the counselling team that an application landed.
@@ -134,6 +140,14 @@ func (m *scholarshipMailer) notifyStaff(name, email, phone, courseName, college 
 
 	// Reply-To is the candidate, which is what anyone hitting Reply expects.
 	m.send(m.staff, email, "New scholarship application: "+name+" ("+courseName+")", body, "", email)
+}
+
+// deliverApplicant is notifyApplicant's synchronous twin, for callers who need
+// to know whether the message actually left.
+func (m *scholarshipMailer) deliverApplicant(name, email, courseName, testTitle, testURL string, durationMinutes, totalMarks int32, isNewAccount bool) error {
+	subject, text := applicantSubjectAndText(name, email, courseName, testTitle, testURL, durationMinutes, isNewAccount)
+	return m.deliver([]string{email}, "", subject, text,
+		applicantHTML(name, courseName, testTitle, testURL, durationMinutes, totalMarks, isNewAccount), email)
 }
 
 // notifyAward tells a candidate an admin has confirmed their scholarship.
@@ -182,7 +196,22 @@ func (m *scholarshipMailer) send(to []string, replyTo, subject, body, html, logE
 				m.log.Error("scholarship email panicked", zap.Any("panic", r))
 			}
 		}()
+		_ = m.deliver(to, replyTo, subject, body, html, logEmail)
+	}()
+}
 
+// deliver sends and reports what happened.
+//
+// The applicant-facing paths call this through send(), which discards the error
+// on purpose: their application is already committed and a broken relay must
+// not fail or delay it. An admin pressing "Resend" is in a different position —
+// they are waiting, and telling them a link went out when the relay refused it
+// is worse than telling them nothing. So that path calls this directly.
+func (m *scholarshipMailer) deliver(to []string, replyTo, subject, body, html, logEmail string) error {
+	if !m.enabled() {
+		return fmt.Errorf("email is not configured (SMTP_HOST is unset)")
+	}
+	{
 		headers := []string{
 			"From: " + m.from,
 			"To: " + strings.Join(to, ", "),
@@ -235,12 +264,11 @@ func (m *scholarshipMailer) send(to []string, replyTo, subject, body, html, logE
 			auth = smtp.PlainAuth("", m.user, m.pass, m.host)
 		}
 		if err := smtp.SendMail(m.host+":"+m.port, auth, m.from, to, []byte(strings.Join(headers, "\r\n"))); err != nil {
-			// The application is already saved, so this is a delivery failure,
-			// not a lost applicant — log loudly and carry on.
 			m.log.Error("scholarship email failed to send",
 				zap.String("email", logEmail), zap.Error(err))
-			return
+			return err
 		}
 		m.log.Info("scholarship email sent", zap.String("email", logEmail), zap.String("subject", subject))
-	}()
+		return nil
+	}
 }

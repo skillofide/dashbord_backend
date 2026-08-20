@@ -122,6 +122,21 @@ func IntegrityPenalty(kind string) float64 {
 		return 25
 	case "multi_face", "no_face":
 		return 15
+	// Refusing or killing the camera is a decision, not an accident, and it is
+	// the one camera signal with no false-positive story — so it costs more
+	// than the picture merely looking wrong.
+	case "camera_denied", "camera_off":
+		return 20
+	// A dark frame is usually a covered lens, but sometimes a dim room; a voice
+	// is often the candidate reading aloud. Both are worth a reviewer's eye
+	// rather than a heavy automatic penalty.
+	// Both say "the camera is not showing me a person right now", and both have
+	// an innocent reading — a dim room, someone sitting very still. Evidence for
+	// a reviewer, not grounds to fail anybody.
+	case "camera_dark", "no_motion":
+		return 8
+	case "voice_detected":
+		return 5
 	case "disconnect":
 		return 2
 	default:

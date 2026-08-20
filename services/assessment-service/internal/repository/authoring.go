@@ -57,22 +57,58 @@ func (r *Repo) UpdateAssessment(ctx context.Context, req *assessmentv1.UpdateAss
 	if a == nil || a.Id == "" {
 		return fmt.Errorf("assessment id is required")
 	}
-	proctoring, err := toJSON(a.Proctoring)
-	if err != nil {
-		return err
+	// nil, not "{}" — so the COALESCE below keeps whatever is stored when the
+	// caller did not mention proctoring. toJSON cannot express that: a nil
+	// *Proctoring reaches it inside a non-nil interface, so it marshals to the
+	// JSON literal `null`, which is a value and would overwrite.
+	var proctoring any
+	if a.Proctoring != nil {
+		b, err := toJSON(a.Proctoring)
+		if err != nil {
+			return err
+		}
+		proctoring = b
 	}
 
+	// Absent-preserving, not defaulting. A caller sending only the field it
+	// wants to change is the normal shape of a PATCH, and the previous version
+	// wrote every omitted field as its zero value — so a request carrying just
+	// {"proctoring": …} blanked a published paper's title and set its duration
+	// to zero, which in turn made every new attempt expire the instant it
+	// started. The damage is silent: the paper still lists, still opens, and
+	// only fails once a candidate is sitting it.
+	//
+	// Strings and numbers fall back to the stored value when empty or zero.
+	// That does mean a title cannot be *cleared* through this path, which is
+	// the right trade: nobody wants a nameless assessment, and losing one by
+	// omission is far more likely than clearing one on purpose. The booleans
+	// are the exception — false is a real choice — so they are only written
+	// when the caller sent the whole object, which is what the admin UI does.
 	ct, err := r.pool.Exec(ctx, `
 		UPDATE assessments SET
-			title = $2, description = $3, duration_minutes = $4, passing_marks = $5,
-			negative_marking = $6, shuffle_questions = $7, shuffle_options = $8,
-			allow_backtrack = $9, reveal_results = $10, proctoring = $11,
-			opens_at = $12, closes_at = $13, max_attempts = $14, updated_at = now()
+			title            = COALESCE(NULLIF($2, ''), title),
+			description      = COALESCE(NULLIF($3, ''), description),
+			duration_minutes = CASE WHEN $4 > 0 THEN $4 ELSE duration_minutes END,
+			passing_marks    = CASE WHEN $5 > 0 THEN $5 ELSE passing_marks END,
+			negative_marking = CASE WHEN $6 > 0 THEN $6 ELSE negative_marking END,
+			shuffle_questions = CASE WHEN $15 THEN $7  ELSE shuffle_questions END,
+			shuffle_options   = CASE WHEN $15 THEN $8  ELSE shuffle_options   END,
+			allow_backtrack   = CASE WHEN $15 THEN $9  ELSE allow_backtrack   END,
+			reveal_results    = CASE WHEN $15 THEN $10 ELSE reveal_results    END,
+			proctoring       = COALESCE($11::jsonb, proctoring),
+			opens_at         = COALESCE($12, opens_at),
+			closes_at        = COALESCE($13, closes_at),
+			max_attempts     = CASE WHEN $14 > 0 THEN $14 ELSE max_attempts END,
+			updated_at       = now()
 		WHERE id = $1
 	`, a.Id, a.Title, a.Description, a.DurationMinutes, a.PassingMarks,
 		a.NegativeMarking, a.ShuffleQuestions, a.ShuffleOptions, a.AllowBacktrack,
 		a.RevealResults, proctoring, parseTime(a.OpensAt), parseTime(a.ClosesAt),
-		maxInt32(a.MaxAttempts, 1))
+		a.MaxAttempts,
+		// "The caller sent the whole assessment" — the admin editor always
+		// includes the title, so its presence is what distinguishes a full save
+		// from a one-field patch.
+		a.Title != "")
 	if err != nil {
 		return fmt.Errorf("update assessment: %w", err)
 	}

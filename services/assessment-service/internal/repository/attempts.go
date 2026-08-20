@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	mrand "math/rand"
@@ -80,6 +81,7 @@ func (r *Repo) ListAvailableAssessments(ctx context.Context, req *assessmentv1.L
 		SELECT a.id, a.title, a.description, a.purpose,
 		       COALESCE(c.name, ''), COALESCE(c.logo_url, ''),
 		       a.duration_minutes, a.total_marks, a.opens_at, a.closes_at, a.max_attempts,
+		       a.proctoring,
 		       COALESCE(i.token, ''),
 		       (SELECT COUNT(*) FROM attempts at
 		         WHERE at.assessment_id = a.id AND at.user_id = $1),
@@ -123,13 +125,22 @@ func (r *Repo) ListAvailableAssessments(ctx context.Context, req *assessmentv1.L
 		s := &assessmentv1.AssessmentSummary{}
 		var opensAt, closesAt *time.Time
 		var questionCount int64
+		var proctoringRaw []byte
 		if err := rows.Scan(&s.Id, &s.Title, &s.Description, &s.Purpose,
 			&s.CompanyName, &s.CompanyLogo, &s.DurationMinutes, &s.TotalMarks,
-			&opensAt, &closesAt, &s.MaxAttempts, &s.InviteToken,
+			&opensAt, &closesAt, &s.MaxAttempts, &proctoringRaw, &s.InviteToken,
 			&s.AttemptsUsed, &s.LiveAttemptId, &s.SectionSummary, &questionCount); err != nil {
 			return nil, fmt.Errorf("scan available assessment: %w", err)
 		}
 		s.QuestionCount = int32(questionCount)
+		if len(proctoringRaw) > 0 {
+			var pr assessmentv1.Proctoring
+			// A malformed blob must not hide the whole assessment from the
+			// candidate; they simply see no proctoring notice.
+			if err := json.Unmarshal(proctoringRaw, &pr); err == nil {
+				s.Proctoring = &pr
+			}
+		}
 		s.OpensAt, s.ClosesAt = fmtTime(opensAt), fmtTime(closesAt)
 		s.CanStart, s.BlockedReason = startability(now, opensAt, closesAt, s)
 

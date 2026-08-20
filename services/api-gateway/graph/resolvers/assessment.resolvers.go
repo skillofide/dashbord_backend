@@ -67,6 +67,19 @@ func (c *AssessmentClients) ListAssessments(p graphql.ResolveParams) (interface{
 			"liveAttemptId":   a.LiveAttemptId,
 			"canStart":        a.CanStart,
 			"blockedReason":   a.BlockedReason,
+			// Nil for a paper with no proctoring configured, which the client
+			// reads as "nothing is monitored".
+			"proctoring": func() interface{} {
+				if a.Proctoring == nil {
+					return nil
+				}
+				return map[string]interface{}{
+					"requireFullscreen": a.Proctoring.RequireFullscreen,
+					"tabSwitchLimit":    int(a.Proctoring.TabSwitchLimit),
+					"blockCopyPaste":    a.Proctoring.BlockCopyPaste,
+					"webcam":            a.Proctoring.Webcam,
+				}
+			}(),
 		})
 	}
 	return out, nil
