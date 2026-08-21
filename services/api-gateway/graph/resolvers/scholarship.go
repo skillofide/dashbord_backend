@@ -699,7 +699,7 @@ func (h *ScholarshipHandler) handleClaim(w http.ResponseWriter, r *http.Request)
 	if errors.Is(err, pgx.ErrNoRows) {
 		// Same answer for a token that never existed and one that was replaced,
 		// so this cannot be used to probe for live links.
-		h.fail(w, http.StatusUnauthorized, "this link is no longer valid — please apply again or sign in")
+		h.fail(w, http.StatusUnauthorized, "this link is no longer valid — please apply again to get a new one")
 		return
 	}
 	if err != nil {
