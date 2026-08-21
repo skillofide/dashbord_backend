@@ -37,6 +37,12 @@ type RunRequest struct {
 	Input         string
 	TimeLimitMs   int32
 	MemoryLimitMb int32
+	// Spec is the problem's declared execution contract. When it is present and
+	// its IoMode is "function", the submission is wrapped by the generated
+	// driver for its signature. When it is absent — a problem not yet migrated
+	// onto a signature — wrapping falls back to the legacy slug-keyed drivers.
+	Spec *ExecutionSpec
+
 	// Raw runs the submitted code verbatim, skipping the driver that is
 	// normally generated around a solution function. Scratchpad code is a
 	// complete program with its own entry point, so wrapping it would break it.
@@ -186,7 +192,11 @@ func (s *DockerSandbox) Run(ctx context.Context, req *RunRequest) (*RunResult, e
 	// Raw requests are complete programs and must not be wrapped.
 	wrappedCode := req.Code
 	if !req.Raw {
-		wrappedCode = wrapUserCode(req.ProblemId, req.Language, req.Code)
+		var err error
+		wrappedCode, err = wrapForSpec(req.Spec, req.ProblemId, req.Language, req.Code)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Build environment variables to pass code + input into the container
@@ -866,6 +876,16 @@ int main() {
 		return code + "\n" + driver
 
 	case "go":
+		// A submission that already declares func main() is a complete stdio
+		// program — the whole `go-*` family of basics problems is written that
+		// way. Appending a generated main() to it produced a second main and a
+		// duplicated import block, so every one of them failed to compile no
+		// matter what the learner wrote. run.sh pipes USER_INPUT to stdin, so
+		// these run correctly verbatim. Mirrors the same guard on Java below.
+		if goDeclaresMain(code) {
+			return code
+		}
+
 		funcName := "solveChallenge"
 		retType := ""
 		hasParams := false
@@ -952,4 +972,15 @@ func main() {
 	}
 
 	return code
+}
+
+// goDeclaresMain reports whether the submission already provides func main().
+// Comments and strings are not stripped first: a false positive costs a
+// learner nothing (their program is run as-is, which is what a complete
+// program wants), while a false negative reintroduces the duplicate-main
+// compile error this guards against.
+var goMainRe = regexp.MustCompile(`(?m)^\s*func\s+main\s*\(\s*\)`)
+
+func goDeclaresMain(code string) bool {
+	return goMainRe.MatchString(code)
 }

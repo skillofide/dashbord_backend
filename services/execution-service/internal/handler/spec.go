@@ -1,0 +1,35 @@
+package handler
+
+import (
+	"github.com/skillofide/execution-service/internal/codegen"
+	"github.com/skillofide/execution-service/internal/sandbox"
+	problemv1 "github.com/skillofide/proto/problem/v1"
+)
+
+// toSandboxSpec converts the wire form of a problem's execution contract into
+// the sandbox's. Returns nil when the problem has no contract recorded, which
+// leaves that problem on the legacy wrapping path.
+func toSandboxSpec(in *problemv1.ExecutionSpec) *sandbox.ExecutionSpec {
+	if in == nil {
+		return nil
+	}
+	out := &sandbox.ExecutionSpec{
+		IoMode:     in.IoMode,
+		EntryPoint: in.EntryPoint,
+		ReturnType: codegen.Type(in.ReturnType),
+		Compare:    in.Compare,
+		FloatEps:   in.FloatEps,
+		Kind:       in.Kind,
+	}
+	for _, p := range in.Params {
+		out.Params = append(out.Params, codegen.Param{Name: p.Name, Type: codegen.Type(p.Type)})
+	}
+	for _, m := range in.Methods {
+		method := codegen.Method{Name: m.Name, ReturnType: codegen.Type(m.ReturnType)}
+		for _, mp := range m.Params {
+			method.Params = append(method.Params, codegen.Param{Name: mp.Name, Type: codegen.Type(mp.Type)})
+		}
+		out.Methods = append(out.Methods, method)
+	}
+	return out
+}

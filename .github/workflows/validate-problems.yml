@@ -1,0 +1,105 @@
+name: Validate problem content
+
+# Runs the problem-content gate: for every function-mode problem, the reference
+# solution must be accepted and the generated starter must not be.
+#
+# Both halves matter. The first catches a broken driver, a mis-declared
+# signature, or test data in the wrong format. The second catches an answer that
+# has leaked into a starter template — the state most of the catalogue was in,
+# where a problem could be cleared by pressing Submit without typing anything.
+#
+# This is not a theoretical safety net. Every manual run of it during the
+# signature migration surfaced a real defect, including two Go code-generation
+# bugs where the fix for one introduced the other, and a C++ driver that failed
+# to compile against solutions which did not include <bits/stdc++.h>. None of
+# them were visible to the unit tests, because all of them only appear when the
+# generated program is handed to a real compiler.
+
+on:
+  pull_request:
+    paths:
+      - 'services/execution-service/internal/codegen/**'
+      - 'services/execution-service/internal/judge/**'
+      - 'services/execution-service/internal/sandbox/**'
+      - 'services/problem-service/migrations/**'
+      - 'scripts/seed-signatures.sql'
+      - 'scripts/backfill-io-modes.sql'
+      - 'seed-problems.go'
+      - '.github/workflows/validate-problems.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      languages:
+        description: 'Languages to validate'
+        default: 'javascript,python,java,cpp,go'
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+      - run: go build ./services/... ./proto/...
+      - run: go test ./services/execution-service/... ./services/problem-service/...
+
+  content:
+    name: Reference solutions and starters
+    runs-on: ubuntu-latest
+    needs: unit
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: skillofide
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: skillofide
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U skillofide"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      POSTGRES_DSN: postgres://skillofide:password@localhost:5432/skillofide?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Build language runner images
+        # Without these the judge answers every run with "No such image", which
+        # surfaces as a RuntimeError on correct code — the failure mode that
+        # silently zeroed every SQL problem in the catalogue.
+        run: ./scripts/build-runners.sh
+
+      - name: Apply migrations
+        run: |
+          go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          migrate -path=services/problem-service/migrations \
+                  -database "$POSTGRES_DSN&x-migrations-table=schema_migrations_problem" up
+
+      - name: Seed problems and signatures
+        run: |
+          go run seed-problems.go
+          psql "$POSTGRES_DSN" -f scripts/backfill-io-modes.sql
+          psql "$POSTGRES_DSN" -f scripts/seed-signatures.sql
+
+      - name: Validate
+        # Serial on purpose. Parallel runs on a shared CI box push compiled
+        # languages past their time limit, and a timeout is indistinguishable
+        # from a wrong answer unless you are reading the flag — which is exactly
+        # how a correct C++ solution was misread as failing during development.
+        run: |
+          ./scripts/validate-problems.sh -j 1 \
+            ${{ github.event.inputs.languages && format('-langs {0}', github.event.inputs.languages) || '' }}

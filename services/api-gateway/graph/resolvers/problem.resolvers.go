@@ -158,20 +158,21 @@ func problemListToMap(resp *problemv1.ListProblemsResponse) map[string]interface
 
 func problemSummaryToMap(p *problemv1.Problem) map[string]interface{} {
 	return map[string]interface{}{
-		"id":           p.Id,
-		"slug":         p.Slug,
-		"title":        p.Title,
-		"difficulty":   p.Difficulty,
-		"topic":        p.Topic,
-		"xp":           p.Xp,
-		"statement":    p.Statement,
-		"constraints":  p.Constraints,
-		"tags":         p.Tags,
-		"examples":     examplesToMap(p.Examples),
-		"hints":        hintsToMap(p.Hints),
-		"starterCodes": starterCodesToMap(p.StarterCodes),
-		"setId":        mapUUIDToSimpleID(p.SetId),
-		"userStatus":   p.UserStatus,
+		"id":                 p.Id,
+		"slug":               p.Slug,
+		"title":              p.Title,
+		"difficulty":         p.Difficulty,
+		"topic":              p.Topic,
+		"xp":                 p.Xp,
+		"statement":          p.Statement,
+		"constraints":        p.Constraints,
+		"tags":               p.Tags,
+		"examples":           examplesToMap(p.Examples),
+		"hints":              hintsToMap(p.Hints),
+		"starterCodes":       starterCodesToMap(p.StarterCodes),
+		"supportedLanguages": supportedLanguagesOrDefault(p.SupportedLanguages),
+		"setId":              mapUUIDToSimpleID(p.SetId),
+		"userStatus":         p.UserStatus,
 	}
 }
 
@@ -201,6 +202,15 @@ func hintsToMap(hints []*problemv1.Hint) []interface{} {
 		})
 	}
 	return result
+}
+
+// supportedLanguagesOrDefault keeps the field non-null for problems served by
+// an older problem-service that does not populate it yet.
+func supportedLanguagesOrDefault(langs []string) []string {
+	if len(langs) == 0 {
+		return []string{"javascript", "python", "java", "cpp", "go"}
+	}
+	return langs
 }
 
 func starterCodesToMap(sc *problemv1.StarterCodes) interface{} {

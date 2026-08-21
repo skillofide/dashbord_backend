@@ -46,8 +46,15 @@ type Problem struct {
 	Examples     []*Example    `json:"examples"`
 	Hints        []*Hint       `json:"hints"`
 	StarterCodes *StarterCodes `json:"starter_codes"`
-	SetId        string        `json:"set_id"`
-	UserStatus   string        `json:"user_status"` // Solved | InProgress | Unsolved
+
+	// SupportedLanguages lists the languages this problem can actually be
+	// solved in, in display order. The editor used to offer all five on every
+	// problem, so a learner opening any of the 412 stdio problems in the
+	// default language got a `console.log("Hello World")` placeholder that no
+	// submission could turn into a passing answer.
+	SupportedLanguages []string `json:"supported_languages,omitempty"`
+	SetId              string   `json:"set_id"`
+	UserStatus         string   `json:"user_status"` // Solved | InProgress | Unsolved
 }
 
 type Example struct {
@@ -87,6 +94,57 @@ type TestCase struct {
 
 type GetTestCasesResponse struct {
 	TestCases []*TestCase `json:"test_cases"`
+
+	// ExecutionSpec tells the judge how to run and grade this problem. It rides
+	// along with the test cases because execution-service already makes exactly
+	// one GetTestCases call per run and per submission, so no extra round trip
+	// is needed. Nil for problems that have no signature recorded yet, in which
+	// case the judge falls back to its legacy behaviour.
+	ExecutionSpec *ExecutionSpec `json:"execution_spec,omitempty"`
+}
+
+// ExecutionSpec is the problem's declared execution contract: how the
+// submission is wrapped, and how its output is compared to the expectation.
+type ExecutionSpec struct {
+	// Kind is "function" or "class". A class problem is graded by driving a
+	// sequence of calls against one instance rather than by calling a single
+	// entry point, because the state carried between calls is what it teaches.
+	Kind string `json:"kind,omitempty"`
+
+	// Methods is set only when Kind is "class".
+	Methods []*SignatureMethod `json:"methods,omitempty"`
+
+	// IoMode is "function", "stdio" or "sql".
+	//
+	//   function  the submission provides one entry point; a generated driver
+	//             feeds it arguments and prints the result
+	//   stdio     the submission is a complete program reading stdin and is run
+	//             verbatim
+	//   sql       handed to the SQL runner verbatim
+	IoMode string `json:"io_mode"`
+
+	// Signature is set only when IoMode is "function".
+	EntryPoint string            `json:"entry_point,omitempty"`
+	Params     []*SignatureParam `json:"params,omitempty"`
+	ReturnType string            `json:"return_type,omitempty"`
+
+	// Compare is "exact", "unordered", "set" or "float".
+	Compare  string  `json:"compare,omitempty"`
+	FloatEps float64 `json:"float_eps,omitempty"`
+}
+
+// SignatureParam is one argument of the entry point, in declaration order.
+// That order is also the order of the lines in a test case's input.
+type SignatureParam struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// SignatureMethod is one callable on a class-design problem's type.
+type SignatureMethod struct {
+	Name       string            `json:"name"`
+	Params     []*SignatureParam `json:"params"`
+	ReturnType string            `json:"returnType"`
 }
 
 type ListPracticeSetsRequest struct {

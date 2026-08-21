@@ -54,8 +54,12 @@ var problemType = graphql.NewObject(graphql.ObjectConfig{
 		"examples":     &graphql.Field{Type: graphql.NewList(exampleType)},
 		"hints":        &graphql.Field{Type: graphql.NewList(hintType)},
 		"starterCodes": &graphql.Field{Type: starterCodesType},
-		"setId":        &graphql.Field{Type: graphql.String},
-		"userStatus":   &graphql.Field{Type: graphql.String},
+		// Languages this problem can actually be solved in. The editor offered
+		// all five on every problem, so the 412 stdio problems opened by
+		// default on a placeholder starter no submission could fix.
+		"supportedLanguages": &graphql.Field{Type: graphql.NewList(graphql.String)},
+		"setId":              &graphql.Field{Type: graphql.String},
+		"userStatus":         &graphql.Field{Type: graphql.String},
 	},
 })
 

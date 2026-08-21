@@ -19,6 +19,12 @@ type Problem {
   examples: [Example!]!
   hints: [Hint!]!
   starterCodes: StarterCodes
+  """
+  Languages this problem can actually be solved in, in display order. The
+  editor must offer only these — every problem used to advertise all five
+  regardless of whether a usable starter existed for them.
+  """
+  supportedLanguages: [String!]!
   setId: String!
   userStatus: String!
 }

@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	streamName      = "EXECUTION"
-	subjectRun      = "execution.run"
-	subjectResult   = "execution.result"
-	consumerName    = "execution-worker"
+	streamName    = "EXECUTION"
+	subjectRun    = "execution.run"
+	subjectResult = "execution.result"
+	consumerName  = "execution-worker"
 )
 
 // ProblemClient is the interface the worker uses to fetch test cases.
@@ -46,12 +46,12 @@ func New(nc *nats.Conn, sb *sandbox.DockerSandbox, j *judge.Judge, probCli probl
 
 	// Create or get the stream
 	if _, err := js.AddStream(&nats.StreamConfig{
-		Name:       streamName,
-		Subjects:   []string{"execution.>"},
-		Retention:  nats.WorkQueuePolicy,
-		MaxAge:     24 * time.Hour,
-		Storage:    nats.FileStorage,
-		Replicas:   1,
+		Name:      streamName,
+		Subjects:  []string{"execution.>"},
+		Retention: nats.WorkQueuePolicy,
+		MaxAge:    24 * time.Hour,
+		Storage:   nats.FileStorage,
+		Replicas:  1,
 	}); err != nil {
 		// ErrStreamNameAlreadyInUse means it exists — that's fine
 		log.Info("stream already exists or created", zap.Error(err))
@@ -151,6 +151,7 @@ func (w *Worker) execute(ctx context.Context, req *executionv1.SubmitCodeRequest
 			Input:         tc.Input,
 			TimeLimitMs:   tc.TimeLimitMs,
 			MemoryLimitMb: tc.MemoryLimitMb,
+			Spec:          toSandboxSpec(tcResp.ExecutionSpec),
 		})
 		if err != nil {
 			w.log.Error("sandbox run failed", zap.Error(err), zap.String("tc_id", tc.Id))
@@ -163,7 +164,7 @@ func (w *Worker) execute(ctx context.Context, req *executionv1.SubmitCodeRequest
 			continue
 		}
 
-		tr := w.judge.EvaluateTestCase(tc, sbResult)
+		tr := w.judge.EvaluateTestCaseWithSpec(tc, sbResult, tcResp.ExecutionSpec)
 		testResults = append(testResults, tr)
 
 		if sbResult.ExecutionMs > maxRuntime {

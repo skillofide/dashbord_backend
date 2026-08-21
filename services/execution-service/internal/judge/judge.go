@@ -25,8 +25,25 @@ type Judge struct{}
 // New creates a Judge.
 func New() *Judge { return &Judge{} }
 
-// EvaluateTestCase compares sandbox output to a test case and returns a TestResult.
+// EvaluateTestCase compares sandbox output to a test case and returns a
+// TestResult, using the legacy text comparison.
+//
+// Deprecated: prefer EvaluateTestCaseWithSpec, which honours the problem's
+// declared comparison mode. Retained so callers that have no spec keep working.
 func (j *Judge) EvaluateTestCase(tc *problemv1.TestCase, res *sandbox.RunResult) *executionv1.TestResult {
+	return j.EvaluateTestCaseWithSpec(tc, res, nil)
+}
+
+// EvaluateTestCaseWithSpec grades one test case against the problem's declared
+// execution contract.
+//
+// When the problem is function-mode, output is compared structurally: both
+// sides are decoded as JSON and matched by value, with optional order- and
+// float-insensitivity. Text comparison made the verdict depend on how a
+// language happened to format its output — Python's "[12, 8, 20, 5]" lost to
+// "[12,8,20,5]" and a string result lost on its quotes — none of which are
+// wrong answers.
+func (j *Judge) EvaluateTestCaseWithSpec(tc *problemv1.TestCase, res *sandbox.RunResult, spec *problemv1.ExecutionSpec) *executionv1.TestResult {
 	tr := &executionv1.TestResult{
 		TestCaseId:     tc.Id,
 		Input:          tc.Input,
@@ -51,7 +68,7 @@ func (j *Judge) EvaluateTestCase(tc *problemv1.TestCase, res *sandbox.RunResult)
 			tr.Error = "Non-zero exit code"
 		}
 
-	case matchesExpected(tc.ExpectedOutput, res.Stdout):
+	case j.matches(tc.ExpectedOutput, res.Stdout, spec):
 		tr.Status = StatusAccepted
 
 	default:
@@ -59,6 +76,19 @@ func (j *Judge) EvaluateTestCase(tc *problemv1.TestCase, res *sandbox.RunResult)
 	}
 
 	return tr
+}
+
+// matches picks the comparison the problem declares. Only function-mode
+// problems get structural comparison: stdio problems print free-form text and
+// SQL problems come back as result sets, both of which have their own rules.
+func (j *Judge) matches(expected, actual string, spec *problemv1.ExecutionSpec) bool {
+	if spec == nil || !strings.EqualFold(spec.IoMode, "function") {
+		return matchesExpected(expected, actual)
+	}
+	return MatchesTyped(expected, actual, CompareSpec{
+		Mode: CompareMode(spec.Compare),
+		Eps:  spec.FloatEps,
+	})
 }
 
 // OverallStatus computes the aggregate status from individual test results.

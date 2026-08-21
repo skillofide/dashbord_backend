@@ -6,7 +6,12 @@ COPY proto/ proto/
 COPY pkg/ pkg/
 COPY services/ services/
 COPY vendor/ vendor/
-RUN go build -mod=vendor -ldflags="-s -w" -o /execution-service ./services/execution-service/cmd/...
+# Build the service package only, not ./cmd/... — that glob now matches the
+# developer tools alongside it (regen-starters, validate-problems,
+# infer-signatures, augment-testcases, driver-conformance) and Go cannot write
+# several binaries to one output path. Those tools are operational tooling that
+# talks to Postgres and Docker; they have no business in the service image.
+RUN go build -mod=vendor -ldflags="-s -w" -o /execution-service ./services/execution-service/cmd
 
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates tzdata

@@ -67,6 +67,7 @@ func (h *ExecutionHandler) RunCode(ctx context.Context, req *executionv1.RunCode
 			Input:         tc.Input,
 			TimeLimitMs:   tc.TimeLimitMs,
 			MemoryLimitMb: tc.MemoryLimitMb,
+			Spec:          toSandboxSpec(tcResp.ExecutionSpec),
 		})
 		if err != nil {
 			h.log.Error("sandbox run error", zap.Error(err))
@@ -79,7 +80,7 @@ func (h *ExecutionHandler) RunCode(ctx context.Context, req *executionv1.RunCode
 			continue
 		}
 
-		tr := h.judge.EvaluateTestCase(tc, sbResult)
+		tr := h.judge.EvaluateTestCaseWithSpec(tc, sbResult, tcResp.ExecutionSpec)
 		testResults = append(testResults, tr)
 
 		if sbResult.ExecutionMs > maxRuntime {
